@@ -1,0 +1,19 @@
+# .NET 빌드 산출물
+bin/
+obj/
+*.user
+*.suo
+.vs/
+
+# 퍼블리시 결과
+publish/
+*.nupkg
+
+# OS / 편집기
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+
+# 캐릭터 생성 중간 산출물 (원본 images/ 에서 언제든 다시 만들 수 있음)
+images/*.tmp

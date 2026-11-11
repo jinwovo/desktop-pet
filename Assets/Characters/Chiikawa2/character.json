@@ -1,0 +1,19 @@
+﻿{
+  "name": "Chiikawa2",
+  "scale": 1.0,
+  "frameSizePx": { "width": 128, "height": 128 },
+  "anchor": { "x": 64, "y": 122 },
+  "walkSpeedPxPerSec": 65,
+  "frames": {
+    "idle": ["idle.png", "idle_2.png"],
+    "walk": ["walk_1.png", "walk_2.png", "walk_3.png", "walk_4.png"],
+    "sit": ["sit.png"],
+    "lookLeft": ["look_left.png"],
+    "lookRight": ["look_right.png"],
+    "drag": ["drag.png"],
+    "fall": ["fall.png"],
+    "cry": ["cry_1.png", "cry_2.png"],
+    "angry": ["angry_1.png", "angry_2.png"]
+  },
+  "frameIntervalMs": 160
+}

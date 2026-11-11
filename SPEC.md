@@ -1,0 +1,263 @@
+# 데스크탑 펫 앱 (가칭: DesktopPet) 기획 문서
+
+## 1. 개요
+윈도우 바탕화면 위에서 항상 떠 있는 캐릭터(펫)가 화면을 걸어 다니거나, 마우스 커서를 바라보거나,
+가만히 앉아 쉬는 등 "펫 키우기" 느낌으로 동작하는 데스크탑 마스코트 앱.
+추가로, 다른 프로그램의 창이 닫힐 때 그 창이 마치 중력에 끌려가듯 화면 아래 작업표시줄 쪽으로
+떨어지는 연출을 보여주는 "창 낙하 애니메이션" 기능을 포함한다.
+
+- 플랫폼: Windows 10/11 전용
+- 기술 스택: .NET 8, C#, WPF (UI), Win32 API(P/Invoke) 연동
+- 실행 형태: 상시 백그라운드 실행, 트레이 아이콘으로 제어
+
+## 2. 목표 / 비목표
+
+### 목표
+- 사용자가 원하는 캐릭터 이미지(PNG)를 넣으면 별도 3D 모델링 없이 자동으로 펫처럼 움직이게 한다.
+- 캐릭터가 화면 하단(또는 작업표시줄 바로 위)을 기준으로 좌우로 걷고, 멈춰서 쉬고, 마우스를
+  따라 고개를 돌리는 등 기본적인 생동감을 준다.
+- 임의의 프로그램 창이 닫힐 때, 그 창의 마지막 화면을 캡처해 작업표시줄로 떨어지며 사라지는
+  연출을 보여준다.
+- 캐릭터 교체는 이미지 파일 교체만으로 가능해야 한다 (코드 수정 불필요).
+
+### 비목표 (이번 범위에서 제외)
+- 이미지 한 장으로부터 실제 3D 메시/리깅을 자동 생성하는 것은 현재 기술로는 연구 수준의 과제라
+  범위에서 제외한다. 대신 2D 스프라이트 + 레이어 변형(확대/축소, 기울임, 좌우 반전, 바운스)으로
+  "입체감 있는 느낌"을 낸다 (Live2D 유사 방식의 간이 버전).
+- 모바일/맥 지원 없음 (Windows 전용).
+- 네트워크 기능, 멀티플레이, 캐릭터 간 상호작용 없음 (추후 확장 고려).
+
+### 저작권 관련 주의
+치이카와, 호빵맨, 세균맨 같은 기존 캐릭터 이미지는 저작권이 있으므로, 본 앱은 특정 캐릭터를
+내장하지 않고 "사용자가 넣는 이미지"를 범용으로 펫화하는 엔진으로 만든다. 그런 캐릭터 이미지를
+쓰는 것은 개인적인 용도로만 사용하고, 앱을 배포/공유할 경우 저작권 문제는 사용자 본인이
+책임져야 한다.
+
+## 3. 기능 요구사항
+
+### 3.1 데스크탑 펫 (캐릭터 기능)
+- **창 형태**: 테두리 없는 투명 배경 WPF 창. `AllowsTransparency=True`, `WindowStyle=None`,
+  `Topmost=True`, 작업표시줄에 아이콘 표시 안 함(`ShowInTaskbar=False`).
+- **클릭 통과(Click-through) 처리**: 캐릭터의 투명한 부분(알파=0)은 클릭이 아래 창으로
+  통과되고, 캐릭터 몸체 부분만 클릭/드래그 가능하도록 픽셀 단위 히트테스트 적용.
+- **상태 머신**: `Idle(대기) → Walk(걷기) → Sit(앉기) → LookAtCursor(커서 응시) →
+  Dragged(드래그 중) → Falling(놓였을 때 낙하/착지)`
+  - Idle: 제자리에서 약간의 숨쉬기 모션(상하 bounce), 일정 확률로 Walk 또는 Sit으로 전환
+  - Walk: 화면 작업영역 하단을 따라 좌우 이동, 이동 방향에 따라 스프라이트 좌우 반전
+  - LookAtCursor: 커서가 일정 거리 내로 오면 캐릭터가 커서 쪽으로 고개(또는 눈) 이미지를 전환
+  - Dragged: 마우스로 캐릭터를 집어서 화면 어디로든 옮길 수 있음
+  - Falling: 드래그 중 마우스를 놓으면 중력 적용되어 바닥(작업표시줄 위)까지 낙하 후 바운스
+- **멀티 모니터 지원**: `System.Windows.Forms.Screen.AllScreens` 기준으로 모든 모니터의
+  작업영역을 걷기 범위로 인식.
+- **캐릭터 교체**: `Assets/Characters/<이름>/` 폴더에 정해진 이름의 PNG들
+  (`idle.png`, `walk_1.png`, `walk_2.png`, `look_left.png`, `look_right.png`, `sit.png`,
+  `drag.png`, `fall.png`)과 `character.json`(크기, 기준점, 애니메이션 속도)을 넣으면
+  트레이 메뉴에서 바로 선택 가능. 프레임이 일부 없으면 `idle.png`로 대체.
+- **트레이 메뉴**: 캐릭터 선택, 크기 조절, 걷기 속도, 펫 보이기/숨기기, 종료.
+
+### 3.2 창 닫힘 낙하 애니메이션
+- 사용자가 다른 프로그램(탐색기, 브라우저, 한글, PDF 뷰어 등)의 창을 닫으면(X 버튼 클릭 등),
+  그 창이 있던 자리에 마지막 화면 캡처 이미지가 나타나 중력처럼 아래로 가속하며 떨어지고,
+  작업표시줄 지점에서 작아지며 사라지는 애니메이션을 재생한다.
+- **동작 원리 (Windows는 다른 프로세스의 종료를 가로채 지연시킬 수 없으므로)**:
+  1. `SetWinEventHook`으로 시스템 전역의 최상위 창 생성/파괴/이동 이벤트를 구독한다
+     (`EVENT_OBJECT_CREATE`, `EVENT_OBJECT_DESTROY`, `EVENT_OBJECT_LOCATIONCHANGE` 등,
+     `WINEVENT_OUTOFCONTEXT`로 등록하여 DLL 인젝션 없이 동작).
+  2. 추적 대상 창(제목표시줄이 있는 일반 최상위 창)은 주기적으로(예: 500ms~1s 간격, 또는
+     위치/포커스 변경 시) `PrintWindow`(`PW_RENDERFULLCONTENT`)로 비트맵을 캡처해
+     "마지막 모습" 캐시로 보관한다.
+  3. `EVENT_OBJECT_DESTROY` 이벤트가 해당 창에 대해 발생하면(창이 이미 사라진 뒤이므로
+     실시간 캡처는 불가), 캐시해 둔 마지막 비트맵과 마지막 창 좌표를 이용해 같은 위치에
+     투명 오버레이 창(WPF, Topmost)을 띄운다.
+  4. 오버레이 창에 낙하(가속도) + 축소 + 페이드아웃 애니메이션을 적용하여 작업표시줄
+     위치까지 떨어뜨린 뒤 오버레이를 닫는다.
+- **제외 대상**: 도구창(Tool window), 테두리 없는 창, 본 앱 자신의 창, 작업표시줄/시작메뉴
+  등 쉘 구성요소는 추적하지 않는다.
+- **알려진 제약**:
+  - 관리자 권한으로 실행 중인 다른 프로그램의 창은, 본 앱이 관리자 권한이 아니면 후킹/캡처가
+    되지 않을 수 있음 (Windows의 UIPI 제한). 필요 시 앱을 관리자 권한으로 실행하는 옵션 제공.
+  - 매우 빠르게 열고 닫는 창은 캡처 주기보다 빨라 마지막 캡처가 비어 있을 수 있음 → 이 경우
+    단색/아이콘 placeholder로 대체.
+  - 일반 "닫기(X)"와 "최소화"를 구분해야 함 (최소화는 원래 Windows 애니메이션이 있으므로
+    본 기능은 진짜 종료(`EVENT_OBJECT_DESTROY`)에만 반응).
+
+## 4. 프로젝트 구조 (예정)
+
+```
+DesktopPet.sln
+├─ src/
+│  ├─ DesktopPet.App/           # 진입점, 트레이 아이콘, 설정 UI, App.xaml
+│  ├─ DesktopPet.Core/          # 펫 상태 머신, 애니메이션/물리 로직 (플랫폼 독립적)
+│  ├─ DesktopPet.Interop/       # Win32 P/Invoke 래퍼 (SetWinEventHook, PrintWindow 등)
+│  └─ DesktopPet.WindowFall/    # 창 추적 + 캡처 캐시 + 낙하 오버레이
+├─ Assets/
+│  └─ Characters/
+│     ├─ Chiikawa/             # 생성된 캐릭터 (character.json + 프레임 PNG 14장)
+│     ├─ Hachiware/
+│     └─ Usagi/
+├─ images/                      # 캐릭터 생성에 쓴 원본 그림
+├─ scripts/
+│  ├─ CharacterBuilder.cs       # 이미지 처리 라이브러리
+│  ├─ build-characters.ps1      # 원본 그림 → 애니메이션 프레임 생성
+│  ├─ install.ps1 / uninstall.ps1
+└─ SPEC.md
+```
+
+## 5. character.json 포맷 (실제 생성 예시)
+```json
+{
+  "name": "Chiikawa",
+  "scale": 1.0,
+  "frameSizePx": { "width": 128, "height": 128 },
+  "anchor": { "x": 64, "y": 122 },
+  "walkSpeedPxPerSec": 55,
+  "frames": {
+    "idle": ["idle.png"],
+    "walk": ["walk_1.png", "walk_2.png", "walk_3.png", "walk_4.png"],
+    "sit": ["sit.png"],
+    "lookLeft": ["look_left.png"],
+    "lookRight": ["look_right.png"],
+    "drag": ["drag.png"],
+    "fall": ["fall.png"],
+    "cry": ["cry_1.png", "cry_2.png"],
+    "angry": ["angry_1.png", "angry_2.png"]
+  },
+  "frameIntervalMs": 160
+}
+```
+
+`anchor.y`는 "프레임 위쪽에서 캐릭터 발바닥까지의 거리"다. 펫이 바닥/창 위에 설 때 이 값을
+기준으로 정렬하므로, 이 값이 틀리면 캐릭터가 떠 있거나 파묻혀 보인다.
+
+## 5-1. 캐릭터 자동 생성 파이프라인
+
+**`images/` 폴더에 그림을 넣고 `scripts/build-characters.ps1`을 실행하면 끝이다.** 좌표를 적거나
+설정을 건드릴 필요가 없다. 공식 캐릭터 아트는 보통 '정면 정지 포즈' 한 장뿐이라 걷기/울기
+프레임이 없으므로, 한 장에서 전체 프레임을 변형으로 합성한다.
+
+### 자동으로 판단하는 것들
+
+| 판단 | 방법 |
+|------|------|
+| 배경색 | 테두리 픽셀을 양자화해 다수결. 이미 투명하면 건너뜀 (흰색·분홍 등 아무 단색이나 가능) |
+| 캐릭터 개수 | 연결 요소(blob) 분석 + 붙어 있는 경우 '이음새' 열 탐지로 분할 |
+| 추출 성공 여부 | `LargestBlobFillRatio`로 검사하고, 실패하면 설정을 바꿔 자동 재시도 |
+| 포맷 | System.Drawing이 못 읽는 webp 등은 WPF 이미징으로 우회 (알파 보존) |
+
+### 핵심 난점 세 가지와 해결
+
+1. **흰 캐릭터 + 흰 배경** — 치이카와는 몸이 희고 배경도 흰 경우가 많다. "밝으면 배경"으로
+   지우면 몸통까지 사라지므로, 반드시 **바깥에서 시작하는 flood fill**이어야 한다.
+
+2. **열린 외곽선** — 그런데 선화는 팔다리를 몸선과 떨어진 별개 획으로 그리는 경우가 많아
+   외곽선에 틈이 있고, flood fill이 그 틈으로 새어 들어가 몸통을 통째로 먹는다(속 빈 껍데기).
+   그래서 `BuildInkBarrier`가 검은 선 주변 반경 R을 '지울 수 없는 벽'으로 만들어 틈을 막는다.
+   R을 얼마로 둬야 하는지는 그림마다 다르므로, **tolerance와 R을 단계적으로 바꿔가며
+   재시도하고 추출 결과가 멀쩡해지는 첫 조합을 채택**한다
+   (실제로 `images.jpg`는 gap=8에서야 성공했다).
+
+3. **한 캐릭터가 여러 조각** — 떨어진 팔다리 획은 각각 별도 blob으로 잡힌다. 그래서 큰 blob은
+   '본체', 작은 조각은 '파편'으로 나눠 가장 가까운 본체에 흡수시킨다. 반대로 캐릭터들이 손을
+   잡아 한 blob이 된 경우는 세로 잉크량이 가장 적은 열(이음새)에서 쪼갠다.
+
+### 이름 지정
+파일 이름이 캐릭터 이름이 된다. 한 그림에 여러 캐릭터가 있으면 왼쪽부터 번호가 붙는다
+(`trio.png` → `trio1`, `trio2`, `trio3`). 직접 지정하려면 `images/overrides.json`:
+
+```json
+{
+  "trio.png":   { "names": ["Hachiware", "Chiikawa", "Usagi"], "walkSpeed": 65 },
+  "배경복잡.jpg": { "skip": true }
+}
+```
+
+### 구성 파일
+- `scripts/CharacterBuilder.cs` – 이미지 처리 라이브러리 (Add-Type으로 로드).
+  `DetectBackgroundColor` / `RemoveBackground` / `BuildInkBarrier` / `FindBlobs` /
+  `FindSplitColumns` / `LargestBlobFillRatio` / `Trim` / `Normalize` / `Pose` /
+  `DrawTears` / `DrawAngerMark` / `TintRed`
+- `scripts/build-characters.ps1` – 위를 엮은 실행 스크립트 (`-Clean`으로 전체 재생성)
+
+현재 생성된 캐릭터: **Chiikawa**, **Chiikawa2**, **Hachiware**, **Usagi**.
+
+> PowerShell 5.1은 BOM 없는 UTF-8을 CP949로 읽어 한글이 깨지므로, 이 스크립트들은 **UTF-8 BOM**
+> 으로 저장해야 한다. 또 Add-Type의 컴파일러가 구버전이라 `out var` 같은 C# 6+ 문법은 못 쓴다.
+
+## 6. 개발 순서 (마일스톤)
+두 기능을 병행 진행하되, 실제 구현은 아래 순서로 단계화한다 (서로 다른 프로젝트라 독립적으로
+진행 가능).
+
+1. **M0** – 솔루션/프로젝트 스캐폴딩, SPEC.md(본 문서) 확정
+2. **M1** – 펫 기본 창 + Idle/Walk 상태 머신 + 샘플 캐릭터로 화면 하단 걷기 동작 확인
+3. **M2** – 드래그 & 낙하(Dragged → Falling) 물리, 커서 응시(LookAtCursor) 추가
+4. **M3** – 캐릭터 교체(트레이 메뉴 + character.json 로더), 멀티 모니터 지원
+5. **M4** – 창 이벤트 후킹 PoC: 전역 창 생성/파괴 이벤트 로그 찍어보기
+6. **M5** – 창 썸네일 캐시(PrintWindow 주기 캡처) + 낙하 오버레이 애니메이션 연결
+7. **M6** – 설정 저장(JSON, `%AppData%\DesktopPet\settings.json`), 트레이 메뉴 완성
+8. **M7** – 다듬기: 성능(캡처 주기/CPU), 예외 창 필터링, 아이콘/인스톨러(선택)
+
+## 7. 현재 구현 상태 (2026-11-11 기준)
+
+- [x] M0 – 솔루션/프로젝트 스캐폴딩 (`DesktopPet.sln`, App/Core/Interop/WindowFall 4개 프로젝트)
+- [x] M1 – 펫 기본 창 + Idle/Walk 상태 머신 + 샘플 캐릭터로 화면 하단 걷기
+- [x] M2 – 드래그 & 낙하(Dragged → Falling) 물리, 커서 응시(LookAtCursor)
+- [x] M3 – 캐릭터 교체(트레이 메뉴) UI, 멀티 모니터 지원
+  (`PlatformLayout`이 모니터별 작업영역을 인식해 현재 올라가 있는 모니터 기준으로 걷기/낙하.
+  단, 모든 모니터가 primary 모니터와 같은 DPI 배율이라고 가정하는 단순화가 있음 — 서로 다른
+  배율의 모니터를 섞어 쓰면 위치가 약간 어긋날 수 있음)
+- [x] M4 – 전역 창 생성/파괴 이벤트 후킹 (`WinEventHook`, `EVENT_OBJECT_DESTROY`)
+- [x] M5 – 창 썸네일 캐시(`PrintWindow` 주기 캡처) + 낙하 오버레이 애니메이션(`FallOverlayWindow`)
+- [x] M6 – 설정 저장(`%AppData%\DesktopPet\settings.json`), 트레이 메뉴 완성
+  (캐릭터 선택 / 크기 75~200% / 걷기 속도 0.5~2배 / 보이기-숨기기 / 캐릭터 폴더 열기)
+- [x] M7 – 다듬기
+  - 트레이/앱 아이콘 추가 (`Assets/AppIcon.ico`, 자리표시용 디자인)
+  - 창 낙하 대상 필터링 보강: 최소화된 창 제외, 시작메뉴/작업표시줄/검색 등 쉘 서피스
+    (`Windows.UI.Core.CoreWindow`, `Shell_TrayWnd` 등) 클래스명으로 제외
+  - `scripts/install.ps1` / `scripts/uninstall.ps1` — `dotnet publish`로 단일 파일 exe를
+    만들어 `%LocalAppData%\DesktopPet`에 설치, 시작 메뉴 바로가기 생성, `-AddToStartup`
+    옵션으로 로그인 시 자동 실행 등록(선택사항, 기본 꺼짐)
+
+### M8 – 창 위에 올라서기 (추가 구현)
+처음에는 작업표시줄(모니터 바닥) 위에서만 걸을 수 있었는데, 열려 있는 **다른 창의 윗변도
+발판**으로 인식하도록 확장했다.
+
+- `Platform` – 설 수 있는 가로 면 하나 (모니터 바닥 또는 어떤 창의 윗변)
+- `PlatformLayout` – 모니터 바닥 목록 + 창 발판 목록을 합쳐서 관리.
+  - `FindLandingPlatform(x, 이전발높이, 새발높이)` – 낙하 중 이번 틱에 통과한 발판 중
+    가장 높은 것 = 착지 지점
+  - `GetSupportPlatform(x, 발높이)` – 지금 밟고 있는 발판. `null`이면 밟고 있던 창이
+    닫히거나 움직인 것이므로 즉시 낙하 상태로 전환
+- `WindowPlatformScanner` – `EnumWindows` + `GetWindowRect`로 창 윗변 목록 생성.
+  픽셀 캡처가 없어 가벼우며, **백그라운드 스레드에서 0.2초마다** 갱신한다.
+
+### M9 – 감정 표현 (울기 / 화내기)
+- `PetState.Cry`, `PetState.Angry` 추가. `IsEmote()`인 상태는 제자리에 머물며 일정 시간 후
+  자동으로 Idle로 돌아간다.
+- **트리거**
+  - 울기: 높은 곳에서 떨어뜨려 착지 속도가 `CryOnImpactSpeed`(900px/s)를 넘으면
+  - 화내기: 1.2초 안에 3번 이상 클릭(찌르기)하면
+  - 트레이 메뉴 → "기분 표현"에서 수동 재생도 가능
+- 클릭과 드래그는 이동 거리 5px 기준으로 구분한다(누르고 안 움직이면 '찌르기').
+
+### 성능 관련 수정 이력 (버벅임 원인들)
+초기 버전에서 캐릭터가 뚝뚝 끊겨 보였는데, 원인이 **세 가지**였고 모두 수정했다.
+
+1. `DispatcherTimer` + WPF `Left`/`Top` 속성으로 창을 옮김
+   → `CompositionTarget.Rendering`(화면 주사율 동기) + `SetWindowPos`로 교체
+2. 프레임 PNG를 "처음 쓰일 때" 디코딩 → 상태가 처음 바뀔 때마다 멈칫
+   → 캐릭터 로드 시 `AllFramePaths()`로 **전부 미리 디코딩**
+3. 창 낙하 기능의 `PrintWindow` 전체 창 캡처가 **UI 스레드**에서 실행
+   → 백그라운드 타이머로 분리 (`WindowSnapshotCache`에 lock 추가)
+   또한 낙하 오버레이가 매 프레임 창을 네이티브 리사이즈하던 것도
+   `ScaleTransform` + 위치 이동 방식으로 교체
+
+### 실행 환경 참고
+빌드는 `dotnet build DesktopPet.sln`으로 확인(오류 0개). 이 PC에는 회사 WDAC 정책
+(Policy ID `{0283ac0f-...}`)이 적용되어 있어 CodeIntegrity 로그에 차단 기록이 남지만,
+실제로는 실행에 성공하고 있다.
+
+## 8. 향후 확장 아이디어 (범위 밖)
+- Live2D Cubism SDK 연동으로 진짜 리깅 기반 모션
+- 캐릭터가 말풍선으로 시스템 알림/시간 등을 이야기
+- 여러 펫 동시 등장 및 서로 상호작용
+- 창 "낙하" 외에 "열림" 시 위에서 튀어 오르는 연출 추가
