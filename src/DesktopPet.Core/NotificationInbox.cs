@@ -50,8 +50,9 @@ public sealed class NotificationInbox : IDisposable
         _watcher.Renamed += (_, e) => TryConsume(e.FullPath);
 
         // Backstop sweep: FileSystemWatcher can silently miss events if its buffer overflows, and
-        // a dropped notification is exactly the thing the user is waiting on.
-        _sweepTimer = new Timer(_ => SweepFolder(), null, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(2));
+        // a dropped notification is exactly the thing the user is waiting on. The watcher handles
+        // the normal path, so this only needs to be often enough to not feel broken.
+        _sweepTimer = new Timer(_ => SweepFolder(), null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
 
         // Anything dropped while the app was closed still deserves to be shown.
         SweepFolder();

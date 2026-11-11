@@ -10,6 +10,15 @@ public sealed class PetSettings
     public double WalkSpeedMultiplier { get; set; } = 1.0;
     public bool Visible { get; set; } = true;
 
+    /// <summary>Animate other applications' windows falling into the taskbar when they close.</summary>
+    public bool WindowFallEnabled { get; set; } = true;
+
+    /// <summary>Let the pet hop between windows instead of turning around at every edge.</summary>
+    public bool HopBetweenWindowsEnabled { get; set; } = true;
+
+    /// <summary>Doze off when left alone for a while.</summary>
+    public bool SleepEnabled { get; set; } = true;
+
     private static string FilePath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DesktopPet", "settings.json");
 

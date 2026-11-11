@@ -75,6 +75,92 @@ public sealed class PlatformLayout
     }
 
     /// <summary>
+    /// A lower platform the pet could hop down onto, just past the edge it's walking toward.
+    ///
+    /// Used at the edge of a window so the pet can drop to the next window (or the desktop)
+    /// instead of always turning around. Only platforms *below* the current one qualify — hopping
+    /// upward would need a jump arc the pet can't reliably make, and hopping sideways at the same
+    /// height tends to look like it clipped through the window edge.
+    /// </summary>
+    /// <param name="direction">-1 walking left, +1 walking right.</param>
+    /// <param name="maxGap">How far past the edge the landing spot may start.</param>
+    /// <param name="petWidth">Platforms narrower than this aren't worth aiming for.</param>
+    public Platform? FindHopDownTarget(
+        double fromX, double direction, double currentGroundY, double maxGap, double petWidth)
+    {
+        Platform? best = null;
+        foreach (var p in AllPlatforms)
+        {
+            // Must be lower than where we are now, but not a sheer drop across the whole screen.
+            var drop = p.GroundY - currentGroundY;
+            if (drop <= 4 || drop > 520)
+            {
+                continue;
+            }
+
+            if (p.Right - p.Left < petWidth * 0.8)
+            {
+                continue;
+            }
+
+            // Horizontal gap from the pet to the near edge of the candidate, in travel direction.
+            var gap = direction > 0 ? p.Left - fromX : fromX - p.Right;
+
+            // Negative gap means it already extends under us, which is a fine place to land too.
+            if (gap > maxGap || gap < -petWidth * 2)
+            {
+                continue;
+            }
+
+            // Prefer the highest qualifying platform: the shortest, most plausible hop.
+            if (best is null || p.GroundY < best.Value.GroundY)
+            {
+                best = p;
+            }
+        }
+
+        return best;
+    }
+
+    /// <summary>
+    /// A higher platform the pet could jump up onto, just past the edge it's walking toward.
+    /// Mirror of <see cref="FindHopDownTarget"/>, but bounded by how high the pet can actually
+    /// jump — aiming at a ledge it can't reach just looks like it bonked into thin air.
+    /// </summary>
+    public Platform? FindHopUpTarget(
+        double fromX, double direction, double currentGroundY, double maxRise, double maxGap, double petWidth)
+    {
+        Platform? best = null;
+        foreach (var p in AllPlatforms)
+        {
+            var rise = currentGroundY - p.GroundY;
+            if (rise <= 6 || rise > maxRise)
+            {
+                continue;
+            }
+
+            if (p.Right - p.Left < petWidth * 0.8)
+            {
+                continue;
+            }
+
+            var gap = direction > 0 ? p.Left - fromX : fromX - p.Right;
+            if (gap > maxGap || gap < -petWidth * 2)
+            {
+                continue;
+            }
+
+            // Prefer the lowest qualifying ledge: the easiest step up.
+            if (best is null || p.GroundY > best.Value.GroundY)
+            {
+                best = p;
+            }
+        }
+
+        return best;
+    }
+
+    /// <summary>
     /// While walking/idling at <paramref name="y"/>: is there still a platform holding the pet up
     /// at <paramref name="x"/>? Null means whatever it was standing on moved/closed — time to fall.
     /// </summary>

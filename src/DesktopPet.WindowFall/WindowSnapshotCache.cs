@@ -42,10 +42,49 @@ public sealed class WindowSnapshotCache
         }
     }
 
-    /// <summary>Captures the window's current pixels via PrintWindow and stores/replaces its snapshot.</summary>
+    /// <summary>
+    /// How long a snapshot of an unchanged window is trusted before being re-captured.
+    ///
+    /// This is the main cost control. PrintWindow doesn't render the window itself — it sends
+    /// WM_PRINT and makes the *owning application* redraw, on that app's own UI thread. Measured
+    /// at ~150ms to sweep six ordinary windows, which, repeated every second, visibly slows other
+    /// programs (closing a window got choppy). Since the snapshot only has to be good enough for
+    /// a half-second fall animation, a slightly stale image of a window nobody touched is fine.
+    /// </summary>
+    private static readonly TimeSpan StaleAfter = TimeSpan.FromSeconds(20);
+
+    /// <summary>
+    /// Captures the window via PrintWindow and stores its snapshot — but skips the capture
+    /// entirely when the window hasn't moved or resized and the existing snapshot is recent.
+    /// </summary>
     public WindowSnapshot? Refresh(IntPtr hwnd)
     {
-        var snapshot = Capture(hwnd); // expensive (PrintWindow) — intentionally done outside the lock
+        if (!NativeMethods.GetWindowRect(hwnd, out var rect))
+        {
+            return null;
+        }
+
+        lock (_lock)
+        {
+            if (_snapshots.TryGetValue(hwnd, out var existing)
+                && DateTime.UtcNow - existing.CapturedAtUtc < StaleAfter
+                && existing.RectPx.Width == rect.Width
+                && existing.RectPx.Height == rect.Height)
+            {
+                if (SameRect(existing.RectPx, rect))
+                {
+                    return existing;
+                }
+
+                // Only moved: the pixels are still valid, so just track the new position.
+                // Re-capturing on every move is what made dragging a window feel sluggish.
+                var moved = existing with { RectPx = rect };
+                _snapshots[hwnd] = moved;
+                return moved;
+            }
+        }
+
+        var snapshot = Capture(hwnd); // expensive — intentionally done outside the lock
         if (snapshot is not null)
         {
             lock (_lock)
@@ -57,13 +96,32 @@ public sealed class WindowSnapshotCache
         return snapshot;
     }
 
+    private static bool SameRect(RECT a, RECT b) =>
+        a.Left == b.Left && a.Top == b.Top && a.Right == b.Right && a.Bottom == b.Bottom;
+
+    /// <summary>
+    /// Drops snapshots for windows that are no longer being tracked. Without this the cache grows
+    /// for the life of the process as windows are opened and closed, holding a bitmap for each.
+    /// </summary>
+    public void RetainOnly(IEnumerable<IntPtr> keep)
+    {
+        var alive = new HashSet<IntPtr>(keep);
+        lock (_lock)
+        {
+            foreach (var gone in _snapshots.Keys.Where(k => !alive.Contains(k)).ToList())
+            {
+                _snapshots.Remove(gone);
+            }
+        }
+    }
+
     /// <summary>
     /// Longest edge the cached preview is kept at. The fall overlay is a transparent (and
     /// therefore software-rendered) window, so compositing a full-resolution window capture every
     /// frame is expensive enough to be visible. The animation shrinks away in half a second, so
     /// the reduced detail isn't noticeable.
     /// </summary>
-    private const int MaxPreviewEdgePx = 640;
+    private const int MaxPreviewEdgePx = 512;
 
     public static WindowSnapshot? Capture(IntPtr hwnd)
     {
@@ -111,7 +169,7 @@ public sealed class WindowSnapshotCache
                 System.Windows.Media.Imaging.BitmapSizeOptions.FromEmptyOptions());
             bitmapSource.Freeze();
 
-            return new WindowSnapshot(hwnd, TopLevelWindows.GetTitle(hwnd), rect, bitmapSource);
+            return new WindowSnapshot(hwnd, TopLevelWindows.GetTitle(hwnd), rect, bitmapSource, DateTime.UtcNow);
         }
         finally
         {

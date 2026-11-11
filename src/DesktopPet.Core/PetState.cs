@@ -14,6 +14,9 @@ public enum PetState
 
     /// <summary>Reaction to being poked repeatedly — same idea, different mood.</summary>
     Angry,
+
+    /// <summary>Dozed off after a long stretch of being left alone. Any interaction wakes it.</summary>
+    Sleep,
 }
 
 public static class PetStateExtensions

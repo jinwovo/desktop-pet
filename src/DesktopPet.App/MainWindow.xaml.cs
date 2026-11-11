@@ -29,6 +29,20 @@ public partial class MainWindow : Window
     private bool _isPressed;
     private System.Drawing.Point _pressOriginPx;
 
+    // Smoothed cursor velocity during a drag, carried into the throw on release.
+    private System.Drawing.Point _dragSampleCursor;
+    private DateTime _dragSampleTimeUtc;
+    private double _throwVelocityX;
+    private double _throwVelocityY;
+
+    // Last values actually pushed to the window/visual tree, so the render loop can skip no-ops.
+    private double _lastMoveX = double.NaN;
+    private double _lastMoveY = double.NaN;
+    private DateTime _lastTopmostAssertUtc = DateTime.MinValue;
+    private int _lastFlip;
+    private string? _lastFramePath;
+    private bool _renderLoopRunning;
+
     /// <summary>How far the cursor must move while held before a press becomes a drag.</summary>
     private const int DragThresholdPx = 5;
 
@@ -71,14 +85,18 @@ public partial class MainWindow : Window
         _brain = new PetBrain(_platformLayout, effWidth, effGroundOffset, startX, startY)
         {
             WalkSpeedPxPerSec = effSpeed,
+            HopBetweenPlatforms = _settings.HopBetweenWindowsEnabled,
+            SleepEnabled = _settings.SleepEnabled,
         };
 
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged += (_, _) => _platformLayout.UpdateMonitors(BuildMonitorFloors());
 
         var ownProcessId = (uint)Environment.ProcessId;
+        // ~0.13ms per sweep, so this is cheap; 300ms is still well inside the time it takes a
+        // user to drag a window somewhere the pet might stand.
         _windowPlatformTimer = new System.Threading.Timer(
             _ => _platformLayout.UpdateWindowPlatforms(WindowPlatformScanner.Scan(ownProcessId, _dpiScale)),
-            null, TimeSpan.Zero, TimeSpan.FromMilliseconds(200));
+            null, TimeSpan.Zero, TimeSpan.FromMilliseconds(300));
 
         _bubble = new SpeechBubbleWindow();
         _bubble.Acknowledged += () => _brain.StopNagging();
@@ -91,11 +109,10 @@ public partial class MainWindow : Window
         MoveWindowTo(startX, startY); // avoid a visible flash at the WPF-default position before the first rendered frame
 
         _lastTickUtc = DateTime.UtcNow;
-        // CompositionTarget.Rendering fires once per composed frame (vsync-paced), which moves far
-        // more smoothly than a DispatcherTimer driving WPF's Left/Top — and SetWindowPos below both
-        // moves the window AND re-asserts HWND_TOPMOST every frame, so nothing (e.g. Chrome) can
-        // keep it pinned behind for more than one frame.
-        CompositionTarget.Rendering += CompositionTarget_Rendering;
+        if (_settings.Visible)
+        {
+            StartRenderLoop();
+        }
     }
 
     private static CharacterDefinition LoadCharacter(string name) =>
@@ -149,8 +166,42 @@ public partial class MainWindow : Window
     public void SetVisible(bool visible)
     {
         Visibility = visible ? Visibility.Visible : Visibility.Hidden;
+
+        // No point simulating or rendering a pet nobody can see.
+        if (visible)
+        {
+            _lastTickUtc = DateTime.UtcNow; // avoid one huge dt after a long hide
+            StartRenderLoop();
+        }
+        else
+        {
+            StopRenderLoop();
+        }
+
         _settings.Visible = visible;
         _settings.Save();
+    }
+
+    private void StartRenderLoop()
+    {
+        if (_renderLoopRunning)
+        {
+            return;
+        }
+
+        CompositionTarget.Rendering += CompositionTarget_Rendering;
+        _renderLoopRunning = true;
+    }
+
+    private void StopRenderLoop()
+    {
+        if (!_renderLoopRunning)
+        {
+            return;
+        }
+
+        CompositionTarget.Rendering -= CompositionTarget_Rendering;
+        _renderLoopRunning = false;
     }
 
     public IReadOnlyList<string> AvailableCharacterNames => CharacterLoader.ListAvailableCharacterNames(CharactersRoot);
@@ -159,6 +210,38 @@ public partial class MainWindow : Window
     public double CurrentScaleMultiplier => _settings.ScaleMultiplier;
     public double CurrentWalkSpeedMultiplier => _settings.WalkSpeedMultiplier;
     public bool IsPetVisible => _settings.Visible;
+    public bool HopEnabled => _settings.HopBetweenWindowsEnabled;
+    public bool SleepEnabled => _settings.SleepEnabled;
+    public bool WindowFallEnabled => _settings.WindowFallEnabled;
+
+    /// <summary>Raised when the window-fall feature is toggled, so the service can start/stop.</summary>
+    public event Action<bool>? WindowFallEnabledChanged;
+
+    public void SetHopEnabled(bool enabled)
+    {
+        _settings.HopBetweenWindowsEnabled = enabled;
+        _brain.HopBetweenPlatforms = enabled;
+        _settings.Save();
+    }
+
+    public void SetSleepEnabled(bool enabled)
+    {
+        _settings.SleepEnabled = enabled;
+        _brain.SleepEnabled = enabled;
+        _settings.Save();
+    }
+
+    public void SetWindowFallEnabled(bool enabled)
+    {
+        if (_settings.WindowFallEnabled == enabled)
+        {
+            return;
+        }
+
+        _settings.WindowFallEnabled = enabled;
+        _settings.Save();
+        WindowFallEnabledChanged?.Invoke(enabled);
+    }
 
     private List<Platform> BuildMonitorFloors() =>
         MonitorHelper.GetWorkAreasPx()
@@ -177,21 +260,49 @@ public partial class MainWindow : Window
         _brain.Tick(dt, cursorWpf);
 
         var drawY = _brain.Y + _brain.NagHopOffset;
+
+        // This runs at display refresh rate, so anything unconditional here is paid 60x a second.
+        // A resting pet changes neither position nor frame, so skip the Win32 call and the WPF
+        // property writes unless something actually moved.
         if (!_isDragging)
         {
-            MoveWindowTo(_brain.X, drawY);
+            var moved = Math.Abs(_brain.X - _lastMoveX) > 0.4 || Math.Abs(drawY - _lastMoveY) > 0.4;
+
+            // Topmost still has to be re-asserted periodically even while standing still,
+            // otherwise another always-on-top window can end up covering the pet.
+            var topmostDue = (now - _lastTopmostAssertUtc).TotalMilliseconds >= 900;
+
+            if (moved || topmostDue)
+            {
+                MoveWindowTo(_brain.X, drawY);
+                _lastMoveX = _brain.X;
+                _lastMoveY = drawY;
+                _lastTopmostAssertUtc = now;
+            }
         }
 
-        _bubble?.FollowPet(_brain.X, drawY, Width);
+        if (_bubble is { IsShowing: true })
+        {
+            _bubble.FollowPet(_brain.X, drawY, Width);
+        }
 
-        FlipTransform.ScaleX = _brain.FacingRight ? 1 : -1;
+        var flip = _brain.FacingRight ? 1 : -1;
+        if (flip != _lastFlip)
+        {
+            FlipTransform.ScaleX = flip;
+            _lastFlip = flip;
+        }
 
         var frames = _brain.State == PetState.LookAtCursor
             ? _character.GetLookFrames(cursorWpf.X >= _brain.X + _character.FrameWidth / 2)
             : _character.GetFrames(_brain.State);
 
         var framePath = _character.GetFramePath(_brain.State, frames, _brain.StateElapsedMs);
-        PetImage.Source = GetFrame(framePath);
+        if (!string.Equals(framePath, _lastFramePath, StringComparison.Ordinal))
+        {
+            PetImage.Source = GetFrame(framePath);
+            _lastFramePath = framePath;
+        }
     }
 
     /// <summary>Moves the native window directly and re-asserts HWND_TOPMOST in the same call.</summary>
@@ -257,10 +368,45 @@ public partial class MainWindow : Window
 
             _isDragging = true;
             _brain.BeginDrag(new PetPoint(cursor.X / _dpiScale, cursor.Y / _dpiScale));
+            StartRenderLoop(); // don't wait for the next idle tick to go smooth
+
+            _dragSampleCursor = cursor;
+            _dragSampleTimeUtc = DateTime.UtcNow;
+            _throwVelocityX = 0;
+            _throwVelocityY = 0;
+        }
+        else
+        {
+            TrackThrowVelocity(cursor);
         }
 
         _brain.UpdateDrag(new PetPoint(cursor.X / _dpiScale, cursor.Y / _dpiScale));
         MoveWindowTo(_brain.X, _brain.Y);
+    }
+
+    /// <summary>
+    /// Keeps a smoothed estimate of how fast the cursor is moving, to use as throw velocity on
+    /// release. Raw frame-to-frame deltas are far too jittery — a single stuttery sample right at
+    /// release would otherwise fling the pet across the screen.
+    /// </summary>
+    private void TrackThrowVelocity(System.Drawing.Point cursor)
+    {
+        var now = DateTime.UtcNow;
+        var dt = (now - _dragSampleTimeUtc).TotalSeconds;
+        if (dt < 0.004)
+        {
+            return;
+        }
+
+        var vx = (cursor.X - _dragSampleCursor.X) / _dpiScale / dt;
+        var vy = (cursor.Y - _dragSampleCursor.Y) / _dpiScale / dt;
+
+        const double smoothing = 0.45;
+        _throwVelocityX = _throwVelocityX * (1 - smoothing) + vx * smoothing;
+        _throwVelocityY = _throwVelocityY * (1 - smoothing) + vy * smoothing;
+
+        _dragSampleCursor = cursor;
+        _dragSampleTimeUtc = now;
     }
 
     private void PetImage_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
@@ -276,7 +422,17 @@ public partial class MainWindow : Window
         if (_isDragging)
         {
             _isDragging = false;
-            _brain.EndDrag();
+
+            // A slow release should just drop the pet, so ignore residual drift below a threshold.
+            var speed = Math.Sqrt(_throwVelocityX * _throwVelocityX + _throwVelocityY * _throwVelocityY);
+            if (speed < 90)
+            {
+                _brain.EndDrag();
+            }
+            else
+            {
+                _brain.EndDrag(_throwVelocityX, _throwVelocityY);
+            }
         }
         else if (_brain.IsNagging)
         {
@@ -312,6 +468,7 @@ public partial class MainWindow : Window
             : PetState.Angry;
 
         _brain.StartNagging(emote);
+        StartRenderLoop(); // the attention hop needs every frame
         _bubble?.ShowMessage(n.Title, n.Message, _dpiScale);
     }
 }

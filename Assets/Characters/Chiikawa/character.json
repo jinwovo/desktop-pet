@@ -13,7 +13,8 @@
     "drag": ["drag.png"],
     "fall": ["fall.png"],
     "cry": ["cry_1.png", "cry_2.png"],
-    "angry": ["angry_1.png", "angry_2.png"]
+    "angry": ["angry_1.png", "angry_2.png"],
+    "sleep": ["sleep_1.png", "sleep_2.png"]
   },
   "frameIntervalMs": 160
 }

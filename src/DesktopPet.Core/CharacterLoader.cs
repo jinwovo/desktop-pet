@@ -42,6 +42,7 @@ public static class CharacterLoader
             [PetState.Falling] = ResolveExisting(characterFolder, dto.Frames.Fall),
             [PetState.Cry] = ResolveExisting(characterFolder, dto.Frames.Cry),
             [PetState.Angry] = ResolveExisting(characterFolder, dto.Frames.Angry),
+            [PetState.Sleep] = ResolveExisting(characterFolder, dto.Frames.Sleep),
         };
 
         // LookAtCursor is directional (left/right of the pet); UI picks the right list at render time.

@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Media;
@@ -10,18 +9,10 @@ namespace DesktopPet.App;
 
 public partial class App : System.Windows.Application
 {
-    private static readonly (string Label, double Value)[] ScalePresets =
-    [
-        ("75%", 0.75), ("100%", 1.0), ("150%", 1.5), ("200%", 2.0),
-    ];
-
-    private static readonly (string Label, double Value)[] SpeedPresets =
-    [
-        ("느리게", 0.5), ("보통", 1.0), ("빠르게", 1.5), ("아주 빠르게", 2.0),
-    ];
-
     private WinForms.NotifyIcon? _trayIcon;
     private WindowFallService? _windowFallService;
+    private SettingsWindow? _settingsWindow;
+    private double _dpiScale = 1.0;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -29,10 +20,15 @@ public partial class App : System.Windows.Application
 
         var petWindow = new MainWindow();
         MainWindow = petWindow;
-        petWindow.Show(); // Loaded fires synchronously here, so _dpiScale/_brain are ready right after.
+        petWindow.Show(); // Loaded fires synchronously here, so the brain is ready right after.
 
-        var dpiScale = VisualTreeHelper.GetDpi(petWindow).DpiScaleX;
-        _windowFallService = new WindowFallService(dpiScale);
+        _dpiScale = VisualTreeHelper.GetDpi(petWindow).DpiScaleX;
+        if (petWindow.WindowFallEnabled)
+        {
+            _windowFallService = new WindowFallService(_dpiScale);
+        }
+
+        petWindow.WindowFallEnabledChanged += OnWindowFallEnabledChanged;
 
         var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico");
         _trayIcon = new WinForms.NotifyIcon
@@ -42,75 +38,35 @@ public partial class App : System.Windows.Application
             Text = "DesktopPet",
             ContextMenuStrip = BuildTrayMenu(petWindow),
         };
+
+        // Double-clicking the tray icon is the conventional shortcut to a settings window.
+        _trayIcon.DoubleClick += (_, _) => ShowSettings(petWindow);
     }
 
+    /// <summary>
+    /// Tray menu is deliberately short: character, size and speed all live in the settings window,
+    /// and duplicating them here just means two places to keep in sync.
+    /// </summary>
     private WinForms.ContextMenuStrip BuildTrayMenu(MainWindow petWindow)
     {
         var menu = new WinForms.ContextMenuStrip();
-        menu.Items.Add("DesktopPet", null, (_, _) => { }).Enabled = false;
+
+        var settingsItem = menu.Items.Add("설정...", null, (_, _) => ShowSettings(petWindow));
+        settingsItem.Font = new System.Drawing.Font(menu.Font, System.Drawing.FontStyle.Bold);
+
         menu.Items.Add(new WinForms.ToolStripSeparator());
-
-        var characterMenu = new WinForms.ToolStripMenuItem("캐릭터");
-        foreach (var name in petWindow.AvailableCharacterNames)
-        {
-            var item = new WinForms.ToolStripMenuItem(name)
-            {
-                CheckOnClick = false,
-                Checked = name == petWindow.CurrentCharacterName,
-            };
-            item.Click += (_, _) =>
-            {
-                petWindow.SwitchCharacter(name);
-                RefreshCheckedSiblings(characterMenu, item);
-            };
-            characterMenu.DropDownItems.Add(item);
-        }
-        menu.Items.Add(characterMenu);
-
-        var scaleMenu = new WinForms.ToolStripMenuItem("크기");
-        foreach (var (label, value) in ScalePresets)
-        {
-            var item = new WinForms.ToolStripMenuItem(label) { Checked = petWindow.CurrentScaleMultiplier == value };
-            item.Click += (_, _) =>
-            {
-                petWindow.SetScaleMultiplier(value);
-                RefreshCheckedSiblings(scaleMenu, item);
-            };
-            scaleMenu.DropDownItems.Add(item);
-        }
-        menu.Items.Add(scaleMenu);
-
-        var speedMenu = new WinForms.ToolStripMenuItem("걷기 속도");
-        foreach (var (label, value) in SpeedPresets)
-        {
-            var item = new WinForms.ToolStripMenuItem(label) { Checked = petWindow.CurrentWalkSpeedMultiplier == value };
-            item.Click += (_, _) =>
-            {
-                petWindow.SetWalkSpeedMultiplier(value);
-                RefreshCheckedSiblings(speedMenu, item);
-            };
-            speedMenu.DropDownItems.Add(item);
-        }
-        menu.Items.Add(speedMenu);
 
         var moodMenu = new WinForms.ToolStripMenuItem("기분 표현");
         moodMenu.DropDownItems.Add("울기 😢", null, (_, _) => petWindow.TriggerEmote(PetState.Cry));
         moodMenu.DropDownItems.Add("화내기 💢", null, (_, _) => petWindow.TriggerEmote(PetState.Angry));
         menu.Items.Add(moodMenu);
 
-        menu.Items.Add(new WinForms.ToolStripSeparator());
-
-        var visibilityItem = new WinForms.ToolStripMenuItem("펫 보이기") { Checked = petWindow.IsPetVisible };
-        visibilityItem.Click += (_, _) =>
-        {
-            var next = !petWindow.IsPetVisible;
-            petWindow.SetVisible(next);
-            visibilityItem.Checked = next;
-        };
+        var visibilityItem = new WinForms.ToolStripMenuItem("펫 보이기");
+        visibilityItem.Click += (_, _) => petWindow.SetVisible(!petWindow.IsPetVisible);
         menu.Items.Add(visibilityItem);
 
-        menu.Items.Add("캐릭터 폴더 열기", null, (_, _) =>
-            Process.Start(new ProcessStartInfo(DesktopPet.App.MainWindow.CharactersRoot) { UseShellExecute = true }));
+        // Reflect current state each time the menu opens, since the settings window can change it.
+        menu.Opening += (_, _) => visibilityItem.Checked = petWindow.IsPetVisible;
 
         menu.Items.Add(new WinForms.ToolStripSeparator());
         menu.Items.Add("종료", null, (_, _) => Shutdown());
@@ -118,14 +74,34 @@ public partial class App : System.Windows.Application
         return menu;
     }
 
-    private static void RefreshCheckedSiblings(WinForms.ToolStripMenuItem parent, WinForms.ToolStripMenuItem selected)
+    private void ShowSettings(MainWindow petWindow)
     {
-        foreach (WinForms.ToolStripItem sibling in parent.DropDownItems)
+        // Reuse the existing window instead of stacking duplicates.
+        if (_settingsWindow is { IsLoaded: true })
         {
-            if (sibling is WinForms.ToolStripMenuItem menuItem)
-            {
-                menuItem.Checked = menuItem == selected;
-            }
+            _settingsWindow.Activate();
+            return;
+        }
+
+        _settingsWindow = new SettingsWindow(petWindow);
+        _settingsWindow.Closed += (_, _) => _settingsWindow = null;
+        _settingsWindow.Show();
+    }
+
+    /// <summary>
+    /// Starts or stops the window-fall feature. Disposing it when off matters: it's the part that
+    /// periodically captures other applications' windows, which is by far the app's biggest cost.
+    /// </summary>
+    private void OnWindowFallEnabledChanged(bool enabled)
+    {
+        if (enabled)
+        {
+            _windowFallService ??= new WindowFallService(_dpiScale);
+        }
+        else
+        {
+            _windowFallService?.Dispose();
+            _windowFallService = null;
         }
     }
 

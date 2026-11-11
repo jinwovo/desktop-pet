@@ -672,16 +672,60 @@ public static class CharacterBuilder
     /// just bobs very slightly. The characters here have small feet poking out below a round
     /// body, so a horizontal cut is a good enough stand-in for real rigging.
     /// </summary>
+    /// <summary>
+    /// Finds the transparent column separating two feet in the sprite's bottom band, or -1 when
+    /// the feet aren't actually separate down there.
+    ///
+    /// Splitting the band at its geometric midpoint is wrong for characters drawn with a single
+    /// central foot blob (Chiikawa is one): the cut lands straight through the foot, and moving
+    /// the halves apart tears a visible hole between the legs. Only a column that is genuinely
+    /// empty is a safe place to cut.
+    /// </summary>
+    public static int FindFootSplitColumn(Bitmap sprite, int anchorY, int spriteHeight, double footBandRatio)
+    {
+        int w = sprite.Width, h = sprite.Height;
+        int bandTop = Math.Max(1, Math.Min(h - 1, (int)Math.Round(anchorY - spriteHeight * footBandRatio)));
+        var px = GetPixels(sprite);
+
+        var ink = new int[w];
+        for (int x = 0; x < w; x++)
+        {
+            int count = 0;
+            for (int y = bandTop; y < h; y++)
+            {
+                if (px[(y * w + x) * 4 + 3] > 40) count++;
+            }
+            ink[x] = count;
+        }
+
+        // Search outward from the centre for an empty column, staying in the middle third so we
+        // don't mistake the gap outside the feet for a gap between them.
+        int lo = (int)(w * 0.34), hi = (int)(w * 0.66), mid = w / 2;
+        for (int offset = 0; offset <= (hi - lo) / 2; offset++)
+        {
+            foreach (int x in new[] { mid - offset, mid + offset })
+            {
+                if (x >= lo && x <= hi && ink[x] == 0) return x;
+            }
+        }
+        return -1;
+    }
+
     /// <param name="footBandRatio">Height of the foot strip as a fraction of the sprite height.</param>
+    /// <param name="splitX">
+    /// Column separating the two feet, from <see cref="FindFootSplitColumn"/>. Pass -1 when the
+    /// feet form one blob: the band then moves as a single unit, which waddles instead of
+    /// stepping but never tears the character apart.
+    /// </param>
     public static Bitmap PoseWalk(
-        Bitmap baseSprite, int anchorY, int spriteHeight, double footBandRatio,
+        Bitmap baseSprite, int anchorY, int spriteHeight, double footBandRatio, int splitX,
         double bodyDy, double bodyRotateDeg,
         double leftLift, double leftDx, double rightLift, double rightDx)
     {
         int w = baseSprite.Width, h = baseSprite.Height;
         int bandTop = (int)Math.Round(anchorY - spriteHeight * footBandRatio);
         bandTop = Math.Max(1, Math.Min(h - 1, bandTop));
-        int midX = w / 2;
+        int bandHeight = h - bandTop;
 
         var dst = new Bitmap(w, h, PixelFormat.Format32bppArgb);
         using (var g = Graphics.FromImage(dst))
@@ -691,14 +735,32 @@ public static class CharacterBuilder
             g.PixelOffsetMode = PixelOffsetMode.HighQuality;
             g.SmoothingMode = SmoothingMode.AntiAlias;
 
-            using (var body = Crop(baseSprite, 0, 0, w, bandTop))
-            using (var leftFoot = Crop(baseSprite, 0, bandTop, midX, h - bandTop))
-            using (var rightFoot = Crop(baseSprite, midX, bandTop, w - midX, h - bandTop))
+            // Feet first; the body is drawn over them so the horizontal cut never shows as a seam.
+            if (splitX > 0 && splitX < w - 1)
             {
-                // Feet first, so the body overlaps where they meet and no seam shows.
-                g.DrawImage(leftFoot, (float)leftDx, (float)(bandTop - leftLift + bodyDy));
-                g.DrawImage(rightFoot, (float)(midX + rightDx), (float)(bandTop - rightLift + bodyDy));
+                using (var leftFoot = Crop(baseSprite, 0, bandTop, splitX, bandHeight))
+                using (var rightFoot = Crop(baseSprite, splitX, bandTop, w - splitX, bandHeight))
+                {
+                    g.DrawImage(leftFoot, (float)leftDx, (float)(bandTop - leftLift + bodyDy));
+                    g.DrawImage(rightFoot, (float)(splitX + rightDx), (float)(bandTop - rightLift + bodyDy));
+                }
+            }
+            else
+            {
+                // One foot blob: it has to move as a unit, so derive its shift from the body lean
+                // rather than averaging the per-foot values (averaging makes the left-step and
+                // right-step frames identical). Sliding opposite the lean reads as the body
+                // rocking over its feet — a waddle.
+                using (var feet = Crop(baseSprite, 0, bandTop, w, bandHeight))
+                {
+                    var dx = -bodyRotateDeg * 1.3;
+                    var lift = Math.Max(leftLift, rightLift) * 0.5;
+                    g.DrawImage(feet, (float)dx, (float)(bandTop - lift + bodyDy));
+                }
+            }
 
+            using (var body = Crop(baseSprite, 0, 0, w, bandTop))
+            {
                 var state = g.Save();
                 if (Math.Abs(bodyRotateDeg) > 0.001)
                 {
@@ -813,6 +875,42 @@ public static class CharacterBuilder
                         g.DrawPath(p, path);
                         path.Dispose();
                     }
+                }
+            }
+        }
+    }
+
+    /// <summary>Floating "Zzz" above a sleeping character; <paramref name="drift"/> animates it rising.</summary>
+    public static void DrawSleepMark(Bitmap bmp, int anchorY, int spriteHeight, double drift)
+    {
+        int w = bmp.Width;
+        float bodyTop = anchorY - spriteHeight;
+        float baseX = w * 0.72f;
+        float baseY = bodyTop + spriteHeight * 0.12f;
+
+        using (var g = Graphics.FromImage(bmp))
+        {
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
+
+            // Three z's of decreasing size, the largest nearest the head.
+            for (int i = 0; i < 3; i++)
+            {
+                float size = spriteHeight * (0.17f - i * 0.035f);
+                float rise = (float)(spriteHeight * (0.11 * i + 0.05 * drift));
+                float x = baseX + i * spriteHeight * 0.055f;
+                float y = baseY - rise;
+
+                using (var font = new Font("Segoe UI", size, FontStyle.Bold, GraphicsUnit.Pixel))
+                using (var halo = new SolidBrush(Color.FromArgb(210, 255, 255, 255)))
+                using (var ink = new SolidBrush(Color.FromArgb(235 - i * 45, 70, 110, 175)))
+                {
+                    // White offset copies act as an outline so it reads over the character.
+                    g.DrawString("z", font, halo, x - 1.5f, y);
+                    g.DrawString("z", font, halo, x + 1.5f, y);
+                    g.DrawString("z", font, halo, x, y - 1.5f);
+                    g.DrawString("z", font, halo, x, y + 1.5f);
+                    g.DrawString("z", font, ink, x, y);
                 }
             }
         }

@@ -93,6 +93,12 @@ $AngryPoses = @(
     @{ File = "angry_2.png"; ScaleX = 1.06; ScaleY = 1.05; Rotate =  3.0; Dx =  2; Dy = -2; Tint = 0.26; Pulse = 1.0 }
 )
 
+# Asleep: settled down and breathing slowly, with drifting z's.
+$SleepPoses = @(
+    @{ File = "sleep_1.png"; ScaleX = 1.05; ScaleY = 0.90; Rotate = -4.0; Dx = -1; Dy = 0; Drift = 0.0 }
+    @{ File = "sleep_2.png"; ScaleX = 1.06; ScaleY = 0.88; Rotate = -4.0; Dx = -1; Dy = 0; Drift = 1.0 }
+)
+
 <#
     Loads any image into a GDI+ bitmap. System.Drawing can't read .webp, so route everything it
     rejects through the WPF imaging stack, which can -- preserving alpha.
@@ -144,8 +150,13 @@ function New-CharacterFromRegion {
         $frame.Dispose()
     }
 
+    # Cut between the feet only where there's genuinely a gap; -1 means they're one blob and the
+    # band has to move as a unit (cutting through the foot tears a hole between the legs).
+    $splitX = [CharacterBuilder]::FindFootSplitColumn($base, $anchorY, $TargetHeight, $FootBandRatio)
+    Write-Host ("     다리 분리: {0}" -f $(if ($splitX -lt 0) { "없음 (한 덩어리로 이동)" } else { "x=$splitX" }))
+
     foreach ($wf in $WalkFrames) {
-        $frame = [CharacterBuilder]::PoseWalk($base, $anchorY, $TargetHeight, $FootBandRatio,
+        $frame = [CharacterBuilder]::PoseWalk($base, $anchorY, $TargetHeight, $FootBandRatio, $splitX,
             $wf.BodyDy, $wf.Rotate, $wf.LeftLift, $wf.LeftDx, $wf.RightLift, $wf.RightDx)
         [CharacterBuilder]::Save($frame, (Join-Path $outDir $wf.File))
         $frame.Dispose()
@@ -160,6 +171,13 @@ function New-CharacterFromRegion {
         $frame = [CharacterBuilder]::Pose($base, $anchorY, $pose.ScaleX, $pose.ScaleY, $pose.Rotate, $pose.Dx, $pose.Dy)
         [CharacterBuilder]::TintRed($frame, $pose.Tint)
         [CharacterBuilder]::DrawAngerMark($frame, $anchorY, $TargetHeight, $pose.Pulse)
+        [CharacterBuilder]::Save($frame, (Join-Path $outDir $pose.File))
+        $frame.Dispose()
+    }
+
+    foreach ($pose in $SleepPoses) {
+        $frame = [CharacterBuilder]::Pose($base, $anchorY, $pose.ScaleX, $pose.ScaleY, $pose.Rotate, $pose.Dx, $pose.Dy)
+        [CharacterBuilder]::DrawSleepMark($frame, $anchorY, $TargetHeight, $pose.Drift)
         [CharacterBuilder]::Save($frame, (Join-Path $outDir $pose.File))
         $frame.Dispose()
     }
@@ -181,7 +199,8 @@ function New-CharacterFromRegion {
     "drag": ["drag.png"],
     "fall": ["fall.png"],
     "cry": ["cry_1.png", "cry_2.png"],
-    "angry": ["angry_1.png", "angry_2.png"]
+    "angry": ["angry_1.png", "angry_2.png"],
+    "sleep": ["sleep_1.png", "sleep_2.png"]
   },
   "frameIntervalMs": 160
 }

@@ -44,10 +44,14 @@ public sealed class WindowCloseWatcher : IDisposable
 
         try
         {
-            foreach (var hwnd in TopLevelWindows.EnumerateEligible(_ownProcessId))
+            var eligible = TopLevelWindows.EnumerateEligible(_ownProcessId);
+            foreach (var hwnd in eligible)
             {
                 _cache.Refresh(hwnd);
             }
+
+            // Windows that closed or minimized since the last sweep no longer need a snapshot.
+            _cache.RetainOnly(eligible);
         }
         finally
         {

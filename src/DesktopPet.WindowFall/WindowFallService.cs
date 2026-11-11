@@ -15,7 +15,7 @@ public sealed class WindowFallService : IDisposable
     /// <see cref="FallOverlayWindow"/>. A few are kept so closing several windows at once
     /// (e.g. shutting down a bunch of apps) still animates, while bounding the cost.
     /// </summary>
-    private const int OverlayPoolSize = 3;
+    private const int OverlayPoolSize = 2;
 
     private readonly WindowSnapshotCache _cache = new();
     private readonly WindowCloseWatcher _watcher;

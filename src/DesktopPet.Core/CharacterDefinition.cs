@@ -48,6 +48,9 @@ public sealed class CharacterFramesDto
 
     [JsonPropertyName("angry")]
     public List<string> Angry { get; set; } = new();
+
+    [JsonPropertyName("sleep")]
+    public List<string> Sleep { get; set; } = new();
 }
 
 /// <summary>Raw deserialized contents of a character.json file.</summary>
@@ -112,6 +115,7 @@ public sealed class CharacterDefinition
     /// </summary>
     private static double FrameIntervalScale(PetState state) => state switch
     {
+        PetState.Sleep => 9.0, // slow breathing; anything faster looks like panting
         PetState.Idle or PetState.Sit or PetState.LookAtCursor => 4.5,
         PetState.Cry => 2.2,
         PetState.Angry => 1.6,
