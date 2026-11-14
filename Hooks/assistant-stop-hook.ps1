@@ -153,9 +153,15 @@ function Send-AssistantCompletion($Hook, [string]$Assistant, [string]$Inbox) {
 }
 
 try {
-    [Console]::InputEncoding = New-Object Text.UTF8Encoding $false
-    [Console]::OutputEncoding = New-Object Text.UTF8Encoding $false
-    if ([string]::IsNullOrWhiteSpace($EventJson) -and [Console]::IsInputRedirected) { $EventJson = [Console]::In.ReadToEnd() }
+    if ([string]::IsNullOrWhiteSpace($EventJson) -and [Console]::IsInputRedirected) {
+        # Hooks can run without an attached Windows console (desktop apps and CI services).
+        # Console.InputEncoding/OutputEncoding setters call console APIs and can throw
+        # ERROR_INVALID_HANDLE there even though redirected stdin/stdout pipes are valid.
+        # Decode the pipe directly so UTF-8 does not depend on a console or the system locale.
+        $reader = [IO.StreamReader]::new([Console]::OpenStandardInput(), [Text.UTF8Encoding]::new($false), $true)
+        try { $EventJson = $reader.ReadToEnd() }
+        finally { $reader.Dispose() }
+    }
     if (-not [string]::IsNullOrWhiteSpace($EventJson)) {
         $hook = $EventJson | ConvertFrom-Json -ErrorAction Stop
         Send-AssistantCompletion $hook $Source.ToLowerInvariant() $InboxDirectory

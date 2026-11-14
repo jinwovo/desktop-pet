@@ -218,6 +218,25 @@ try {
     Complete-HookProcess $process
     Pass-Hook 'Actual EncodedCommand bridge stays quiet on success and failure, including Unicode and quoted paths'
 
+    $headlessData = Join-Path $fixtureRoot 'headless'
+    $headlessNative = 'using System; using System.Runtime.InteropServices; public static class HeadlessHookFixture { [DllImport("kernel32.dll")] public static extern bool FreeConsole(); [DllImport("kernel32.dll")] public static extern IntPtr GetConsoleWindow(); }'
+    foreach ($assistant in @('claude', 'codex')) {
+        $headlessScript = @"
+`$ProgressPreference = 'SilentlyContinue'
+Add-Type -TypeDefinition '$headlessNative'
+[void][HeadlessHookFixture]::FreeConsole()
+if ([HeadlessHookFixture]::GetConsoleWindow() -ne [IntPtr]::Zero) { throw 'Headless fixture is still attached to a console' }
+& $literalBridge -Source '$assistant'
+"@
+        $process = Start-HookProcess $encodedBridge @() $headlessData $headlessScript
+        Write-HookInput $process ((New-Stop ('headless-' + $assistant) 'headless-turn') | ConvertTo-Json -Compress)
+        Complete-HookProcess $process
+    }
+    $headless = @(Read-Notifications $headlessData)
+    Assert-Hook ($headless.Count -eq 2) 'Headless assistant hooks silently lost completion notifications'
+    Assert-Hook (@($headless | Where-Object { $_.projectFolder -eq '한글 프로젝트' -and $_.message.Contains('한글 프로젝트') }).Count -eq 2) 'Headless redirected stdin lost UTF-8 project names'
+    Pass-Hook 'Console-free Claude and Codex hooks preserve UTF-8 stdin, quiet stdout and durable notifications'
+
     $legacyData = Join-Path $fixtureRoot 'legacy'
     $legacy = @{ type = 'agent-turn-complete'; 'thread-id' = 'legacy-thread'; 'turn-id' = 'legacy-turn'; cwd = 'C:\fixture\legacy-project'; 'last-assistant-message' = 'not persisted' } | ConvertTo-Json -Compress
     Invoke-Hook 'codex' '' $legacyData @($legacy)
@@ -247,7 +266,7 @@ try {
         Assert-Hook ($bytes[0] -eq 239 -and $bytes[1] -eq 187 -and $bytes[2] -eq 191) 'PowerShell 5.1 script must keep UTF-8 BOM'
     }
     Pass-Hook 'Manual shout/cry/gentle and PowerShell 5.1 UTF-8 BOM are preserved'
-    Write-Output "$script:passed/12 assistant hook regression groups passed"
+    Write-Output "$script:passed/13 assistant hook regression groups passed"
 }
 finally {
     $workspace = [IO.Path]::GetFullPath($repoRoot).TrimEnd('\') + '\'
