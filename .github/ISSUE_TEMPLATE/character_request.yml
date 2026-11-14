@@ -1,0 +1,23 @@
+name: Original character proposal
+description: Propose an original character or share a prepared pack.
+body:
+  - type: input
+    id: name
+    attributes:
+      label: Character name
+    validations:
+      required: true
+  - type: textarea
+    id: design
+    attributes:
+      label: Design and personality
+      description: Describe an original design and attach a preview if available.
+    validations:
+      required: true
+  - type: textarea
+    id: provenance
+    attributes:
+      label: Source and distribution permission
+      description: Include original sources, license, and any AI-assisted creation steps. Do not attach unauthorized third-party character art.
+    validations:
+      required: true

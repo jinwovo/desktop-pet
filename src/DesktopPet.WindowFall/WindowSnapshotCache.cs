@@ -14,6 +14,8 @@ public sealed class WindowSnapshotCache
     // on the UI thread from the WinEventHook callback — the dictionary itself needs a lock.
     private readonly object _lock = new();
     private readonly Dictionary<IntPtr, WindowSnapshot> _snapshots = new();
+    private long _generation;
+    private static int _captureInProgress;
 
     public WindowSnapshot? TryGet(IntPtr hwnd)
     {
@@ -28,6 +30,17 @@ public sealed class WindowSnapshotCache
         lock (_lock)
         {
             _snapshots.Remove(hwnd);
+            _generation++;
+        }
+    }
+
+    /// <summary>Releases previews and invalidates any capture that is still in flight.</summary>
+    public void Clear()
+    {
+        lock (_lock)
+        {
+            _snapshots.Clear();
+            _generation++;
         }
     }
 
@@ -57,15 +70,19 @@ public sealed class WindowSnapshotCache
     /// Captures the window via PrintWindow and stores its snapshot — but skips the capture
     /// entirely when the window hasn't moved or resized and the existing snapshot is recent.
     /// </summary>
-    public WindowSnapshot? Refresh(IntPtr hwnd)
+    public WindowSnapshot? Refresh(IntPtr hwnd, CancellationToken cancellationToken = default)
     {
-        if (!NativeMethods.GetWindowRect(hwnd, out var rect))
+        if (cancellationToken.IsCancellationRequested || !NativeMethods.GetWindowRect(hwnd, out var rect) ||
+            !WindowCaptureLimits.TryGetCaptureSize(rect, out _, out _))
         {
             return null;
         }
 
+        long generation;
         lock (_lock)
         {
+            if (cancellationToken.IsCancellationRequested) return null;
+            generation = _generation;
             if (_snapshots.TryGetValue(hwnd, out var existing)
                 && DateTime.UtcNow - existing.CapturedAtUtc < StaleAfter
                 && existing.RectPx.Width == rect.Width
@@ -84,11 +101,17 @@ public sealed class WindowSnapshotCache
             }
         }
 
-        var snapshot = Capture(hwnd); // expensive — intentionally done outside the lock
+        var snapshot = Capture(hwnd, cancellationToken); // expensive — intentionally outside the lock
         if (snapshot is not null)
         {
             lock (_lock)
             {
+                if (cancellationToken.IsCancellationRequested || generation != _generation) return null;
+                if (!_snapshots.ContainsKey(hwnd) && _snapshots.Count >= WindowCaptureLimits.MaxCachedWindows)
+                {
+                    var oldest = _snapshots.MinBy(pair => pair.Value.CapturedAtUtc).Key;
+                    _snapshots.Remove(oldest);
+                }
                 _snapshots[hwnd] = snapshot;
             }
         }
@@ -108,10 +131,13 @@ public sealed class WindowSnapshotCache
         var alive = new HashSet<IntPtr>(keep);
         lock (_lock)
         {
+            var removed = false;
             foreach (var gone in _snapshots.Keys.Where(k => !alive.Contains(k)).ToList())
             {
                 _snapshots.Remove(gone);
+                removed = true;
             }
+            if (removed) _generation++;
         }
     }
 
@@ -121,22 +147,29 @@ public sealed class WindowSnapshotCache
     /// frame is expensive enough to be visible. The animation shrinks away in half a second, so
     /// the reduced detail isn't noticeable.
     /// </summary>
-    private const int MaxPreviewEdgePx = 512;
-
-    public static WindowSnapshot? Capture(IntPtr hwnd)
+    public static WindowSnapshot? Capture(IntPtr hwnd, CancellationToken cancellationToken = default)
     {
-        if (!NativeMethods.GetWindowRect(hwnd, out var rect))
+        // A native capture cannot be aborted. Share this nonblocking gate across service
+        // instances so toggling the feature off/on cannot accumulate hung capture threads.
+        if (cancellationToken.IsCancellationRequested || Interlocked.CompareExchange(ref _captureInProgress, 1, 0) != 0)
+            return null;
+        try { return CaptureCore(hwnd, cancellationToken); }
+        finally { Interlocked.Exchange(ref _captureInProgress, 0); }
+    }
+
+    private static WindowSnapshot? CaptureCore(IntPtr hwnd, CancellationToken cancellationToken)
+    {
+        if (cancellationToken.IsCancellationRequested || !NativeMethods.GetWindowRect(hwnd, out var rect))
         {
             return null;
         }
 
-        var width = rect.Width;
-        var height = rect.Height;
-        if (width <= 0 || height <= 0)
+        if (!WindowCaptureLimits.TryGetCaptureSize(rect, out var width, out var height))
         {
             return null;
         }
 
+        if (cancellationToken.IsCancellationRequested) return null;
         using var bitmap = new System.Drawing.Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
         using (var graphics = System.Drawing.Graphics.FromImage(bitmap))
         {
@@ -144,6 +177,7 @@ public sealed class WindowSnapshotCache
             bool captured;
             try
             {
+                if (cancellationToken.IsCancellationRequested) return null;
                 captured = NativeMethods.PrintWindow(hwnd, hdc, NativeMethods.PW_RENDERFULLCONTENT);
             }
             finally
@@ -151,14 +185,15 @@ public sealed class WindowSnapshotCache
                 graphics.ReleaseHdc(hdc);
             }
 
-            if (!captured)
+            if (!captured || cancellationToken.IsCancellationRequested)
             {
                 return null;
             }
         }
 
-        using var preview = Downscale(bitmap, MaxPreviewEdgePx);
+        using var preview = Downscale(bitmap);
 
+        if (cancellationToken.IsCancellationRequested) return null;
         var hBitmap = preview.GetHbitmap();
         try
         {
@@ -169,6 +204,7 @@ public sealed class WindowSnapshotCache
                 System.Windows.Media.Imaging.BitmapSizeOptions.FromEmptyOptions());
             bitmapSource.Freeze();
 
+            if (cancellationToken.IsCancellationRequested) return null;
             return new WindowSnapshot(hwnd, TopLevelWindows.GetTitle(hwnd), rect, bitmapSource, DateTime.UtcNow);
         }
         finally
@@ -177,24 +213,26 @@ public sealed class WindowSnapshotCache
         }
     }
 
-    private static System.Drawing.Bitmap Downscale(System.Drawing.Bitmap source, int maxEdge)
+    private static System.Drawing.Bitmap Downscale(System.Drawing.Bitmap source)
     {
-        var longest = Math.Max(source.Width, source.Height);
-        if (longest <= maxEdge)
+        var (w, h) = WindowCaptureLimits.GetPreviewSize(source.Width, source.Height);
+        if (source.Width == w && source.Height == h)
         {
             return (System.Drawing.Bitmap)source.Clone();
         }
 
-        var scale = (double)maxEdge / longest;
-        var w = Math.Max(1, (int)(source.Width * scale));
-        var h = Math.Max(1, (int)(source.Height * scale));
-
         var scaled = new System.Drawing.Bitmap(w, h, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-        using (var g = System.Drawing.Graphics.FromImage(scaled))
+        try
         {
+            using var g = System.Drawing.Graphics.FromImage(scaled);
             g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.Bilinear;
             g.DrawImage(source, 0, 0, w, h);
+            return scaled;
         }
-        return scaled;
+        catch
+        {
+            scaled.Dispose();
+            throw;
+        }
     }
 }

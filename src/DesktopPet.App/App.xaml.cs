@@ -13,14 +13,63 @@ public partial class App : System.Windows.Application
     private WindowFallService? _windowFallService;
     private SettingsWindow? _settingsWindow;
     private double _dpiScale = 1.0;
+    private System.Threading.Mutex? _instanceMutex;
+    private bool _ownsInstanceMutex;
+    private AssistantIntegrationService? _assistantService;
+    private AssistantConnectionsWindow? _assistantWindow;
+    private bool _assistantSetupRunning;
+    private Task _assistantSetupTask = Task.CompletedTask;
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        if (e.Args.Contains("--disconnect-assistants", StringComparer.Ordinal))
+        {
+            try
+            {
+                var service = CreateAssistantIntegrationService();
+                var history = CreateAssistantIntegrationHistory();
+                var results = new List<AssistantIntegrationStatus>();
+                foreach (var provider in Enum.GetValues<AssistantProvider>())
+                {
+                    var result = service.Disconnect(provider);
+                    results.Add(result);
+                    if (result.Succeeded && !result.Registered) history.Remove(provider, result.ConfigPath);
+                }
+                foreach (var profile in history.GetProfiles())
+                {
+                    var directory = Path.GetDirectoryName(profile.ConfigPath)!;
+                    var recorded = new AssistantIntegrationService(
+                        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                        Path.Combine(AppContext.BaseDirectory, "Hooks", "assistant-stop-hook.ps1"),
+                        profile.Provider == AssistantProvider.Claude ? directory : null,
+                        profile.Provider == AssistantProvider.Codex ? directory : null);
+                    var result = recorded.Disconnect(profile.Provider);
+                    results.Add(result);
+                    if (result.Succeeded && !result.Registered) history.Remove(profile.Provider, profile.ConfigPath);
+                }
+                Shutdown(results.All(result => result.Succeeded && !result.Registered) ? 0 : 2);
+            }
+            catch { Shutdown(2); }
+            return;
+        }
+        if (e.Args.Contains("--version", StringComparer.Ordinal))
+        {
+            Console.WriteLine(typeof(App).Assembly.GetName().Version?.ToString() ?? "0.5.0");
+            Shutdown();
+            return;
+        }
+        _instanceMutex = new System.Threading.Mutex(true, @"Local\DesktopPet.App", out _ownsInstanceMutex);
+        if (!_ownsInstanceMutex)
+        {
+            Shutdown();
+            return;
+        }
         base.OnStartup(e);
 
         var petWindow = new MainWindow();
         MainWindow = petWindow;
         petWindow.Show(); // Loaded fires synchronously here, so the brain is ready right after.
+        if (!petWindow.IsReady) return;
 
         _dpiScale = VisualTreeHelper.GetDpi(petWindow).DpiScaleX;
         if (petWindow.WindowFallEnabled)
@@ -41,6 +90,14 @@ public partial class App : System.Windows.Application
 
         // Double-clicking the tray icon is the conventional shortcut to a settings window.
         _trayIcon.DoubleClick += (_, _) => ShowSettings(petWindow);
+        petWindow.OperationFailed += message => _trayIcon?.ShowBalloonTip(
+            5000, "DesktopPet", message, WinForms.ToolTipIcon.Warning);
+        petWindow.PendingNotificationCountChanged += count =>
+        {
+            if (_trayIcon is not null) _trayIcon.Text = count > 0 ? $"DesktopPet · 알림 {count}개" : "DesktopPet";
+        };
+        petWindow.AutoConnectAssistantsChanged += enabled => { if (enabled) StartAssistantSetup(petWindow); };
+        StartAssistantSetup(petWindow);
     }
 
     /// <summary>
@@ -53,8 +110,28 @@ public partial class App : System.Windows.Application
 
         var settingsItem = menu.Items.Add("설정...", null, (_, _) => ShowSettings(petWindow));
         settingsItem.Font = new System.Drawing.Font(menu.Font, System.Drawing.FontStyle.Bold);
+        menu.Items.Add("AI 연결...", null, (_, _) => ShowAssistantConnections());
+        var unreadItem = menu.Items.Add("보관된 알림 확인", null, (_, _) => petWindow.ShowUnreadNotifications());
 
         menu.Items.Add(new WinForms.ToolStripSeparator());
+
+        var focusMenu = new WinForms.ToolStripMenuItem("집중 타이머");
+        var focusStatus = focusMenu.DropDownItems.Add(petWindow.FocusTimerCaption);
+        focusStatus.Enabled = false;
+        var focusStart = focusMenu.DropDownItems.Add("집중 시작", null, (_, _) => petWindow.StartFocusTimer());
+        var focusPause = focusMenu.DropDownItems.Add("일시정지", null, (_, _) => petWindow.PauseOrResumeFocusTimer());
+        var focusRestart = focusMenu.DropDownItems.Add("다시 시작", null, (_, _) => petWindow.RestartFocusTimer());
+        var focusStop = focusMenu.DropDownItems.Add("종료", null, (_, _) => petWindow.StopFocusTimer());
+        focusMenu.DropDownOpening += (_, _) =>
+        {
+            focusStatus.Text = petWindow.FocusTimerCaption;
+            focusStart.Text = petWindow.FocusStartCaption;
+            focusStart.Enabled = petWindow.FocusCanStart;
+            focusPause.Text = petWindow.FocusSnapshot.Status == FocusTimerStatus.Paused ? "계속" : "일시정지";
+            focusPause.Enabled = petWindow.FocusCanPause;
+            focusRestart.Enabled = focusStop.Enabled = petWindow.FocusCanStop;
+        };
+        menu.Items.Add(focusMenu);
 
         var moodMenu = new WinForms.ToolStripMenuItem("기분 표현");
         moodMenu.DropDownItems.Add("울기 😢", null, (_, _) => petWindow.TriggerEmote(PetState.Cry));
@@ -66,7 +143,13 @@ public partial class App : System.Windows.Application
         menu.Items.Add(visibilityItem);
 
         // Reflect current state each time the menu opens, since the settings window can change it.
-        menu.Opening += (_, _) => visibilityItem.Checked = petWindow.IsPetVisible;
+        menu.Opening += (_, _) =>
+        {
+            visibilityItem.Checked = petWindow.IsPetVisible;
+            unreadItem.Enabled = petWindow.PendingNotificationCount > 0;
+            unreadItem.Text = petWindow.PendingNotificationCount > 0
+                ? $"보관된 알림 확인 ({petWindow.PendingNotificationCount})" : "보관된 알림 없음";
+        };
 
         menu.Items.Add(new WinForms.ToolStripSeparator());
         menu.Items.Add("종료", null, (_, _) => Shutdown());
@@ -88,6 +171,75 @@ public partial class App : System.Windows.Application
         _settingsWindow.Show();
     }
 
+    internal static AssistantIntegrationService CreateAssistantIntegrationService() => new(
+        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+        Path.Combine(AppContext.BaseDirectory, "Hooks", "assistant-stop-hook.ps1"),
+        NullIfEmpty(Environment.GetEnvironmentVariable("CLAUDE_CONFIG_DIR")),
+        NullIfEmpty(Environment.GetEnvironmentVariable("CODEX_HOME")));
+
+    private static string? NullIfEmpty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value;
+
+    internal static AssistantIntegrationHistory CreateAssistantIntegrationHistory() => new(Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DesktopPet", "assistant-connections.json"));
+
+    private void StartAssistantSetup(MainWindow petWindow)
+    {
+        if (!_assistantSetupRunning) _assistantSetupTask = InitializeAssistantLinksAsync(petWindow);
+    }
+
+    private async Task InitializeAssistantLinksAsync(MainWindow petWindow)
+    {
+        if (_assistantSetupRunning) return;
+        _assistantSetupRunning = true;
+        try
+        {
+            _assistantService ??= CreateAssistantIntegrationService();
+            foreach (var provider in Enum.GetValues<AssistantProvider>())
+            {
+                if (!petWindow.AutoConnectAssistants) break;
+                var before = await Task.Run(() => _assistantService.GetStatus(provider));
+                if (!petWindow.AutoConnectAssistants || !before.Detected) continue;
+                var result = await Task.Run(() => _assistantService.Connect(provider));
+                if (result.Succeeded && result.Registered)
+                {
+                    try { CreateAssistantIntegrationHistory().Record(result); }
+                    catch
+                    {
+                        if (!before.HasOwnedRegistration) await Task.Run(() => _assistantService.Disconnect(provider));
+                        throw;
+                    }
+                }
+            }
+        }
+        catch (Exception ex) { System.Diagnostics.Trace.TraceError($"Assistant setup: {ex.Message}"); }
+        finally
+        {
+            _assistantSetupRunning = false;
+            if (!Dispatcher.HasShutdownStarted && !petWindow.AssistantSetupSeen)
+            {
+                petWindow.MarkAssistantSetupSeen();
+                ShowAssistantConnections();
+            }
+        }
+    }
+
+    public void ShowAssistantConnections()
+    {
+        if (_assistantWindow is { IsLoaded: true }) { _assistantWindow.Activate(); return; }
+        try
+        {
+            _assistantService ??= CreateAssistantIntegrationService();
+            _assistantWindow = new AssistantConnectionsWindow(_assistantService, MainWindow as MainWindow,
+                () => _assistantSetupTask, CreateAssistantIntegrationHistory());
+            _assistantWindow.Closed += (_, _) => _assistantWindow = null;
+            _assistantWindow.Show();
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show("AI 연결 화면을 열지 못했습니다. " + ex.Message, "DesktopPet", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
     /// <summary>
     /// Starts or stops the window-fall feature. Disposing it when off matters: it's the part that
     /// periodically captures other applications' windows, which is by far the app's biggest cost.
@@ -107,9 +259,12 @@ public partial class App : System.Windows.Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        _assistantWindow?.Close();
         (MainWindow as MainWindow)?.DisposeResources();
         _windowFallService?.Dispose();
         _trayIcon?.Dispose();
+        if (_ownsInstanceMutex) _instanceMutex?.ReleaseMutex();
+        _instanceMutex?.Dispose();
         base.OnExit(e);
     }
 }

@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Diagnostics;
 using System.Windows.Interop;
 using System.Windows.Media;
 using DesktopPet.Interop;
@@ -30,7 +31,7 @@ public partial class FallOverlayWindow : Window
     private double _targetCenterY;
 
     private IntPtr _hwnd;
-    private DateTime _startTimeUtc;
+    private long _startTimestamp;
     private bool _isPlaying;
 
     public bool IsAvailable => !_isPlaying;
@@ -38,6 +39,7 @@ public partial class FallOverlayWindow : Window
     public FallOverlayWindow()
     {
         InitializeComponent();
+        SourceInitialized += (_, _) => WindowStyleHelper.PreventActivation(new WindowInteropHelper(this).Handle);
 
         // Realize the native window up front (off-screen) so the first real animation doesn't
         // pay window-creation cost at the exact moment the user closes something.
@@ -80,13 +82,13 @@ public partial class FallOverlayWindow : Window
         MoveTo(_startCenterX, _startCenterY);
         Show();
 
-        _startTimeUtc = DateTime.UtcNow;
+        _startTimestamp = Stopwatch.GetTimestamp();
         CompositionTarget.Rendering += CompositionTarget_Rendering;
     }
 
     private void CompositionTarget_Rendering(object? sender, EventArgs e)
     {
-        var elapsedMs = (DateTime.UtcNow - _startTimeUtc).TotalMilliseconds;
+        var elapsedMs = Stopwatch.GetElapsedTime(_startTimestamp).TotalMilliseconds;
         var t = Math.Clamp(elapsedMs / Duration.TotalMilliseconds, 0, 1);
         var easedFall = t * t; // ease-in: starts slow, accelerates like gravity
 

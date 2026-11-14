@@ -28,7 +28,11 @@ public sealed class PetBrain
     private const double HopHorizontalSpeedPxPerSec = 115;
 
     /// <summary>A little upward kick so the hop arcs instead of just walking off the edge.</summary>
-    private const double HopUpwardSpeedPxPerSec = 170;
+    private const double HopUpwardSpeedPxPerSec = 200;
+    private const double MaxHopHorizontalSpeedPxPerSec = 300;
+    private const double WalkVelocityResponseSeconds = 0.10;
+    private const double MaxSimulationStepSeconds = 1.0 / 120;
+    private const int MaxSimulationStepsPerTick = 240;
 
     /// <summary>
     /// Launch speed for hopping *up* onto a higher ledge. Peak height is v²/2g, so this reaches
@@ -78,6 +82,8 @@ public sealed class PetBrain
     private double _stateElapsedMs;
     private double _nextStateDecisionAtMs;
     private double _walkTargetDirection;
+    private double _walkVelocityX;
+    private PetState? _walkStopDestination;
     private double _emoteEndsAtMs;
     private double _totalElapsedMs;
     private double _lookCooldownUntilMs;
@@ -85,12 +91,15 @@ public sealed class PetBrain
     private PetPoint _lastCursorPos;
     private double _lastPokeAtMs = double.NegativeInfinity;
     private int _pokeStreak;
+    private PetState _nagEmote = PetState.Angry;
+    private double _gentleHoldUntilMs;
 
     /// <summary>When false, the pet turns around at platform edges instead of jumping.</summary>
     public bool HopBetweenPlatforms { get; set; } = true;
 
     /// <summary>When false, the pet never dozes off no matter how long it's left alone.</summary>
     public bool SleepEnabled { get; set; } = true;
+    public bool CalmBehavior { get; set; }
 
     public PetState State { get; private set; } = PetState.Idle;
     public double X { get; private set; }
@@ -98,6 +107,12 @@ public sealed class PetBrain
     public bool FacingRight { get; private set; } = true;
     public double StateElapsedMs => _stateElapsedMs;
     public double WalkSpeedPxPerSec { get; set; } = 60;
+    public double HorizontalVelocityPxPerSec => State switch
+    {
+        PetState.Walk => _walkVelocityX,
+        PetState.Falling => _fallVelocityX,
+        _ => 0,
+    };
 
     public PetBrain(PlatformLayout layout, double frameWidth, double groundOffset, double startX, double startY, Random? rng = null)
     {
@@ -113,11 +128,23 @@ public sealed class PetBrain
     /// <summary>Call after switching characters or changing scale — these feed the floor/edge math.</summary>
     public void UpdateFrameSize(double frameWidth, double groundOffset)
     {
+        X += (_frameWidth - frameWidth) / 2;
+        Y += _groundOffset - groundOffset;
         _frameWidth = frameWidth;
         _groundOffset = groundOffset;
     }
 
     public void Tick(double dtSeconds, PetPoint cursorScreenPos)
+    {
+        if (!double.IsFinite(dtSeconds) || dtSeconds <= 0) return;
+        // Keep collision/state transitions consistent across refresh rates without an unbounded
+        // catch-up loop when a caller supplies a large elapsed time after a pause.
+        var steps = (int)Math.Min(MaxSimulationStepsPerTick, Math.Ceiling(dtSeconds / MaxSimulationStepSeconds));
+        var step = dtSeconds / steps;
+        for (var i = 0; i < steps; i++) TickStep(step, cursorScreenPos);
+    }
+
+    private void TickStep(double dtSeconds, PetPoint cursorScreenPos)
     {
         _stateElapsedMs += dtSeconds * 1000;
         _totalElapsedMs += dtSeconds * 1000;
@@ -141,6 +168,12 @@ public sealed class PetBrain
 
         if (State == PetState.Sleep)
         {
+            if (!SleepEnabled)
+            {
+                ChangeState(PetState.Idle);
+                _lastActivityMs = _totalElapsedMs;
+                return;
+            }
             TickSleep();
             return;
         }
@@ -213,13 +246,16 @@ public sealed class PetBrain
     /// hit-testing are unaffected.
     /// </summary>
     public double NagHopOffset =>
-        IsNagging ? -Math.Abs(Math.Sin(_stateElapsedMs / 150.0)) * 7.0 : 0.0;
+        IsNagging && State.IsEmote() ? -Math.Abs(Math.Sin(_stateElapsedMs / 150.0)) * 7.0 : 0.0;
 
     /// <summary>Plays an emote indefinitely until <see cref="StopNagging"/> is called.</summary>
     public void StartNagging(PetState emote)
     {
-        StartEmote(emote);
+        if (!emote.IsEmote()) throw new ArgumentOutOfRangeException(nameof(emote));
+        _nagEmote = emote;
         IsNagging = true;
+        _lastActivityMs = _totalElapsedMs;
+        if (State is not (PetState.Dragged or PetState.Falling)) StartEmote(emote);
     }
 
     public void StopNagging()
@@ -230,7 +266,16 @@ public sealed class PetBrain
         }
 
         IsNagging = false;
-        ChangeState(PetState.Idle);
+        if (State.IsEmote()) ChangeState(PetState.Idle);
+    }
+
+    /// <summary>A brief quiet pause, with no repeated jumping or interruption of a drag or flight.</summary>
+    public void StartGentleAttention()
+    {
+        StopNagging();
+        _lastActivityMs = _totalElapsedMs;
+        _gentleHoldUntilMs = _totalElapsedMs + 1400;
+        if (State is not (PetState.Dragged or PetState.Falling)) ChangeState(PetState.Idle);
     }
 
     /// <summary>Called when the user clicks the pet. Enough pokes in quick succession makes it angry.</summary>
@@ -272,52 +317,16 @@ public sealed class PetBrain
     private void TickFalling(double dtSeconds)
     {
         // Horizontal carry-over is what turns a fall into a hop or a throw; zero for a plain drop.
-        X += _fallVelocityX * dtSeconds;
-        _fallVelocityX *= Math.Pow(AirDragPerSec, dtSeconds);
+        var horizontalDecay = Math.Pow(AirDragPerSec, dtSeconds);
+        X += _fallVelocityX * HorizontalTravelFactor(dtSeconds);
+        _fallVelocityX *= horizontalDecay;
 
-        var centerX = X + _frameWidth / 2;
-        var feetYOld = Y + _groundOffset;
-
-        _fallVelocityY += GravityPxPerSec2 * dtSeconds;
-        var feetYNew = feetYOld + _fallVelocityY * dtSeconds;
-
-        // Only test for landing while descending, so the upward part of a hop passes over the
-        // edge it just left instead of immediately re-landing on it.
-        var landing = _fallVelocityY > 0
-            ? _layout.FindLandingPlatform(centerX, feetYOld, feetYNew)
-            : null;
-
-        if (landing is { } platform)
-        {
-            Y = platform.GroundY - _groundOffset;
-            var impactSpeed = _fallVelocityY;
-            var wasHopping = _isHopping;
-
-            _fallVelocityY = 0;
-            _fallVelocityX = 0;
-            _isHopping = false;
-
-            // A gentle drop is shrugged off; a long fall hurts — unless the pet jumped on purpose.
-            if (impactSpeed >= CryOnImpactSpeed && !wasHopping)
-            {
-                StartEmote(PetState.Cry);
-            }
-            else
-            {
-                ChangeState(PetState.Idle);
-            }
-        }
-        else
-        {
-            Y = feetYNew - _groundOffset;
-        }
-
-        // Screen edges are walls while airborne. Bouncing (rather than clamping) is what sells a
-        // throw: flinging the pet at the side of the screen should rebound, not stick.
-        var monitorFloor = _layout.GetMonitorFloorAt(centerX);
+        // Bound horizontal movement before testing a landing; otherwise a fast throw can
+        // miss the floor outside its X range and remain below every platform forever.
+        var monitorFloor = _layout.GetMonitorFloorAt(X + _frameWidth / 2);
         var minX = monitorFloor.Left;
         var maxX = monitorFloor.Right - _frameWidth;
-
+        if (maxX < minX) minX = maxX = (monitorFloor.Left + monitorFloor.Right - _frameWidth) / 2;
         if (X < minX)
         {
             X = minX;
@@ -336,6 +345,53 @@ public sealed class PetBrain
                 FacingRight = false;
             }
         }
+        var centerX = X + _frameWidth / 2;
+        var feetYOld = Y + _groundOffset;
+
+        var feetYNew = feetYOld + _fallVelocityY * dtSeconds + 0.5 * GravityPxPerSec2 * dtSeconds * dtSeconds;
+        _fallVelocityY += GravityPxPerSec2 * dtSeconds;
+
+        // Only test for landing while descending, so the upward part of a hop passes over the
+        // edge it just left instead of immediately re-landing on it.
+        var landing = _fallVelocityY > 0
+            ? _layout.FindLandingPlatform(centerX, feetYOld, feetYNew)
+            : null;
+
+        // Work areas may move above the pet after display changes. The desktop floor is
+        // the final boundary even when the pet was already below it at the start of a tick.
+        if (_fallVelocityY > 0 && feetYNew >= monitorFloor.GroundY &&
+            (landing is null || landing.Value.GroundY > monitorFloor.GroundY))
+            landing = monitorFloor;
+
+        if (landing is { } platform)
+        {
+            Y = platform.GroundY - _groundOffset;
+            var impactSpeed = _fallVelocityY;
+            var wasHopping = _isHopping;
+
+            _fallVelocityY = 0;
+            _fallVelocityX = 0;
+            _isHopping = false;
+
+            // A gentle drop is shrugged off; a long fall hurts — unless the pet jumped on purpose.
+            if (IsNagging)
+            {
+                StartEmote(_nagEmote);
+            }
+            else if (impactSpeed >= CryOnImpactSpeed && !wasHopping)
+            {
+                StartEmote(PetState.Cry);
+            }
+            else
+            {
+                ChangeState(PetState.Idle);
+            }
+        }
+        else
+        {
+            Y = feetYNew - _groundOffset;
+        }
+
     }
 
     /// <summary>
@@ -356,32 +412,77 @@ public sealed class PetBrain
     /// </summary>
     private bool TryHopDown(double direction, Platform current)
     {
-        var target = _layout.FindHopDownTarget(
-            X + _frameWidth / 2, direction, current.GroundY, HopSearchDistancePx, _frameWidth);
-
-        if (target is null)
-        {
-            return false;
-        }
-
-        Launch(direction, HopHorizontalSpeedPxPerSec, HopUpwardSpeedPxPerSec);
-        return true;
+        return TryHop(direction, current, upward: false);
     }
 
     /// <summary>Jumps up onto a higher ledge in the direction of travel, if one is in reach.</summary>
     private bool TryHopUp(double direction, Platform current)
     {
-        var target = _layout.FindHopUpTarget(
-            X + _frameWidth / 2, direction, current.GroundY, MaxHopUpRisePx, HopSearchDistancePx, _frameWidth);
+        return TryHop(direction, current, upward: true);
+    }
 
-        if (target is null)
+    private bool TryHop(double direction, Platform current, bool upward)
+    {
+        var centerX = X + _frameWidth / 2;
+        var upwardSpeed = upward ? HopUpSpeedPxPerSec : HopUpwardSpeedPxPerSec;
+        var candidates = _layout.GetHopCandidates(centerX, direction, current.GroundY,
+            upward ? MaxHopUpRisePx : 0, upward ? 0 : 520, HopSearchDistancePx, _frameWidth);
+        foreach (var target in candidates)
         {
-            return false;
-        }
+            var discriminant = upwardSpeed * upwardSpeed + 2 * GravityPxPerSec2 * (target.GroundY - current.GroundY);
+            if (discriminant <= 0) continue;
+            var flightSeconds = (upwardSpeed + Math.Sqrt(discriminant)) / GravityPxPerSec2;
+            var travelFactor = HorizontalTravelFactor(flightSeconds);
 
-        Launch(direction, HopHorizontalSpeedPxPerSec * 0.85, HopUpSpeedPxPerSec);
+            var landingLeft = target.Left + _frameWidth / 2;
+            var landingRight = target.Right - _frameWidth / 2;
+            if (landingRight < landingLeft)
+                landingLeft = landingRight = (target.Left + target.Right) / 2;
+            var nearDistance = direction > 0 ? landingLeft - centerX : centerX - landingRight;
+            var farDistance = direction > 0 ? landingRight - centerX : centerX - landingLeft;
+            var minimumSpeed = Math.Max(8, nearDistance) / travelFactor;
+            var maximumSpeed = Math.Min(MaxHopHorizontalSpeedPxPerSec, farDistance / travelFactor);
+
+            if (!upward)
+            {
+                // A down-hop must leave the current ledge before returning to its height.
+                // Otherwise it simply lands on the same window and repeats the hop forever.
+                var clearanceDistance = direction > 0 ? current.Right - centerX + 2 : centerX - current.Left + 2;
+                var returnSeconds = 2 * upwardSpeed / GravityPxPerSec2;
+                minimumSpeed = Math.Max(minimumSpeed, clearanceDistance / HorizontalTravelFactor(returnSeconds));
+            }
+            if (minimumSpeed > maximumSpeed || maximumSpeed <= 0) continue;
+            var speed = Math.Clamp(HopHorizontalSpeedPxPerSec, minimumSpeed, maximumSpeed);
+            if (!HopPathIsClear(centerX, current.GroundY, target, direction * speed, upwardSpeed, flightSeconds)) continue;
+            Launch(direction, speed, upwardSpeed);
+            return true;
+        }
+        return false;
+    }
+
+    private bool HopPathIsClear(double centerX, double groundY, Platform target, double velocityX, double upwardSpeed, double flightSeconds)
+    {
+        var previousY = groundY;
+        var steps = (int)Math.Ceiling(flightSeconds / MaxSimulationStepSeconds);
+        for (var i = 1; i <= steps; i++)
+        {
+            var time = flightSeconds * i / steps;
+            var x = centerX + velocityX * HorizontalTravelFactor(time);
+            var y = groundY - upwardSpeed * time + 0.5 * GravityPxPerSec2 * time * time;
+            var floor = _layout.GetMonitorFloorAt(x);
+            if (x - _frameWidth / 2 < floor.Left - 0.5 || x + _frameWidth / 2 > floor.Right + 0.5) return false;
+            if (time * GravityPxPerSec2 >= upwardSpeed)
+            {
+                var landing = _layout.FindLandingPlatform(x, previousY, y);
+                if (landing is { } platform && platform != target) return false;
+            }
+            previousY = y;
+        }
         return true;
     }
+
+    private static double HorizontalTravelFactor(double seconds) =>
+        (Math.Pow(AirDragPerSec, seconds) - 1) / Math.Log(AirDragPerSec);
 
     private void Launch(double direction, double horizontalSpeed, double upwardSpeed)
     {
@@ -414,8 +515,11 @@ public sealed class PetBrain
 
     private void TickWalk(double dtSeconds, PetPoint cursorScreenPos)
     {
-        X += _walkTargetDirection * WalkSpeedPxPerSec * dtSeconds;
-        FacingRight = _walkTargetDirection >= 0;
+        var targetVelocity = _walkStopDestination is null ? _walkTargetDirection * WalkSpeedPxPerSec : 0;
+        var decay = Math.Exp(-dtSeconds / WalkVelocityResponseSeconds);
+        X += targetVelocity * dtSeconds + (_walkVelocityX - targetVelocity) * WalkVelocityResponseSeconds * (1 - decay);
+        _walkVelocityX = targetVelocity + (_walkVelocityX - targetVelocity) * decay;
+        FacingRight = Math.Abs(_walkVelocityX) > 1 ? _walkVelocityX > 0 : _walkTargetDirection >= 0;
 
         var support = _layout.GetSupportPlatform(X + _frameWidth / 2, Y + _groundOffset);
         if (support is null)
@@ -443,6 +547,7 @@ public sealed class PetBrain
 
             X = leftEdge;
             _walkTargetDirection = 1;
+            _walkVelocityX = 0;
             FacingRight = true;
         }
         else if (X >= rightEdge)
@@ -454,14 +559,21 @@ public sealed class PetBrain
 
             X = rightEdge;
             _walkTargetDirection = -1;
+            _walkVelocityX = 0;
             FacingRight = false;
         }
 
         Y = platform.GroundY - _groundOffset;
 
-        if (_stateElapsedMs >= _nextStateDecisionAtMs)
+        if (_walkStopDestination is { } destination)
         {
-            ChangeState(PickNextRestState());
+            if (Math.Abs(_walkVelocityX) <= 1) ChangeState(destination);
+        }
+        else if (_stateElapsedMs >= _nextStateDecisionAtMs)
+        {
+            var next = PickNextRestState();
+            if (next == PetState.Walk) ChangeState(next);
+            else _walkStopDestination = next;
         }
     }
 
@@ -475,6 +587,7 @@ public sealed class PetBrain
         }
 
         Y = support.Value.GroundY - _groundOffset;
+        if (_totalElapsedMs < _gentleHoldUntilMs) return;
 
         var dx = cursorScreenPos.X - (X + _frameWidth / 2);
         var dy = cursorScreenPos.Y - (Y + _groundOffset / 2);
@@ -519,17 +632,19 @@ public sealed class PetBrain
     {
         // Weighted toward walking — standing still is what makes a desktop pet feel dead.
         var roll = _rng.NextDouble();
-        if (roll < 0.7)
+        if (roll < (CalmBehavior ? 0.42 : 0.7))
         {
             _walkTargetDirection = _rng.NextDouble() < 0.5 ? -1 : 1;
             return PetState.Walk;
         }
 
-        return roll < 0.88 ? PetState.Idle : PetState.Sit;
+        return roll < (CalmBehavior ? 0.82 : 0.88) ? PetState.Idle : PetState.Sit;
     }
 
     private void ChangeState(PetState next)
     {
+        if (State != PetState.Walk || next != PetState.Walk) _walkVelocityX = 0;
+        _walkStopDestination = null;
         State = next;
         _stateElapsedMs = 0;
 
@@ -542,19 +657,18 @@ public sealed class PetBrain
                 ScheduleNextIdleDecision();
                 break;
             case PetState.Sit:
-                ScheduleNextActionWindow(1800, 4000);
+                ScheduleNextActionWindow(CalmBehavior ? 3200 : 1800, CalmBehavior ? 6200 : 4000);
                 break;
         }
     }
 
-    private void ScheduleNextIdleDecision() => ScheduleNextActionWindow(700, 2000);
+    private void ScheduleNextIdleDecision() => ScheduleNextActionWindow(CalmBehavior ? 2400 : 700, CalmBehavior ? 5600 : 2000);
 
     private void ScheduleNextActionWindow(double minMs, double maxMs) =>
         _nextStateDecisionAtMs = minMs + _rng.NextDouble() * (maxMs - minMs);
 
     public void BeginDrag(PetPoint cursorScreenPos)
     {
-        IsNagging = false; // grabbing the pet counts as noticing it
         _lastActivityMs = _totalElapsedMs;
         _dragOffsetX = cursorScreenPos.X - X;
         _dragOffsetY = cursorScreenPos.Y - Y;
@@ -565,7 +679,6 @@ public sealed class PetBrain
     {
         X = cursorScreenPos.X - _dragOffsetX;
         Y = cursorScreenPos.Y - _dragOffsetY;
-        FacingRight = true;
     }
 
     /// <summary>

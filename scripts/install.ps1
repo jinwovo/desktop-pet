@@ -1,65 +1,74 @@
 ﻿<#
 .SYNOPSIS
-    DesktopPet를 퍼블리시하고 %LocalAppData%\DesktopPet 에 설치한다(관리자 권한 불필요).
-
-.PARAMETER AddToStartup
-    지정하면 HKCU Run 키에 등록해서 로그인할 때 자동 실행되도록 한다. 기본값은 꺼짐.
-
-.EXAMPLE
-    .\scripts\install.ps1
-    .\scripts\install.ps1 -AddToStartup
+    Installs a DesktopPet release per user, preserving notifications and custom characters.
+.DESCRIPTION
+    Run from an extracted release ZIP without a .NET SDK. From the source repository, a
+    self-contained public release is built first. Framework-dependent deployment is explicit.
 #>
 param(
-    [switch]$AddToStartup
+    [switch]$AddToStartup,
+    [string]$PackageDirectory,
+    [string]$InstallDirectory = (Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'DesktopPet'),
+    [switch]$FrameworkDependent
 )
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'Install-DesktopPetPayload.ps1')
+. (Join-Path $PSScriptRoot 'package-release.ps1') -FrameworkDependent:$FrameworkDependent
 
-$repoRoot = Split-Path -Parent $PSScriptRoot
-$appProject = Join-Path $repoRoot "src\DesktopPet.App\DesktopPet.App.csproj"
-$installDir = Join-Path $env:LOCALAPPDATA "DesktopPet"
-$publishDir = Join-Path $env:TEMP "DesktopPet.publish"
-
-if (Test-Path $publishDir) {
-    Remove-Item $publishDir -Recurse -Force
+$installRoot = Get-DesktopPetInstallPath $InstallDirectory
+$temporaryRoot = $null
+try {
+    if (-not $PackageDirectory -and [System.IO.File]::Exists((Join-Path $PSScriptRoot 'DesktopPet.release.json'))) {
+        $PackageDirectory = $PSScriptRoot
+    }
+    if (-not $PackageDirectory) {
+        $temporaryRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('DesktopPet.install-package-' + [Guid]::NewGuid().ToString('N'))
+        [System.IO.Directory]::CreateDirectory($temporaryRoot) | Out-Null
+        $archiveRoot = Join-Path $temporaryRoot 'archives'
+        & (Join-Path $PSScriptRoot 'package-release.ps1') -OutputDirectory $archiveRoot -FrameworkDependent:$FrameworkDependent
+        $archives = @(Get-ChildItem -LiteralPath $archiveRoot -Filter '*.zip' -File)
+        if ($archives.Count -ne 1) { throw 'Expected exactly one release archive.' }
+        $PackageDirectory = Join-Path $temporaryRoot 'extracted'
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        [System.IO.Compression.ZipFile]::ExtractToDirectory($archives[0].FullName, $PackageDirectory)
+    }
+    $manifest = Test-DesktopPetReleasePayload -Directory $PackageDirectory
+    if ($manifest.requiresDotNetRuntime) { Write-Host 'Framework-dependent 배포: .NET 10 Desktop Runtime x64가 필요합니다.' }
+    Write-Host "설치 중... ($installRoot, 알림과 사용자 캐릭터 보존)"
+    Install-DesktopPetPayload -PublishDirectory $PackageDirectory -InstallDirectory $installRoot
+}
+finally {
+    if ($temporaryRoot -and [System.IO.Directory]::Exists($temporaryRoot)) {
+        $safeTemporary = Assert-DesktopPetChildPath -Root ([System.IO.Path]::GetTempPath()) -Path $temporaryRoot
+        Assert-DesktopPetNoReparsePoint $safeTemporary
+        Remove-Item -LiteralPath $safeTemporary -Recurse -Force
+    }
 }
 
-Write-Host "퍼블리시 중... ($appProject)"
-dotnet publish $appProject -c Release -r win-x64 --self-contained true `
-    -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
-    -o $publishDir
-if ($LASTEXITCODE -ne 0) {
-    throw "dotnet publish 실패 (exit $LASTEXITCODE)"
-}
-
-if (Test-Path $installDir) {
-    Write-Host "기존 설치 제거 중... ($installDir)"
-    Remove-Item $installDir -Recurse -Force
-}
-
-Write-Host "설치 중... ($installDir)"
-New-Item -ItemType Directory -Force -Path $installDir | Out-Null
-Copy-Item "$publishDir\*" $installDir -Recurse -Force
-
-$exePath = Join-Path $installDir "DesktopPet.App.exe"
-
-# 시작 메뉴 바로가기
-$startMenuDir = Join-Path ([Environment]::GetFolderPath("Programs")) ""
-$shortcutPath = Join-Path $startMenuDir "DesktopPet.lnk"
+$exePath = Join-Path $installRoot 'DesktopPet.App.exe'
+$shortcutPath = Join-Path ([Environment]::GetFolderPath('Programs')) 'DesktopPet.lnk'
 $shell = New-Object -ComObject WScript.Shell
 $shortcut = $shell.CreateShortcut($shortcutPath)
-$shortcut.TargetPath = $exePath
-$shortcut.WorkingDirectory = $installDir
-$shortcut.IconLocation = (Join-Path $installDir "Assets\AppIcon.ico")
-$shortcut.Save()
-Write-Host "시작 메뉴 바로가기 생성: $shortcutPath"
-
-if ($AddToStartup) {
-    $runKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
-    Set-ItemProperty -Path $runKey -Name "DesktopPet" -Value "`"$exePath`""
-    Write-Host "로그인 시 자동 실행으로 등록했습니다. (해제하려면 uninstall.ps1 실행)"
+if ([System.IO.File]::Exists($shortcutPath) -and $shortcut.TargetPath -and
+    -not ([System.IO.Path]::GetFullPath($shortcut.TargetPath)).Equals($exePath, [StringComparison]::OrdinalIgnoreCase)) {
+    Write-Warning '기존 DesktopPet 바로가기가 다른 프로그램을 가리켜 보존했습니다.'
 }
-
-Write-Host ""
+else {
+    $shortcut.TargetPath = $exePath
+    $shortcut.WorkingDirectory = $installRoot
+    $shortcut.IconLocation = Join-Path $installRoot 'Assets\AppIcon.ico'
+    $shortcut.Save()
+    Write-Host "시작 메뉴 바로가기: $shortcutPath"
+}
+if ($AddToStartup) {
+    $runKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
+    $existing = Get-ItemProperty -Path $runKey -Name DesktopPet -ErrorAction SilentlyContinue
+    $expected = '"' + $exePath + '"'
+    if ($existing -and $existing.DesktopPet -ne $expected) { Write-Warning '기존 DesktopPet 자동 실행 값이 달라 보존했습니다.' }
+    else {
+        New-Item -Path $runKey -Force | Out-Null
+        Set-ItemProperty -Path $runKey -Name DesktopPet -Value $expected
+    }
+}
 Write-Host "설치 완료: $exePath"
-Write-Host "캐릭터 이미지 폴더: $installDir\Assets\Characters\<캐릭터이름>\"

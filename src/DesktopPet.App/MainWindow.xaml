@@ -11,17 +11,22 @@
         Background="Transparent"
         Topmost="True"
         ShowInTaskbar="False"
+        ShowActivated="False"
         ResizeMode="NoResize"
         WindowStartupLocation="Manual"
         SizeToContent="Manual"
         Width="128" Height="128">
-    <Grid>
+    <Grid x:Name="ActorVisualRoot" Background="Transparent"
+          MouseLeftButtonDown="PetImage_MouseLeftButtonDown" MouseMove="PetImage_MouseMove"
+          MouseLeftButtonUp="PetImage_MouseLeftButtonUp" LostMouseCapture="PetImage_LostMouseCapture">
+        <Grid.RenderTransform><TranslateTransform x:Name="ResidualOffset" /></Grid.RenderTransform>
+        <Image x:Name="PreviousPetImage" Stretch="Uniform" IsHitTestVisible="False" Focusable="False"
+               Visibility="Collapsed" RenderOptions.BitmapScalingMode="HighQuality" />
+        <local:GroundedRigVisual x:Name="PetRig" Visibility="Collapsed" />
         <Image x:Name="PetImage"
-               Stretch="Fill"
-               RenderTransformOrigin="0.5,0.5"
-               MouseLeftButtonDown="PetImage_MouseLeftButtonDown"
-               MouseMove="PetImage_MouseMove"
-               MouseLeftButtonUp="PetImage_MouseLeftButtonUp">
+               Stretch="Uniform"
+               RenderOptions.BitmapScalingMode="HighQuality"
+               RenderTransformOrigin="0.5,0.5">
             <Image.RenderTransform>
                 <ScaleTransform x:Name="FlipTransform" ScaleX="1" ScaleY="1" />
             </Image.RenderTransform>

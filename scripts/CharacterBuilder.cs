@@ -1,7 +1,7 @@
 // Image-processing helpers used by build-characters.ps1 (loaded via Add-Type).
 // Turns a single flat artwork file into the full set of animation frames a DesktopPet
-// character needs, by compositing programmatic transforms (bob, shear, squash) and
-// emotion overlays (tears, anger mark) onto one extracted sprite.
+// character needs. The default pipeline uses subtle rigid movement and emotion overlays,
+// preserving the original proportions and keeping the artwork in one piece.
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -563,6 +563,77 @@ public static class CharacterBuilder
 
     // ---------- geometry ----------
 
+    /// <summary>
+    /// Follows the transparent valley between touching characters instead of chopping them at
+    /// a fixed X coordinate. White interiors cost more than dark shared outlines.
+    /// </summary>
+    private static int[] FindSeam(Bitmap source, int nominalX, int radius)
+    {
+        int w = source.Width, h = source.Height;
+        int lo = Math.Max(0, nominalX - radius), hi = Math.Min(w - 1, nominalX + radius);
+        int columns = hi - lo + 1;
+        var px = GetPixels(source);
+        var previous = new double[columns];
+        var current = new double[columns];
+        var back = new int[h * columns];
+        for (int x = 0; x < columns; x++) previous[x] = Math.Abs(lo + x - nominalX) * 0.1;
+        for (int y = 0; y < h; y++)
+        {
+            for (int x = 0; x < columns; x++)
+            {
+                int idx = (y * w + lo + x) * 4;
+                int lum = (px[idx] + px[idx + 1] + px[idx + 2]) / 3;
+                double pixelCost = px[idx + 3] < 30 ? 0 : 6 + lum * 0.5;
+                double best = double.MaxValue;
+                int bestX = x;
+                for (int step = -3; step <= 3; step++)
+                {
+                    int from = x + step;
+                    if (from < 0 || from >= columns) continue;
+                    double candidate = previous[from] + Math.Abs(step) * 0.35;
+                    if (candidate < best) { best = candidate; bestX = from; }
+                }
+                current[x] = best + pixelCost + Math.Abs(lo + x - nominalX) * 0.012;
+                back[y * columns + x] = bestX;
+            }
+            var swap = previous; previous = current; current = swap;
+        }
+        int end = 0;
+        for (int x = 1; x < columns; x++) if (previous[x] < previous[end]) end = x;
+        var seam = new int[h];
+        for (int y = h - 1; y >= 0; y--)
+        {
+            seam[y] = lo + end;
+            end = back[y * columns + end];
+        }
+        return seam;
+    }
+
+    /// <summary>Extracts one character using curved boundaries, retaining shared dark outlines.</summary>
+    public static Bitmap ExtractBetweenSeams(Bitmap source, int leftBoundary, int rightBoundary, int radius)
+    {
+        int w = source.Width, h = source.Height;
+        var left = leftBoundary < 0 ? null : FindSeam(source, leftBoundary, radius);
+        var right = rightBoundary < 0 ? null : FindSeam(source, rightBoundary, radius);
+        var px = GetPixels(source);
+        for (int y = 0; y < h; y++)
+        {
+            int lower = left == null ? -1 : left[y];
+            int upper = right == null ? w : right[y];
+            for (int x = 0; x < w; x++)
+            {
+                if (x >= lower && x <= upper) continue;
+                int idx = (y * w + x) * 4;
+                int lum = (px[idx] + px[idx + 1] + px[idx + 2]) / 3;
+                bool sharedOutline = lum < 115 && (Math.Abs(x - lower) <= 2 || Math.Abs(x - upper) <= 2);
+                if (!sharedOutline) px[idx + 3] = 0;
+            }
+        }
+        var result = new Bitmap(w, h, PixelFormat.Format32bppArgb);
+        SetPixels(result, px);
+        return result;
+    }
+
     public static Bitmap Crop(Bitmap src, int x, int y, int w, int h)
     {
         x = Math.Max(0, x); y = Math.Max(0, y);
@@ -606,7 +677,8 @@ public static class CharacterBuilder
     /// </summary>
     public static Bitmap Normalize(Bitmap trimmed, int canvasW, int canvasH, int targetHeight, int bottomMargin, out int anchorY)
     {
-        double scale = (double)targetHeight / trimmed.Height;
+        // Leave a little horizontal room for the gentle sway as well as preserving aspect ratio.
+        double scale = Math.Min((double)targetHeight / trimmed.Height, (double)(canvasW - 12) / trimmed.Width);
         int newW = Math.Max(1, (int)Math.Round(trimmed.Width * scale));
         int newH = Math.Max(1, (int)Math.Round(trimmed.Height * scale));
 
@@ -659,6 +731,27 @@ public static class CharacterBuilder
             g.DrawImage(baseSprite, 0, 0, w, h);
         }
         return dst;
+    }
+
+    /// <summary>Moves the intact sprite without cutting its legs or deforming its aspect ratio.</summary>
+    public static Bitmap PoseGrounded(Bitmap baseSprite, int anchorY, double rotateDeg, double dx)
+    {
+        using (var posed = Pose(baseSprite, anchorY, 1, 1, rotateDeg, dx, 0))
+        {
+            var px = GetPixels(posed);
+            int lowest = -1;
+            for (int y = 0; y < posed.Height; y++)
+                for (int x = 0; x < posed.Width; x++)
+                    if (px[(y * posed.Width + x) * 4 + 3] >= 100) lowest = y;
+            int desiredBottom = anchorY - 1;
+            var result = new Bitmap(posed.Width, posed.Height, PixelFormat.Format32bppArgb);
+            using (var g = Graphics.FromImage(result))
+            {
+                g.Clear(Color.Transparent);
+                g.DrawImageUnscaled(posed, 0, lowest < 0 ? 0 : desiredBottom - lowest);
+            }
+            return result;
+        }
     }
 
     /// <summary>
@@ -785,41 +878,57 @@ public static class CharacterBuilder
     /// </summary>
     public static void DrawTears(Bitmap bmp, int anchorY, int spriteHeight, double dropProgress)
     {
-        int w = bmp.Width;
-        float bodyTop = anchorY - spriteHeight;
-        float eyeY = bodyTop + spriteHeight * 0.46f;
-        float dropW = Math.Max(5f, spriteHeight * 0.11f);
-        float slide = (float)(spriteHeight * 0.07 * dropProgress);
+        var bounds = OpaqueBounds(bmp, 100);
+        DrawTearsAt(bmp, bounds.Left + bounds.Width * 0.35, bounds.Top + bounds.Height * 0.42,
+            bounds.Left + bounds.Width * 0.65, bounds.Top + bounds.Height * 0.42, dropProgress);
+    }
 
+    /// <summary>Opaque artwork bounds used to map explicit per-character facial landmarks.</summary>
+    public static Rectangle OpaqueBounds(Bitmap bmp, int threshold)
+    {
+        var px = GetPixels(bmp);
+        int x0 = bmp.Width, y0 = bmp.Height, x1 = -1, y1 = -1;
+        for (int y = 0; y < bmp.Height; y++)
+            for (int x = 0; x < bmp.Width; x++)
+                if (px[(y * bmp.Width + x) * 4 + 3] >= threshold)
+                {
+                    x0 = Math.Min(x0, x); x1 = Math.Max(x1, x);
+                    y0 = Math.Min(y0, y); y1 = Math.Max(y1, y);
+                }
+        return x1 < 0 ? Rectangle.Empty : Rectangle.FromLTRB(x0, y0, x1 + 1, y1 + 1);
+    }
+
+    /// <summary>Small tears start below supplied eye centers; neither the eyes nor forehead is painted over.</summary>
+    public static void DrawTearsAt(Bitmap bmp, double leftEyeX, double leftEyeY, double rightEyeX, double rightEyeY, double dropProgress)
+    {
+        float unit = bmp.Width / 128f;
+        float dropW = 4.3f * unit;
         using (var g = Graphics.FromImage(bmp))
         {
             g.SmoothingMode = SmoothingMode.AntiAlias;
             using (var fill = new SolidBrush(Color.FromArgb(235, 150, 215, 255)))
             using (var shine = new SolidBrush(Color.FromArgb(220, 240, 252, 255)))
-            using (var pen = new Pen(Color.FromArgb(255, 70, 150, 225), Math.Max(1.8f, spriteHeight * 0.022f)))
+            using (var pen = new Pen(Color.FromArgb(245, 70, 150, 225), 0.9f * unit))
             {
-                foreach (float cx in new[] { w * 0.37f, w * 0.63f })
+                var eyes = new[] { new PointF((float)leftEyeX, (float)leftEyeY), new PointF((float)rightEyeX, (float)rightEyeY) };
+                foreach (var eye in eyes)
                 {
-                    // main drop clinging to the cheek
-                    float topY = eyeY + slide;
-                    var path = new GraphicsPath();
-                    path.AddEllipse(cx - dropW / 2f, topY, dropW, dropW * 1.15f);
-                    path.AddPolygon(new[]
+                    float cx = eye.X;
+                    float topY = eye.Y + 5.0f * unit;
+                    using (var path = new GraphicsPath())
                     {
-                        new PointF(cx, topY - dropW * 0.75f),
-                        new PointF(cx - dropW * 0.36f, topY + dropW * 0.45f),
-                        new PointF(cx + dropW * 0.36f, topY + dropW * 0.45f),
-                    });
-                    g.FillPath(fill, path);
-                    g.DrawPath(pen, path);
-                    path.Dispose();
-
-                    g.FillEllipse(shine, cx - dropW * 0.28f, topY + dropW * 0.18f, dropW * 0.26f, dropW * 0.34f);
-
-                    // a smaller drop that has already broken off, further along as the loop advances
+                        path.AddBezier(cx, topY, cx - dropW * 0.2f, topY + dropW * 0.4f,
+                            cx - dropW * 0.75f, topY + dropW * 1.15f, cx, topY + dropW * 1.3f);
+                        path.AddBezier(cx, topY + dropW * 1.3f, cx + dropW * 0.75f, topY + dropW * 1.15f,
+                            cx + dropW * 0.2f, topY + dropW * 0.4f, cx, topY);
+                        path.CloseFigure();
+                        g.FillPath(fill, path);
+                        g.DrawPath(pen, path);
+                    }
+                    g.FillEllipse(shine, cx - dropW * 0.22f, topY + dropW * 0.6f, dropW * 0.22f, dropW * 0.3f);
                     float smallW = dropW * 0.55f;
-                    float smallY = topY + dropW * (1.5f + 1.4f * (float)dropProgress);
-                    using (var smallPen = new Pen(pen.Color, pen.Width * 0.8f))
+                    float smallY = topY + (9f + 4f * (float)dropProgress) * unit;
+                    using (var smallPen = new Pen(pen.Color, 0.7f * unit))
                     {
                         g.FillEllipse(fill, cx - smallW / 2f, smallY, smallW, smallW * 1.2f);
                         g.DrawEllipse(smallPen, cx - smallW / 2f, smallY, smallW, smallW * 1.2f);

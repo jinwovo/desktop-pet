@@ -1,0 +1,45 @@
+<Window x:Class="DesktopPet.App.MotionPreviewWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:DesktopPet.App"
+        Title="DesktopPet 움직임 시험" Width="740" Height="420" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" Background="#F5F6FA" FontFamily="Segoe UI, Malgun Gothic">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <StackPanel Margin="0,0,0,12">
+            <TextBlock Text="움직임 시험" FontSize="20" FontWeight="SemiBold" Foreground="#25304A" />
+            <TextBlock Text="펫을 잡아 옮기거나 던져보세요. 이 창 안에서만 움직입니다."
+                       Foreground="#68738C" Margin="0,6,0,0" />
+        </StackPanel>
+        <Border Grid.Row="1" CornerRadius="12" BorderBrush="#DCE2ED" BorderThickness="1" Background="#EDF1F8">
+            <Canvas x:Name="Scene" ClipToBounds="True" Background="Transparent"
+                    MouseMove="Scene_MouseMove" MouseLeave="Scene_MouseLeave">
+                <Rectangle x:Name="FloorVisual" Height="3" Fill="#A5B2CA" />
+                <Rectangle x:Name="LowerLedgeVisual" Height="8" RadiusX="4" RadiusY="4" Fill="#9CAECB" />
+                <Rectangle x:Name="UpperLedgeVisual" Height="8" RadiusX="4" RadiusY="4" Fill="#BCC9DE" />
+                <Image x:Name="PreviousActor" Stretch="Uniform" IsHitTestVisible="False" Focusable="False"
+                       Visibility="Collapsed" RenderOptions.BitmapScalingMode="HighQuality" />
+                <local:GroundedRigVisual x:Name="MotionRig" Visibility="Collapsed" />
+                <Image x:Name="Actor" Stretch="Uniform" RenderTransformOrigin="0.5,0.5"
+                       RenderOptions.BitmapScalingMode="HighQuality" Cursor="Hand">
+                    <Image.RenderTransform><ScaleTransform x:Name="ActorFlip" /></Image.RenderTransform>
+                </Image>
+                <Border x:Name="ActorInput" Background="Transparent" Cursor="Hand"
+                        MouseLeftButtonDown="Actor_MouseLeftButtonDown" MouseLeftButtonUp="Actor_MouseLeftButtonUp"
+                        LostMouseCapture="Actor_LostMouseCapture" />
+            </Canvas>
+        </Border>
+        <DockPanel Grid.Row="2" Margin="0,12,0,0">
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                <Button Content="처음으로" Click="ResetButton_Click" Padding="12,6" Margin="0,0,8,0" />
+                <Button Content="점프" Click="JumpButton_Click" Padding="12,6" Margin="0,0,8,0" />
+                <Button Content="위에서 놓기" Click="DropButton_Click" Padding="12,6" />
+            </StackPanel>
+            <TextBlock x:Name="StateText" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="#68738C" />
+        </DockPanel>
+    </Grid>
+</Window>

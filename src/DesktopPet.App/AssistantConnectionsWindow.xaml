@@ -1,0 +1,47 @@
+<Window x:Class="DesktopPet.App.AssistantConnectionsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="DesktopPet · AI 연결" Width="500" SizeToContent="Height" ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen" Background="#F5F7F4" FontFamily="Segoe UI, Malgun Gothic">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="24">
+        <TextBlock Text="응답이 끝나면, 조용히 알려드려요" FontSize="20" FontWeight="SemiBold" Foreground="#314A3C" />
+        <TextBlock Text="현재 PC의 사용자 설정에 연결합니다. 다른 작업 폴더에서도 사용할 수 있어요."
+                   Margin="0,8,0,18" TextWrapping="Wrap" Foreground="#68766D" />
+        <Border Background="White" BorderBrush="#DAE2DB" BorderThickness="1" CornerRadius="10" Padding="16" Margin="0,0,0,12">
+            <StackPanel>
+                <TextBlock Text="Claude Code" FontSize="15" FontWeight="SemiBold" Foreground="#314A3C" />
+                <TextBlock x:Name="ClaudeStatusText" Text="상태 확인 중" Margin="0,6,0,0" TextWrapping="Wrap" Foreground="#647268" />
+                <TextBlock x:Name="ClaudeReceiptText" Margin="0,4,0,0" FontSize="11" Foreground="#789080" />
+                <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                    <Button x:Name="ClaudeConnectButton" Content="연결" Tag="Claude" Padding="14,5" Click="Connect_Click" />
+                    <Button x:Name="ClaudeDisconnectButton" Content="연결 해제" Tag="Claude" Padding="14,5" Margin="8,0,0,0" Click="Disconnect_Click" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+        <Border Background="White" BorderBrush="#DAE2DB" BorderThickness="1" CornerRadius="10" Padding="16">
+            <StackPanel>
+                <TextBlock Text="Codex" FontSize="15" FontWeight="SemiBold" Foreground="#314A3C" />
+                <TextBlock x:Name="CodexStatusText" Text="상태 확인 중" Margin="0,6,0,0" TextWrapping="Wrap" Foreground="#647268" />
+                <TextBlock x:Name="CodexReceiptText" Margin="0,4,0,0" FontSize="11" Foreground="#789080" />
+                <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                    <Button x:Name="CodexConnectButton" Content="연결" Tag="Codex" Padding="14,5" Click="Connect_Click" />
+                    <Button x:Name="CodexDisconnectButton" Content="연결 해제" Tag="Codex" Padding="14,5" Margin="8,0,0,0" Click="Disconnect_Click" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+        <TextBlock Text="Codex 앱의 Settings → Hooks 또는 CLI의 /hooks에서 새 연결을 허용해주세요. Claude Code는 세션을 다시 시작하면 적용됩니다."
+                   Margin="0,12,0,0" TextWrapping="Wrap" Foreground="#68766D" FontSize="12" />
+        <CheckBox x:Name="AutoConnectCheck" Content="다음 실행에도 설치된 AI 도구를 자동 연결" Margin="0,16,0,0"
+                  Checked="AutoConnect_Changed" Unchecked="AutoConnect_Changed" />
+        <TextBlock Text="대화 원문을 보내지 않고, 도구 이름과 작업 폴더 이름으로 완료를 알려줍니다. 지원: Claude Code · 훅을 지원하는 로컬 Codex."
+                   Margin="0,8,0,0" TextWrapping="Wrap" FontSize="11" Foreground="#7D8880" />
+        <TextBlock x:Name="OperationText" TextWrapping="Wrap" Foreground="#42634E" Margin="0,10,0,0" />
+        <DockPanel Margin="0,16,0,0">
+            <Button Content="상태 새로고침" Padding="12,6" DockPanel.Dock="Left" Click="Refresh_Click" />
+            <Button Content="시작하기" Padding="18,6" DockPanel.Dock="Right" Click="Close_Click" IsDefault="True" />
+            <TextBlock />
+        </DockPanel>
+    </StackPanel>
+    </ScrollViewer>
+</Window>

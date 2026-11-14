@@ -1,0 +1,66 @@
+name: Draft GitHub release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version matching the checked-out source (for example 0.5.0)
+        required: true
+        default: "0.5.0"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    uses: ./.github/workflows/windows-release.yml
+  draft:
+    needs: verify
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    defaults:
+      run:
+        shell: powershell
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v4
+        with:
+          name: DesktopPet-public-windows
+          path: release-files
+      - name: Validate version and create a reviewable draft
+        env:
+          RELEASE_VERSION: ${{ inputs.version || github.ref_name }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:RELEASE_VERSION.StartsWith('v')) { $env:RELEASE_VERSION = $env:RELEASE_VERSION.Substring(1) }
+          if ($env:RELEASE_VERSION -notmatch '^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$') { throw 'Invalid release version' }
+          [xml]$project = Get-Content src/DesktopPet.App/DesktopPet.App.csproj
+          if ($project.Project.PropertyGroup.Version -ne $env:RELEASE_VERSION) { throw 'Requested version must match the verified source' }
+          $archive = Get-Item (Join-Path release-files ("DesktopPet-" + $env:RELEASE_VERSION + "-win-x64.zip"))
+          $checksum = Get-Item ($archive.FullName + '.sha256')
+          $expected = ([IO.File]::ReadAllText($checksum.FullName).Trim() -split '\s+')[0]
+          if ((Get-FileHash -LiteralPath $archive.FullName -Algorithm SHA256).Hash -ine $expected) { throw 'Release checksum mismatch' }
+          $releaseFiles = @($archive.FullName, $checksum.FullName)
+          $optional = Get-Item (Join-Path release-files ("DesktopPet-" + $env:RELEASE_VERSION + "-fan-art-packs.zip"))
+          $optionalChecksum = Get-Item ($optional.FullName + '.sha256')
+          $optionalExpected = ([IO.File]::ReadAllText($optionalChecksum.FullName).Trim() -split '\s+')[0]
+          if ((Get-FileHash -LiteralPath $optional.FullName -Algorithm SHA256).Hash -ine $optionalExpected) { throw 'Optional pack checksum mismatch' }
+          $releaseFiles += @($optional.FullName, $optionalChecksum.FullName)
+          $notes = @"
+          Windows 10/11 x64 portable release. Extract the entire ZIP and run DesktopPet.App.exe.
+
+          Includes Companion, Nimbus and Ember, local AI completion hooks, a focus timer and quiet notification controls.
+          This package includes the .NET runtime. See README.md, README.ko.md and README.zh-CN.md for setup.
+          Optional third-party fan-art packs are separate downloads; see their included NOTICE. The project MIT license does not grant third-party character rights.
+          Codex hooks still require your trust review; DesktopPet does not approve hooks on your behalf.
+
+          SHA256: $expected
+          "@
+          [IO.File]::WriteAllText((Join-Path $env:RUNNER_TEMP 'desktop-pet-release-notes.md'), $notes)
+          gh release create ("v" + $env:RELEASE_VERSION) @releaseFiles --draft --title ("DesktopPet " + $env:RELEASE_VERSION) --target $env:GITHUB_SHA --notes-file (Join-Path $env:RUNNER_TEMP 'desktop-pet-release-notes.md')
+          if ($LASTEXITCODE -ne 0) { throw 'Draft release creation failed; existing releases are never replaced automatically' }

@@ -29,6 +29,29 @@ public sealed class PlatformLayout
 
     private IEnumerable<Platform> AllPlatforms => _windowPlatforms.Concat(_monitorFloors);
 
+    /// <summary>
+    /// Nearby surfaces to consider for a hop. This is a geometric shortlist; the brain still
+    /// checks flight time, air drag, ledge clearance and intermediate landings before launch.
+    /// </summary>
+    public IReadOnlyList<Platform> GetHopCandidates(
+        double fromX, double direction, double currentGroundY, double maxRise, double maxDrop,
+        double maxGap, double petWidth)
+    {
+        return AllPlatforms
+            .Where(p =>
+            {
+                var deltaY = p.GroundY - currentGroundY;
+                var inHeightRange = deltaY < -6 && -deltaY <= maxRise || deltaY > 4 && deltaY <= maxDrop;
+                if (!inHeightRange || p.Right - p.Left < petWidth * 0.8) return false;
+                var nearGap = direction > 0 ? p.Left - fromX : fromX - p.Right;
+                var extendsForward = direction > 0 ? p.Right > fromX + 2 : p.Left < fromX - 2;
+                return nearGap <= maxGap && extendsForward;
+            })
+            .Distinct()
+            .OrderBy(p => Math.Abs(p.GroundY - currentGroundY))
+            .ToArray();
+    }
+
     /// <summary>The monitor floor at x — used as the ultimate fallback and to bound X while falling.</summary>
     public Platform GetMonitorFloorAt(double x)
     {

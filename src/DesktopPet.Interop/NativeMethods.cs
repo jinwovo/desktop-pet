@@ -40,6 +40,9 @@ public static class NativeMethods
     public const long WS_EX_TOOLWINDOW = 0x00000080L;
     public const long WS_EX_LAYERED = 0x00080000L;
     public const long WS_EX_TRANSPARENT = 0x00000020L;
+    public const long WS_EX_NOACTIVATE = 0x08000000L;
+    public const int WM_MOUSEACTIVATE = 0x0021;
+    public const int MA_NOACTIVATE = 3;
 
     public const uint PW_RENDERFULLCONTENT = 0x00000002;
 

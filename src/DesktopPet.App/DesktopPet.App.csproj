@@ -2,12 +2,13 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationIcon>..\..\Assets\AppIcon.ico</ApplicationIcon>
+    <Version>0.5.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,14 +18,78 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\..\Assets\Characters\**\*">
+    <Content Include="..\..\LICENSE">
+      <Link>LICENSE</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Include="..\..\Assets\Characters\**\*" Condition="'$(DistributionBuild)' != 'true' And '$(PersonalBuild)' != 'true'">
       <Link>Assets\Characters\%(RecursiveDir)%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Include="..\..\Assets\Characters\Companion\**\*" Condition="'$(DistributionBuild)' == 'true' Or '$(PersonalBuild)' == 'true'">
+      <Link>Assets\Characters\Companion\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Include="..\..\Assets\Characters\Nimbus\**\*" Condition="'$(DistributionBuild)' == 'true' Or '$(PersonalBuild)' == 'true'">
+      <Link>Assets\Characters\Nimbus\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Include="..\..\Assets\Characters\Ember\**\*" Condition="'$(DistributionBuild)' == 'true' Or '$(PersonalBuild)' == 'true'">
+      <Link>Assets\Characters\Ember\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Include="..\..\Assets\Characters\치이카와\**\*" Condition="'$(PersonalBuild)' == 'true' And '$(DistributionBuild)' != 'true' And Exists('..\..\Assets\Characters\치이카와\character.json')">
+      <Link>Assets\Characters\치이카와\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Include="..\..\Assets\Characters\세균맨\**\*" Condition="'$(PersonalBuild)' == 'true' And '$(DistributionBuild)' != 'true' And Exists('..\..\Assets\Characters\세균맨\character.json')">
+      <Link>Assets\Characters\세균맨\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Include="..\..\Assets\Characters\헬로키티\**\*" Condition="'$(PersonalBuild)' == 'true' And '$(DistributionBuild)' != 'true' And Exists('..\..\Assets\Characters\헬로키티\character.json')">
+      <Link>Assets\Characters\헬로키티\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <!-- Public source keeps optional fan-art packs outside the default bundled collection. -->
+    <Content Include="..\..\character-packs\fan-art\치이카와\**\*" Condition="'$(PersonalBuild)' == 'true' And '$(DistributionBuild)' != 'true' And !Exists('..\..\Assets\Characters\치이카와\character.json')">
+      <Link>Assets\Characters\치이카와\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Include="..\..\character-packs\fan-art\세균맨\**\*" Condition="'$(PersonalBuild)' == 'true' And '$(DistributionBuild)' != 'true' And !Exists('..\..\Assets\Characters\세균맨\character.json')">
+      <Link>Assets\Characters\세균맨\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Include="..\..\character-packs\fan-art\헬로키티\**\*" Condition="'$(PersonalBuild)' == 'true' And '$(DistributionBuild)' != 'true' And !Exists('..\..\Assets\Characters\헬로키티\character.json')">
+      <Link>Assets\Characters\헬로키티\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
     <Content Include="..\..\Assets\AppIcon.ico">
       <Link>Assets\AppIcon.ico</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\..\Hooks\assistant-stop-hook.ps1" Condition="Exists('..\..\Hooks\assistant-stop-hook.ps1')">
+      <Link>Hooks\assistant-stop-hook.ps1</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
   </ItemGroup>
+
+  <Target Name="ValidateDistributionAssets" BeforeTargets="PrepareForBuild" Condition="'$(DistributionBuild)' == 'true'">
+    <Error Condition="!Exists('..\..\Assets\Characters\Companion\character.json')" Text="DistributionBuild requires the original Companion mascot. Personal development characters are never substituted." />
+    <Error Condition="!Exists('..\..\Assets\Characters\Nimbus\character.json')" Text="DistributionBuild requires the original Nimbus character." />
+    <Error Condition="!Exists('..\..\Assets\Characters\Ember\character.json')" Text="DistributionBuild requires the original Ember character." />
+    <Error Condition="!Exists('..\..\Hooks\assistant-stop-hook.ps1')" Text="DistributionBuild requires Hooks/assistant-stop-hook.ps1." />
+  </Target>
 
 </Project>

@@ -7,26 +7,27 @@
         Background="Transparent"
         Topmost="True"
         ShowInTaskbar="False"
+        ShowActivated="False"
         ResizeMode="NoResize"
         SizeToContent="Height"
         WindowStartupLocation="Manual"
         Width="280">
     <Grid Margin="10,10,10,18">
         <Grid.Effect>
-            <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.35" Color="#333" />
+            <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.16" Color="#47594E" />
         </Grid.Effect>
 
         <!-- bubble body -->
-        <Border Background="#FFFFFDF7"
-                BorderBrush="#FF2E2E2E"
-                BorderThickness="3"
+        <Border Background="#FFFCFDFB"
+                BorderBrush="#FFCCD7D0"
+                BorderThickness="1.5"
                 CornerRadius="14">
             <StackPanel Margin="14,11,14,12">
                 <TextBlock x:Name="TitleText"
                            Text="작업 완료"
                            FontWeight="Bold"
                            FontSize="14"
-                           Foreground="#FFD2254A"
+                           Foreground="#FF385546"
                            TextWrapping="Wrap" />
                 <TextBlock x:Name="MessageText"
                            Text=""
@@ -36,7 +37,7 @@
                            TextWrapping="Wrap"
                            MaxHeight="120"
                            TextTrimming="CharacterEllipsis" />
-                <TextBlock Text="클릭해서 확인"
+                <TextBlock x:Name="AcknowledgementText" Text="클릭해서 확인"
                            FontSize="11"
                            Foreground="#FF8A8A8A"
                            Margin="0,8,0,0"
@@ -45,9 +46,9 @@
         </Border>
 
         <!-- tail, pointing down at the pet -->
-        <Path Fill="#FFFFFDF7"
-              Stroke="#FF2E2E2E"
-              StrokeThickness="3"
+        <Path Fill="#FFFCFDFB"
+              Stroke="#FFCCD7D0"
+              StrokeThickness="1.5"
               HorizontalAlignment="Center"
               VerticalAlignment="Bottom"
               Margin="0,0,0,-13"

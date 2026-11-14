@@ -1,138 +1,239 @@
+using System.Diagnostics;
 using System.Text.Json;
 
 namespace DesktopPet.Core;
 
-/// <summary>A request from an outside process for the pet to get the user's attention.</summary>
 public sealed class PetNotification
 {
     public string Title { get; set; } = "알림";
     public string Message { get; set; } = "";
+    public string Mood { get; set; } = "gentle";
+    public string Source { get; set; } = "";
+    public string EventId { get; set; } = "";
+    public DateTimeOffset? CreatedAtUtc { get; set; }
+}
 
-    /// <summary>"shout" (default) or "cry" — which emote the pet plays while nagging.</summary>
-    public string Mood { get; set; } = "shout";
+/// <summary>A notification stays on disk until the user acknowledges this delivery.</summary>
+public sealed class InboxNotification
+{
+    private readonly Func<bool> _acknowledge;
+
+    internal InboxNotification(PetNotification notification, Func<bool> acknowledge)
+    {
+        Notification = notification;
+        _acknowledge = acknowledge;
+    }
+
+    public PetNotification Notification { get; }
+    public bool Acknowledge() => _acknowledge();
 }
 
 /// <summary>
-/// Watches a drop folder for notification files so anything on the machine — a Claude Code hook,
-/// a build script, a scheduled task — can make the pet speak up by writing a small JSON file.
-///
-/// A drop folder is used rather than a socket or named pipe because the senders are typically
-/// one-line shell commands: writing a file needs no client library, no connection handling, and
-/// works even when the pet app isn't running yet (the message is picked up on next start).
+/// Reads atomically published JSON files. Subscribe before Start; unread and unacknowledged
+/// deliveries survive app restarts. File reads and retries never hold the receipt-state lock.
 /// </summary>
 public sealed class NotificationInbox : IDisposable
 {
+    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
     private readonly FileSystemWatcher _watcher;
     private readonly Timer _sweepTimer;
     private readonly string _folder;
+    private readonly object _sync = new();
+    // Serializes the callback boundary with Dispose, without holding the state lock during UI dispatch.
+    private readonly object _deliveryGate = new();
+    private readonly Dictionary<string, DeliveryState> _delivered = new(StringComparer.OrdinalIgnoreCase);
+    private int _sweeping;
+    private bool _started;
+    private bool _disposed;
+    private bool _resourcesDisposed;
 
-    /// <summary>Raised on a background thread — marshal to the UI thread before touching windows.</summary>
-    public event Action<PetNotification>? NotificationReceived;
+    private sealed class DeliveryState(string path)
+    {
+        public string Path { get; } = path;
+        public object Sync { get; } = new();
+        public bool Acknowledged { get; set; }
+    }
+
+    /// <summary>Runs on a background thread after Start. Dispatch UI work asynchronously and return promptly.</summary>
+    public event Action<InboxNotification>? NotificationReceived;
 
     public static string DefaultFolder => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "DesktopPet", "inbox");
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DesktopPet", "inbox");
 
     public NotificationInbox(string? folder = null)
     {
-        _folder = folder ?? DefaultFolder;
+        _folder = Path.GetFullPath(folder ?? DefaultFolder);
         Directory.CreateDirectory(_folder);
-
         _watcher = new FileSystemWatcher(_folder, "*.json")
         {
             NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite,
-            EnableRaisingEvents = true,
         };
-        _watcher.Created += (_, e) => TryConsume(e.FullPath);
-        _watcher.Changed += (_, e) => TryConsume(e.FullPath);
-        // Senders are expected to write to a temp name and rename into place (so the file is never
-        // observed half-written) — and a rename raises Renamed, not Created.
-        _watcher.Renamed += (_, e) => TryConsume(e.FullPath);
+        _watcher.Created += (_, _) => RequestSweep();
+        _watcher.Changed += (_, _) => RequestSweep();
+        _watcher.Renamed += (_, _) => RequestSweep();
+        _watcher.Error += (_, _) => RequestSweep();
+        _sweepTimer = new Timer(_ => SweepFolder(), null, Timeout.Infinite, Timeout.Infinite);
+    }
 
-        // Backstop sweep: FileSystemWatcher can silently miss events if its buffer overflows, and
-        // a dropped notification is exactly the thing the user is waiting on. The watcher handles
-        // the normal path, so this only needs to be often enough to not feel broken.
-        _sweepTimer = new Timer(_ => SweepFolder(), null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
+    public void Start()
+    {
+        lock (_sync)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            if (_started) return;
+            if (NotificationReceived is null)
+                throw new InvalidOperationException("알림 수신기를 등록한 뒤 Start를 호출하세요.");
 
-        // Anything dropped while the app was closed still deserves to be shown.
-        SweepFolder();
+            _started = true;
+            _watcher.EnableRaisingEvents = true;
+            _sweepTimer.Change(TimeSpan.Zero, TimeSpan.FromSeconds(5));
+        }
+    }
+
+    private void RequestSweep()
+    {
+        lock (_sync)
+        {
+            if (_started && !_disposed)
+                _sweepTimer.Change(TimeSpan.FromMilliseconds(80), TimeSpan.FromSeconds(5));
+        }
     }
 
     private void SweepFolder()
     {
+        if (Interlocked.CompareExchange(ref _sweeping, 1, 0) != 0) return;
         try
         {
-            foreach (var existing in Directory.GetFiles(_folder, "*.json"))
-            {
-                TryConsume(existing);
-            }
-        }
-        catch (DirectoryNotFoundException)
-        {
-            Directory.CreateDirectory(_folder);
-        }
-    }
-
-    // The watcher events and the sweep timer can race for the same file; without this both could
-    // read it before either deletes it, and the user would get the same message twice.
-    private readonly object _consumeLock = new();
-
-    private void TryConsume(string path)
-    {
-        lock (_consumeLock)
-        {
-            ConsumeCore(path);
-        }
-    }
-
-    private void ConsumeCore(string path)
-    {
-        // The writer may still have the file open; retry briefly rather than dropping the message.
-        for (var attempt = 0; attempt < 5; attempt++)
-        {
+            if (!CanDeliver()) return;
             try
             {
-                if (!File.Exists(path))
+                Directory.CreateDirectory(_folder);
+                foreach (var path in Directory.GetFiles(_folder, "*.json").OrderBy(p => p, StringComparer.Ordinal))
                 {
-                    return;
+                    lock (_sync)
+                    {
+                        if (_disposed) return;
+                        if (_delivered.ContainsKey(path)) continue;
+                    }
+                    TryDeliver(path);
                 }
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                Trace.TraceWarning($"Notification sweep: {ex.Message}");
+            }
+        }
+        finally { Volatile.Write(ref _sweeping, 0); }
+    }
 
-                var json = File.ReadAllText(path);
-                File.Delete(path);
+    private bool CanDeliver()
+    {
+        lock (_sync) return _started && !_disposed && NotificationReceived is not null;
+    }
 
-                var notification = JsonSerializer.Deserialize<PetNotification>(
-                    json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-                if (notification is not null)
+    private void TryDeliver(string path)
+    {
+        // Non-atomic senders may still be writing. Never delete a file before parsing it.
+        for (var attempt = 0; attempt < 5; attempt++)
+        {
+            if (!CanDeliver()) return;
+            try
+            {
+                PetNotification notification;
+                using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete))
                 {
-                    NotificationReceived?.Invoke(notification);
+                    using var reader = new StreamReader(stream, detectEncodingFromByteOrderMarks: true);
+                    notification = JsonSerializer.Deserialize<PetNotification>(reader.ReadToEnd(), JsonOptions)
+                        ?? throw new JsonException("알림 내용이 null입니다.");
+                }
+                lock (_deliveryGate)
+                {
+                    Action<InboxNotification>? receiver;
+                    var state = new DeliveryState(path);
+                    lock (_sync)
+                    {
+                        if (_disposed || !_started || _delivered.ContainsKey(path)) return;
+                        receiver = NotificationReceived;
+                        if (receiver is null) return;
+                        _delivered.Add(path, state);
+                    }
+                    try
+                    {
+                        receiver(new InboxNotification(notification, () => Acknowledge(state)));
+                    }
+                    catch (Exception ex)
+                    {
+                        lock (_sync)
+                        {
+                            if (_delivered.TryGetValue(path, out var current) && ReferenceEquals(current, state))
+                                _delivered.Remove(path);
+                        }
+                        Trace.TraceError($"Notification delivery: {ex}");
+                    }
                 }
                 return;
             }
-            catch (IOException)
-            {
-                Thread.Sleep(60);
-            }
+            catch (FileNotFoundException) { return; }
+            catch (DirectoryNotFoundException) { return; }
             catch (JsonException)
             {
-                TryDelete(path); // malformed; don't retry forever
-                return;
+                if (attempt == 4)
+                {
+                    if (CanDeliver()) Quarantine(path);
+                    return;
+                }
             }
-            catch (UnauthorizedAccessException)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-                Thread.Sleep(60);
+                if (attempt == 4) return; // Leave it for the next sweep.
+            }
+            Thread.Sleep(60);
+        }
+    }
+
+    private bool Acknowledge(DeliveryState state)
+    {
+        // A receipt remains idempotent even after another notification reuses its file name.
+        // Only acknowledgements for this receipt serialize; slow storage never holds _sync.
+        lock (state.Sync)
+        {
+            if (state.Acknowledged) return true;
+            try
+            {
+                File.Delete(state.Path);
+                state.Acknowledged = true;
+                lock (_sync)
+                {
+                    if (_delivered.TryGetValue(state.Path, out var current) && ReferenceEquals(current, state))
+                        _delivered.Remove(state.Path);
+                }
+                return true;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                Trace.TraceWarning($"Notification acknowledgement: {ex.Message}");
+                return false;
             }
         }
     }
 
-    private static void TryDelete(string path)
+    private void Quarantine(string path)
     {
-        try { File.Delete(path); } catch { /* best effort */ }
+        var invalidFolder = Path.Combine(_folder, "invalid");
+        Directory.CreateDirectory(invalidFolder);
+        File.Move(path, Path.Combine(invalidFolder, $"{Path.GetFileNameWithoutExtension(path)}-{Guid.NewGuid():N}.json"));
     }
 
     public void Dispose()
     {
-        _sweepTimer.Dispose();
-        _watcher.Dispose();
+        // Mark stopped before waiting for an already-running callback, so no later delivery can win the gate.
+        lock (_sync) _disposed = true;
+        lock (_deliveryGate)
+        {
+            if (_resourcesDisposed) return;
+            _resourcesDisposed = true;
+            _sweepTimer.Dispose();
+            _watcher.Dispose();
+        }
     }
 }

@@ -1,0 +1,192 @@
+<div align="center">
+
+# DesktopPet
+
+陪伴 AI 工作与专注时间的安静 Windows 桌面宠物。
+
+[English](README.md) · [한국어](README.ko.md) · **简体中文**
+
+[版本发布](https://github.com/jinwovo/desktop-pet/releases) · [报告问题](https://github.com/jinwovo/desktop-pet/issues/new/choose) · [参与贡献](CONTRIBUTING.md)
+
+![Windows 检查](https://github.com/jinwovo/desktop-pet/actions/workflows/windows-release.yml/badge.svg)
+
+<img src="docs/preview/public-walk.gif" width="640" alt="Companion、Nimbus 和 Ember 行走与休息的预览">
+
+</div>
+
+DesktopPet 可以提醒本地 Claude Code、Codex 的回复完成，提供 25 分钟专注 / 5 分钟休息计时器，并支持导入角色包。行走时使用缓存的身体与双脚图层连续运动，根据实际移动距离调整步态，减少脚踩地时的滑动。
+
+公开角色包括 **Companion、Nimbus 和 Ember**。制作方式与素材来源见[公开素材记录](docs/PUBLIC_ASSET_PROVENANCE.md)。已有的逐帧角色包也可继续使用。
+
+仓库也在 [character-packs/fan-art](character-packs/fan-art/README.md) 中提供可选的 **Chiikawa（吉伊卡哇）、Baikinman（细菌人）和 Hello Kitty 同人角色包**。它们与原创角色分开标注，项目 MIT 许可不授予第三方角色权利。默认 Windows ZIP 包含三款原创角色；可在设置中导入可选包，或使用 `-p:PersonalBuild=true` 构建。
+
+## 快速开始
+
+### 使用发布包
+
+1. 打开[版本发布页面](https://github.com/jinwovo/desktop-pet/releases)。**只有维护者发布版本后才会提供二进制下载。** 如果没有发布文件，请按下方步骤从源码构建。
+2. 下载 Windows x64 ZIP，将**完整压缩包**解压到可写文件夹，运行 `DesktopPet.App.exe`。
+3. 查看首次启动的 **AI 连接**（`AI 연결`）窗口。检测到的本地配置可以自动注册；Codex 的钩子仍需本人授权。
+4. 双击托盘图标打开**设置**（`설정`）。先点击**测试通知**（`테스트 알림`），无需连接 AI 即可检查气泡。
+
+默认打包方式包含 .NET 运行时。文件名明确标有 `framework-dependent` 的包需要另行安装 .NET 10 Desktop Runtime x64。请保留 EXE、`Assets` 和 `Hooks` 的完整目录结构。
+
+### 从源码运行
+
+需要 Windows 和 **.NET 10 SDK**。
+
+```powershell
+git clone https://github.com/jinwovo/desktop-pet.git
+cd desktop-pet
+dotnet restore DesktopPet.sln
+dotnet build DesktopPet.sln -c Release --no-restore
+.\src\DesktopPet.App\bin\Release\net10.0-windows\DesktopPet.App.exe
+```
+
+缺少构建或运行时包时，需要能够访问 NuGet。普通使用者不需要安装开发 SDK。
+
+## 主要功能
+
+| 功能 | 行为 |
+| --- | --- |
+| 三个公开角色 | 在设置中选择 Companion、Nimbus 或 Ember。 |
+| 脚部接地行走 | 身体与双脚按实际距离和显示大小连续移动，停止时先放下抬起的脚。 |
+| 轻柔完成提醒 | 默认显示 8 秒的简短气泡。 |
+| 未读通知 | 自动隐藏不等于删除；可从托盘重新查看并点击确认。 |
+| 专注计时器 | 手动控制固定的 25 分钟专注与 5 分钟休息。 |
+| 导入角色 | 选择包含 `character.json` 和 PNG 的单独角色文件夹。 |
+| 减少打扰 | 可隐藏宠物、开启免打扰、调整大小和速度、关闭可选效果。 |
+
+文档提供英语、韩语和简体中文版本。当前程序界面主要使用**韩语**，本说明附有关键按钮的韩语名称。构建目标为 Windows x64；不提供 macOS、Linux 或原生 ARM64 安装包。
+
+## 连接 Claude Code 和 Codex
+
+从托盘菜单或设置打开 **AI 连接**（`AI 연결`）。
+
+默认会为检测到的当前用户配置尝试自动连接。DesktopPet 只添加或更新自己的 Stop 处理器，保留其他配置和钩子。可在同一窗口关闭自动连接或断开某个工具。
+
+| 工具 | 用户配置位置 | 生效方式 |
+| --- | --- | --- |
+| Claude Code | `~/.claude/settings.json` 或 `CLAUDE_CONFIG_DIR/settings.json` | 注册后重启 Claude Code 会话。 |
+| 支持钩子的本地 Codex | `~/.codex/hooks.json` 或 `CODEX_HOME/hooks.json` | 检查并信任已注册的钩子。 |
+
+**Codex 授权：**在 CLI 输入 `/hooks`，或打开 Codex 应用的 **Settings → Hooks** / **Review hooks**。找到 DesktopPet 的 `Stop` 命令，检查后允许执行。定义改变后可能需要重新审核；DesktopPet 不会代替用户写入信任决定。[Codex 官方说明](https://learn.chatgpt.com/docs/hooks)
+
+连接 Claude Code 后，请重新开始会话。[Claude Code 钩子文档](https://code.claude.com/docs/en/hooks)
+
+“完成”表示一次**回复轮次结束**，不代表整个项目或测试套件成功。不支持浏览器聊天或没有兼容本地钩子的应用；管理员禁止钩子的策略仍然有效。
+
+## 管理专注时间
+
+在设置的**专注计时器**（`집중 타이머`）卡片中操作：
+
+1. **开始专注**（`집중 시작`）启动 25 分钟倒计时。
+2. **暂停 / 继续**（`일시정지 / 계속`）暂停或恢复当前倒计时。
+3. **重新开始**（`다시 시작`）重置当前阶段；**停止**（`종료`）结束计时，不发送完成提醒。
+4. 专注结束后，手动点击**开始休息**（`휴식 시작`）进行 5 分钟休息。休息结束后再手动开始下一次专注。
+
+不会自动连续循环，也不会在关闭程序后恢复正在进行的计时。计时完成使用同一个本地通知收件箱，遵守隐藏与免打扰设置。托盘菜单也提供控制入口。
+
+## 通知与免打扰
+
+- 气泡自动消失后，未读记录仍然保留。
+- 连续通知显示最新内容，未读列表按到达顺序保存。
+- 收到通知不会自动显示已隐藏的宠物。
+- **免打扰**（`방해 금지`）只保存通知，不自动弹出气泡。
+- 窗口跳跃和窗口关闭下落效果默认关闭。开启后者时会在本机捕获其他应用窗口；关闭它可避免这部分捕获工作。
+
+## 添加自己的角色
+
+1. 解压准备好的角色包。
+2. 在设置中点击**添加角色**（`캐릭터 추가`）。
+3. 选择包含 `character.json` 和所引用 PNG 的**单独角色文件夹**。
+4. 验证通过后，程序将其复制到用户角色库并选中。
+
+不能直接导入 ZIP 或单张图片。同名文件夹不会被覆盖；发生冲突时请先更改待导入文件夹名称。手动放置的同名用户角色也不会覆盖内置角色。
+
+导入会拒绝危险路径与链接，并限制文件数、源文件总量和解码图片大小。支持传统逐帧皮肤和可选的六张贴图 `walkRig`（三个绘制图层、两种朝向）。格式与提交要求见[角色包贡献说明](CONTRIBUTING.md#character-packs)。
+
+## 本地存储与隐私
+
+通知与专注计时器在本机运行。程序不上传聊天内容，也不提供云端同步。
+
+| 数据 | 位置 |
+| --- | --- |
+| 偏好设置 | `%APPDATA%\DesktopPet\settings.json` |
+| 未读通知 | `%LOCALAPPDATA%\DesktopPet\inbox\` |
+| 添加的角色 | `%LOCALAPPDATA%\DesktopPet\Characters\` |
+| 已连接配置的路径 | `%LOCALAPPDATA%\DesktopPet\assistant-connections.json` |
+| 短期去重标记 | `inbox\.assistant-events\` |
+
+AI 通知使用工具名称、项目文件夹名称、时间和哈希标识，不保存回复原文或 transcript 内容。Claude 去重可能检查 transcript 的**文件大小和修改时间**。连接记录与配置备份可能包含本地路径，提交问题时请先遮盖这些信息。
+
+## 安装、更新和卸载
+
+可以直接使用解压后的便携目录。需要固定安装到当前用户目录时，在发布包中运行：
+
+```powershell
+powershell -NoProfile -File .\install.ps1
+# 仅在需要登录 Windows 后自动启动时使用：
+powershell -NoProfile -File .\install.ps1 -AddToStartup
+```
+
+更新前请从托盘退出旧程序。安装脚本验证文件并保留用户角色、通知和连接记录。安装目录中的 `uninstall.ps1` 会先断开助手连接，成功后才删除受管理的程序文件。
+
+程序没有内置自动更新器。校验和、移动便携目录、打包和发布验证见[分发指南](docs/DISTRIBUTION.md)。
+
+## 开发与验证
+
+```powershell
+dotnet build DesktopPet.sln -c Release
+dotnet tests/DesktopPet.RegressionTests/bin/Release/net10.0-windows/DesktopPet.RegressionTests.dll
+dotnet tests/DesktopPet.UiSmokeTests/bin/Release/net10.0-windows/DesktopPet.UiSmokeTests.dll --capture
+powershell -NoProfile -File tests/assistant-hooks-regression.ps1
+powershell -NoProfile -File tests/install-regression.ps1
+powershell -NoProfile -File tests/package-regression.ps1
+```
+
+测试使用临时目录，不会向真实助手配置注册钩子。没有 Windows 符号链接权限时，相关测试会明确跳过。UI 测试会创建真实 WPF 窗口，渲染和耗时受机器环境影响。
+
+构建公开 Windows x64 包：
+
+```powershell
+powershell -NoProfile -File scripts/package-release.ps1 -Version 0.5.0
+```
+
+输出位于 `artifacts/releases/`，包含 self-contained ZIP 与 SHA256 文件。缺少运行时包时构建会失败，不会静默切换为其他部署方式。[Windows 工作流](.github/workflows/windows-release.yml)配置了测试与构建产物；存在该文件不等于远程构建已通过或版本已经发布。
+
+## 常见问题
+
+**程序在运行，却看不到宠物。** 从托盘打开显示选项，并检查大小和隐藏设置。
+
+**Codex 显示已连接，却没有通知。** 在 Codex 审核钩子，检查活动的 `CODEX_HOME`。未显示新定义时重新打开本地会话。可先用测试通知确认气泡是否可见。
+
+**完成气泡消失了。** 从托盘的未读通知列表重新查看。隐藏和免打扰期间收到的通知也保存在那里。
+
+**角色导入失败。** 检查解压后的单独文件夹、PNG 引用、`character.json` 和重名情况。链接、缺失或超大图片、损坏元数据会被拒绝。
+
+**动画感觉卡顿或占用较高。** 关闭窗口下落效果，减小角色显示大小。报告问题时提供 Windows 版本、显示缩放、刷新率和角色名称。程序不保证所有硬件上具有相同 CPU 占用或帧率。
+
+**重新打开程序后计时器没有继续。** 重新启动程序时，计时器按设计回到待机状态。
+
+## 贡献与安全
+
+欢迎通过[问题页面](https://github.com/jinwovo/desktop-pet/issues)提交可复现的问题、翻译修正和动画示例。请阅读[贡献指南](CONTRIBUTING.md)、[安全说明](SECURITY.md)和[变更记录](CHANGELOG.md)。
+
+本项目采用 [MIT 许可证](LICENSE)。公共角色使用 AI 辅助制作，原始素材和制作流程记录在[素材来源](docs/PUBLIC_ASSET_PROVENANCE.md)中。
+
+## 认识伙伴
+
+| Companion | Nimbus | Ember |
+| --- | --- | --- |
+| 头顶嫩叶、奶油色的温柔种子伙伴 | 带有云朵刘海和小爪子的蓝色猫咪 | 尾尖为奶油色的暖橙色小狐狸 |
+
+![公共角色与动作](docs/preview/public-characters.png)
+
+GIF 根据实际移动记录生成，并非帧率基准测试。桌面宠物、动作测试窗口和设置预览共用连续步态渲染器。阅读[角色包指南](docs/CHARACTER_PACKS.md)，了解如何添加原创伙伴。
+
+## 准备公开发布
+
+[公开发布指南](docs/PUBLIC_RELEASE.md)介绍不含私人素材的源码导出、GitHub 发行草稿、验证范围，以及仓库简介与主题建议。
+
+完整界面本地化、朝向过渡优化、键盘无障碍和更多原创角色是后续贡献方向，尚未作为已完成功能提供。如果 DesktopPet 对你有帮助，欢迎点 Star，也欢迎提交可复现的问题与小型改进。

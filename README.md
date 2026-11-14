@@ -1,115 +1,192 @@
+<div align="center">
+
 # DesktopPet
 
-윈도우 바탕화면 위를 걸어다니는 데스크탑 마스코트 앱. 캐릭터가 화면 아래를 돌아다니고,
-열려 있는 창 위에 올라서고, 마우스를 쳐다보고, 집어 들었다 놓으면 떨어져서 착지한다.
+A quiet desktop companion for AI work, focused sessions, and a less empty taskbar.
 
-Claude Code 작업이 끝나면 캐릭터가 말풍선을 띄우고 화내면서 알려주는 기능이 핵심이다.
+**English** · [한국어](README.ko.md) · [简体中文](README.zh-CN.md)
 
-## 주요 기능
+[Releases](https://github.com/jinwovo/desktop-pet/releases) · [Report a bug](https://github.com/jinwovo/desktop-pet/issues/new/choose) · [Contributing](CONTRIBUTING.md)
 
-- **돌아다니기** — 작업표시줄 위뿐 아니라 **열려 있는 다른 창의 윗변**도 발판으로 인식한다.
-  창 끝에 닿으면 옆에 있는 창으로 **뛰어내리거나 뛰어올라** 건너간다. 밟고 있던 창이 닫히거나
-  움직이면 떨어진다.
-- **던지기** — 드래그해서 휙 놓으면 관성으로 날아가고, 화면 끝에 부딪히면 튕긴다.
-- **감정 표현** — 높은 곳에서 떨어뜨리면 울고(😢), 빠르게 여러 번 찌르면 화낸다(💢).
-  오래 방치하면 잠든다(💤). 커서를 움직이거나 클릭하면 깨어난다.
-- **작업 완료 알림** — 외부에서 알림을 보내면 말풍선을 띄우고 **확인할 때까지** 제자리에서
-  뛰며 조른다.
-- **창 닫힘 연출** — 다른 프로그램 창을 닫으면 그 창이 작업표시줄로 떨어지며 사라진다.
-- **캐릭터 자동 생성** — 그림 파일을 넣기만 하면 걷기/울기/화내기/잠자기 프레임을 자동 합성한다.
+![Windows checks](https://github.com/jinwovo/desktop-pet/actions/workflows/windows-release.yml/badge.svg)
 
-## 빠른 시작
+<img src="docs/preview/public-walk.gif" width="640" alt="Companion, Nimbus and Ember walking and resting on the desktop">
 
-```powershell
-# 1. 빌드
-dotnet build DesktopPet.sln
+</div>
 
-# 2. 실행
-.\src\DesktopPet.App\bin\Debug\net8.0-windows\DesktopPet.App.exe
-```
+DesktopPet is a Windows desktop pet with gentle completion notifications for local Claude Code and Codex, a 25/5 focus timer, and importable character packs. Its live walking renderer moves cached body and foot layers continuously, using actual travel distance to keep a planted foot from sliding.
 
-트레이 아이콘을 더블클릭하면 설정 창이 열린다 — 캐릭터 선택, 크기/속도 슬라이더, 동작 토글.
-슬라이더는 움직이는 즉시 펫에 반영된다.
+The public collection contains **Companion**, **Nimbus**, and **Ember**. Character creation and source records are documented in [Public asset provenance](docs/PUBLIC_ASSET_PROVENANCE.md). Existing frame-based custom packs remain supported.
 
-> 무겁게 느껴지면 설정에서 **"창 닫을 때 떨어지는 연출"을 끄면 된다.** 그 기능이 다른 프로그램의
-> 창을 주기적으로 캡처하는 유일한 부분이라, 끄면 체감이 크게 달라진다.
+The repository also includes optional **Chiikawa, Baikinman and Hello Kitty fan-art packs** in [character-packs/fan-art](character-packs/fan-art/README.md). They are identified separately from the original collection and are not covered by the project's MIT grant for third-party character rights. The default Windows ZIP includes the three original characters; import optional packs through Settings or build with `-p:PersonalBuild=true`.
 
-설치해서 쓰려면:
+## Quick start
+
+### Use a published build
+
+1. Open [Releases](https://github.com/jinwovo/desktop-pet/releases). **Binary downloads are available only when a release has been published.** If the page has no release assets, use the source build below.
+2. Download the Windows x64 ZIP, extract the **entire archive** into a writable folder, and run `DesktopPet.App.exe`.
+3. Review the **AI connections** (`AI 연결`) screen. Detected local profiles can be registered automatically; Codex still requires your own hook approval.
+4. Double-click the tray icon to open **Settings** (`설정`). Use **Test notification** (`테스트 알림`) to check the bubble without connecting an assistant.
+
+The default release packaging includes its .NET runtime. An explicitly labelled `framework-dependent` package requires the .NET 10 Desktop Runtime x64. Keep the EXE, `Assets`, and `Hooks` together.
+
+### Build from source
+
+Windows and the **.NET 10 SDK** are required.
 
 ```powershell
-.\scripts\install.ps1              # %LocalAppData%\DesktopPet 에 설치
-.\scripts\install.ps1 -AddToStartup  # 로그인 시 자동 실행까지
+git clone https://github.com/jinwovo/desktop-pet.git
+cd desktop-pet
+dotnet restore DesktopPet.sln
+dotnet build DesktopPet.sln -c Release --no-restore
+.\src\DesktopPet.App\bin\Release\net10.0-windows\DesktopPet.App.exe
 ```
 
-## 캐릭터 추가하기
+NuGet access is needed for missing build or runtime packs. Runtime use does not require a developer SDK.
 
-`images/` 폴더에 그림을 넣고 스크립트를 돌리면 끝이다. 좌표를 적을 필요가 없다.
+## What it does
+
+| Feature | Behavior |
+| --- | --- |
+| Three public companions | Choose Companion, Nimbus, or Ember in Settings. |
+| Grounded walking | Continuous body/foot transforms follow measured distance and sprite scale; raised feet settle before the resting pose. |
+| Gentle completions | Short local bubbles; the default display duration is 8 seconds. |
+| Unread inbox | Auto-hide retains a receipt. Review saved notifications from the tray and click to acknowledge them. |
+| Focus timer | Fixed 25-minute focus and 5-minute break sessions with explicit controls. |
+| Custom characters | Import an extracted folder containing `character.json` and its PNG resources. |
+| Quiet controls | Hide the pet, enable Do not disturb, adjust size/speed, or disable optional effects. |
+
+Documentation is available in three languages. The application currently uses primarily **Korean UI labels**; this README includes the labels needed to find its controls. The build targets Windows x64; macOS, Linux, and native ARM64 packages are not provided.
+
+## Connect Claude Code and Codex
+
+Open the tray's **AI connections** (`AI 연결`) entry or the button in Settings.
+
+Auto-connect is enabled by default for detected current-user profiles. DesktopPet adds or updates its own Stop handler, preserving unrelated settings and hooks. Disable auto-connect or disconnect an individual provider from the same screen.
+
+| Provider | User configuration | Activation |
+| --- | --- | --- |
+| Claude Code | `~/.claude/settings.json`, or `CLAUDE_CONFIG_DIR/settings.json` | Restart the Claude Code session after registration. |
+| Local Codex with hook support | `~/.codex/hooks.json`, or `CODEX_HOME/hooks.json` | Review and trust the registered hook. |
+
+**Codex approval:** open `/hooks` in the Codex CLI, or **Settings → Hooks** / **Review hooks** in the Codex app. Find DesktopPet's `Stop` handler, review its command, and trust it. A changed hook definition may require a new review. DesktopPet does not create that trust for you. [Codex hook documentation](https://learn.chatgpt.com/docs/hooks)
+
+Claude Code hook settings take effect according to its session configuration; restart the session after connecting. [Claude Code hook documentation](https://code.claude.com/docs/en/hooks)
+
+A completion means an assistant's response turn ended. It does not certify that an entire project or test suite succeeded. Browser-only chats and applications without compatible local hooks are outside the integration. Administrator policies that disable hooks remain in effect.
+
+## Focus without repeated interruptions
+
+In Settings, open **Focus timer** (`집중 타이머`):
+
+1. Choose **Start focus** (`집중 시작`) for 25 minutes.
+2. **Pause / Continue** (`일시정지 / 계속`) suspends or resumes the current countdown.
+3. **Restart** (`다시 시작`) starts the current session over. **Stop** (`종료`) ends it without a completion alert.
+4. When focus finishes, start the 5-minute break explicitly. When the break finishes, start a new focus session when ready.
+
+The timer does not automatically chain sessions or restore an active countdown after the app closes. Its completion uses the same local notification inbox, hidden-pet rules, and Do not disturb setting. Tray controls are also available.
+
+## Notification controls
+
+- Auto-hide closes a bubble without deleting it; the unread tray entry remains available.
+- A burst shows the latest completion and retains unread receipts in arrival order.
+- A hidden pet stays hidden when a notification arrives.
+- **Do not disturb** (`방해 금지`) saves notifications without automatic bubbles.
+- Window hopping and the window-fall effect are off by default. The latter captures other application windows locally while enabled; leave it off to avoid that capture workload.
+
+## Add your own character
+
+1. Extract a prepared character pack.
+2. In Settings, choose **Add character** (`캐릭터 추가`).
+3. Select the individual folder containing `character.json` and its referenced PNG files.
+4. DesktopPet validates the pack, copies it into your user library, and selects it.
+
+ZIP files and standalone pictures are not imported directly. Existing names are not overwritten; rename the prepared folder to resolve a name collision. Bundled characters take precedence over manually placed same-name user folders.
+
+Imports reject unsafe paths and links and apply file, source-size, and decoded-image budgets. Legacy sprite cycles work alongside optional six-texture `walkRig` packs (three drawn layers, two views). See [Contributing character packs](CONTRIBUTING.md#character-packs) for the format and review requirements.
+
+## Local storage and privacy
+
+DesktopPet's notifications and focus timer run locally. The app does not upload chat content or provide cloud synchronization.
+
+| Data | Location |
+| --- | --- |
+| Preferences | `%APPDATA%\DesktopPet\settings.json` |
+| Unread notifications | `%LOCALAPPDATA%\DesktopPet\inbox\` |
+| Additional characters | `%LOCALAPPDATA%\DesktopPet\Characters\` |
+| Connected profile paths | `%LOCALAPPDATA%\DesktopPet\assistant-connections.json` |
+| Short-lived deduplication claims | `inbox\.assistant-events\` |
+
+Assistant notifications keep the provider, project-folder name, time, and hashed event identifiers. They do not save the assistant's message text or transcript contents. Claude replay detection can inspect transcript **file size and modification time**. Connection records and configuration backups can contain local paths; redact these before attaching files to an issue.
+
+## Install, update, or remove
+
+Portable use needs no installation script. For a per-user installation, run `install.ps1` from an extracted release:
 
 ```powershell
-.\scripts\build-characters.ps1
+powershell -NoProfile -File .\install.ps1
+# Optional: start after Windows sign-in.
+powershell -NoProfile -File .\install.ps1 -AddToStartup
 ```
 
-배경색, 캐릭터 개수, 각 캐릭터의 경계를 알아서 판별한다. 이름은 파일 이름을 따르고,
-한 그림에 여러 캐릭터가 있으면 왼쪽부터 번호가 붙는다. 이름을 직접 정하려면
-`images/overrides.json`:
+Close the existing pet before updating. The installer validates the payload and preserves user characters, notifications, and connection records. To remove an installed copy, close the pet from its tray and run its `uninstall.ps1`; assistant disconnection must succeed before managed app files are removed.
 
-```json
-{
-  "trio.png":   { "names": ["Hachiware", "Chiikawa", "Usagi"], "walkSpeed": 65 },
-  "복잡한거.jpg": { "skip": true }
-}
-```
+There is no built-in automatic updater. See [Distribution guide](docs/DISTRIBUTION.md) for checksums, portable moves, packaging, and release validation.
 
-자세한 동작 원리는 [SPEC.md](SPEC.md) 5-1절 참고.
-
-## Claude Code 작업 완료 알림
-
-`.claude/settings.json` 의 `Stop` 훅이 작업 종료 시 펫에게 신호를 보낸다.
-
-```
-Claude Code (작업 완료)
-  → scripts/claude-stop-hook.ps1
-  → %LocalAppData%\DesktopPet\inbox\*.json
-  → 펫 앱이 감지 → 말풍선 + 화난 포즈 + 제자리 점프
-```
-
-펫이나 말풍선을 클릭하면 확인 처리된다. 다른 용도로도 쓸 수 있다:
+## Development and verification
 
 ```powershell
-.\scripts\notify-pet.ps1 -Message "빌드 끝남"
-.\scripts\notify-pet.ps1 -Title "테스트 실패" -Message "3개 실패" -Mood cry
+dotnet build DesktopPet.sln -c Release
+dotnet tests/DesktopPet.RegressionTests/bin/Release/net10.0-windows/DesktopPet.RegressionTests.dll
+dotnet tests/DesktopPet.UiSmokeTests/bin/Release/net10.0-windows/DesktopPet.UiSmokeTests.dll --capture
+powershell -NoProfile -File tests/assistant-hooks-regression.ps1
+powershell -NoProfile -File tests/install-regression.ps1
+powershell -NoProfile -File tests/package-regression.ps1
 ```
 
-펫 앱이 꺼져 있어도 메시지는 남아 있다가 다음 실행 때 표시된다.
+The suites use fixture directories and do not register hooks in your real assistant configuration. Symbolic-link cases explicitly skip when the required Windows privilege is unavailable. UI checks create actual WPF windows; rendering results and timing depend on the machine.
 
-현재는 이 저장소에서 작업할 때만 동작한다. 모든 폴더에서 알림을 받으려면 같은 `hooks` 설정을
-`~/.claude/settings.json` 으로 옮기면 된다.
+To create a public Windows x64 package:
 
-## 구조
-
-```
-src/
-  DesktopPet.App/        진입점, 펫 창, 트레이 메뉴, 말풍선
-  DesktopPet.Core/       펫 상태 머신, 발판 계산, 캐릭터 로딩, 알림 수신 (UI 비의존)
-  DesktopPet.Interop/    Win32 P/Invoke (창 후킹, 캡처, z-order, DWM)
-  DesktopPet.WindowFall/ 창 닫힘 감지와 낙하 연출
-scripts/
-  build-characters.ps1   그림 → 캐릭터 프레임 자동 생성
-  CharacterBuilder.cs    이미지 처리 라이브러리
-  notify-pet.ps1         펫에게 알림 보내기
-  claude-stop-hook.ps1   Claude Code Stop 훅용 래퍼
-  install.ps1 / uninstall.ps1
-images/                  캐릭터 생성에 쓰는 원본 그림
-Assets/Characters/       생성된 캐릭터 (프레임 PNG + character.json)
+```powershell
+powershell -NoProfile -File scripts/package-release.ps1 -Version 0.5.0
 ```
 
-## 요구 사항
+The output is a self-contained ZIP and a SHA256 sidecar under `artifacts/releases/`. Missing runtime packs cause a build failure; the script does not silently change deployment type. The [Windows workflow](.github/workflows/windows-release.yml) is configured to run checks and create artifacts; its presence does not imply a successful remote build or a published release.
 
-- Windows 10/11
-- .NET 8 SDK
+## FAQ
 
-## 참고
+**The pet is running, but I cannot see it.** Open the tray menu and enable pet visibility. Check Settings for a previous scale or hidden preference.
 
-- 캐릭터 이미지는 개인적으로 쓰려고 넣어둔 저작권 자료다. **이 저장소는 비공개로 유지할 것.**
-- PowerShell 5.1이 BOM 없는 UTF-8을 CP949로 읽으므로, `scripts/*.ps1` 은 UTF-8 BOM으로
-  저장해야 한글이 깨지지 않는다.
+**Codex appears connected but sends no completion.** Review the hook in Codex, check the active `CODEX_HOME`, and restart the local session if the new definition is not listed. Use Test notification to separate bubble visibility from hook delivery.
+
+**A completion disappeared.** Auto-hide retains it. Open the tray's unread-notification entry. Hidden and Do not disturb modes also keep it there.
+
+**My character does not import.** Select its extracted folder, check referenced PNGs and `character.json`, and use a unique folder name. Links, missing or oversized resources, and malformed metadata are rejected.
+
+**The motion feels heavy.** Keep the window-fall effect disabled, reduce character size, and compare on one monitor before reporting the Windows version, display scale, refresh rate, and character name. No hardware-independent CPU or frame-rate guarantee is made.
+
+**The timer stopped after reopening DesktopPet.** Timer sessions intentionally start idle after relaunch.
+
+## Contributing and security
+
+Bug reports, language corrections, and reproducible animation examples are welcome in [Issues](https://github.com/jinwovo/desktop-pet/issues). Please read [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and [CHANGELOG.md](CHANGELOG.md).
+
+Released under the [MIT license](LICENSE). AI-assisted public artwork and generation steps are documented in [Public asset provenance](docs/PUBLIC_ASSET_PROVENANCE.md).
+
+## Meet your companions
+
+| Companion | Nimbus | Ember |
+| --- | --- | --- |
+| A soft cream seedling with a leaf sprout. | A cloud-blue cat with a cloud tuft and little paws. | A warm orange fox with a cream-tipped tail. |
+
+![Public character gallery](docs/preview/public-characters.png)
+
+The GIF is a recorded movement preview, not an FPS benchmark. The desktop pet, motion tester and Settings preview share the live renderer. [Character pack guide](docs/CHARACTER_PACKS.md) explains how to add your own original companion.
+
+## Public release preparation
+
+See [Public release guide](docs/PUBLIC_RELEASE.md) for a clean source export, draft GitHub release workflow, validation status and suggested repository description/topics. The exporter excludes local assistant configurations and unselected private development artwork. The three explicitly selected fan-art packs have their own notice and directory.
+
+Planned contribution areas include full UI localization, smoother body-angle transitions, keyboard accessibility and more original character packs. These are ideas, not shipped features. If DesktopPet is useful to you, a star helps others discover it; reproducible issues and small contributions are equally welcome.

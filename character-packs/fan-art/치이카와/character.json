@@ -1,0 +1,778 @@
+{
+    "name":  "치이카와",
+    "scale":  1,
+    "frontFacingRest":  true,
+    "frameSizePx":  {
+                        "height":  128,
+                        "width":  128
+                    },
+    "anchor":  {
+                   "y":  122,
+                   "x":  64
+               },
+    "walkSpeedPxPerSec":  42,
+    "frameIntervalMs":  110,
+    "frames":  {
+                   "idle":  [
+                                "idle.png",
+                                "blink.png",
+                                "idle.png",
+                                "blink.png"
+                            ],
+                   "walk":  [
+                                "walk_1.png",
+                                "walk_2.png",
+                                "walk_3.png",
+                                "walk_4.png",
+                                "walk_5.png",
+                                "walk_6.png",
+                                "walk_7.png",
+                                "walk_8.png",
+                                "walk_9.png",
+                                "walk_10.png",
+                                "walk_11.png",
+                                "walk_12.png",
+                                "walk_13.png",
+                                "walk_14.png",
+                                "walk_15.png",
+                                "walk_16.png",
+                                "walk_17.png",
+                                "walk_18.png",
+                                "walk_19.png",
+                                "walk_20.png",
+                                "walk_21.png",
+                                "walk_22.png",
+                                "walk_23.png",
+                                "walk_24.png",
+                                "walk_25.png",
+                                "walk_26.png",
+                                "walk_27.png",
+                                "walk_28.png",
+                                "walk_29.png",
+                                "walk_30.png",
+                                "walk_31.png",
+                                "walk_32.png"
+                            ],
+                   "walkTurn":  [
+                                    "walk_turn_1.png",
+                                    "walk_turn_2.png",
+                                    "walk_turn_3.png",
+                                    "walk_turn_4.png",
+                                    "walk_turn_5.png",
+                                    "walk_turn_6.png",
+                                    "walk_turn_7.png",
+                                    "walk_turn_8.png",
+                                    "walk_turn_9.png",
+                                    "walk_turn_10.png",
+                                    "walk_turn_11.png",
+                                    "walk_turn_12.png",
+                                    "walk_turn_13.png",
+                                    "walk_turn_14.png",
+                                    "walk_turn_15.png",
+                                    "walk_turn_16.png",
+                                    "walk_turn_17.png",
+                                    "walk_turn_18.png",
+                                    "walk_turn_19.png",
+                                    "walk_turn_20.png",
+                                    "walk_turn_21.png",
+                                    "walk_turn_22.png",
+                                    "walk_turn_23.png",
+                                    "walk_turn_24.png",
+                                    "walk_turn_25.png",
+                                    "walk_turn_26.png",
+                                    "walk_turn_27.png",
+                                    "walk_turn_28.png",
+                                    "walk_turn_29.png",
+                                    "walk_turn_30.png",
+                                    "walk_turn_31.png",
+                                    "walk_turn_32.png"
+                                ],
+                   "walkFront":  [
+                                     "idle.png",
+                                     "idle.png",
+                                     "idle.png",
+                                     "idle.png",
+                                     "idle.png",
+                                     "idle.png",
+                                     "idle.png",
+                                     "idle.png",
+                                     "idle.png",
+                                     "idle.png",
+                                     "idle.png",
+                                     "idle.png",
+                                     "idle.png",
+                                     "idle.png",
+                                     "idle.png",
+                                     "idle.png",
+                                     "idle.png",
+                                     "idle.png",
+                                     "idle.png",
+                                     "idle.png",
+                                     "idle.png",
+                                     "idle.png",
+                                     "idle.png",
+                                     "idle.png",
+                                     "idle.png",
+                                     "idle.png",
+                                     "idle.png",
+                                     "idle.png",
+                                     "idle.png",
+                                     "idle.png",
+                                     "idle.png",
+                                     "idle.png"
+                                 ],
+                   "sit":  [
+                               "sit.png"
+                           ],
+                   "lookLeft":  [
+                                    "look_left.png"
+                                ],
+                   "lookRight":  [
+                                     "look_right.png"
+                                 ],
+                   "drag":  [
+                                "drag.png"
+                            ],
+                   "fall":  [
+                                "fall.png"
+                            ],
+                   "cry":  [
+                               "cry_1.png",
+                               "cry_2.png"
+                           ],
+                   "angry":  [
+                                 "angry_1.png",
+                                 "angry_2.png"
+                             ],
+                   "sleep":  [
+                                 "sleep_1.png",
+                                 "sleep_2.png"
+                             ],
+                   "walkSettleSide":  [
+                                          "settle_side_1_1.png",
+                                          "settle_side_1_2.png",
+                                          "settle_side_1_3.png",
+                                          "settle_side_1_4.png",
+                                          "settle_side_1_5.png",
+                                          "settle_side_1_6.png",
+                                          "settle_side_1_7.png",
+                                          "settle_side_1_8.png",
+                                          "settle_side_1_9.png",
+                                          "settle_side_1_10.png",
+                                          "settle_side_1_11.png",
+                                          "settle_side_1_12.png",
+                                          "settle_side_1_13.png",
+                                          "settle_side_1_14.png",
+                                          "settle_side_1_15.png",
+                                          "settle_side_1_16.png",
+                                          "settle_side_1_17.png",
+                                          "settle_side_1_18.png",
+                                          "settle_side_1_19.png",
+                                          "settle_side_1_20.png",
+                                          "settle_side_1_21.png",
+                                          "settle_side_1_22.png",
+                                          "settle_side_1_23.png",
+                                          "settle_side_1_24.png",
+                                          "settle_side_1_25.png",
+                                          "settle_side_1_26.png",
+                                          "settle_side_1_27.png",
+                                          "settle_side_1_28.png",
+                                          "settle_side_1_29.png",
+                                          "settle_side_1_30.png",
+                                          "settle_side_1_31.png",
+                                          "settle_side_1_32.png",
+                                          "settle_side_2_1.png",
+                                          "settle_side_2_2.png",
+                                          "settle_side_2_3.png",
+                                          "settle_side_2_4.png",
+                                          "settle_side_2_5.png",
+                                          "settle_side_2_6.png",
+                                          "settle_side_2_7.png",
+                                          "settle_side_2_8.png",
+                                          "settle_side_2_9.png",
+                                          "settle_side_2_10.png",
+                                          "settle_side_2_11.png",
+                                          "settle_side_2_12.png",
+                                          "settle_side_2_13.png",
+                                          "settle_side_2_14.png",
+                                          "settle_side_2_15.png",
+                                          "settle_side_2_16.png",
+                                          "settle_side_2_17.png",
+                                          "settle_side_2_18.png",
+                                          "settle_side_2_19.png",
+                                          "settle_side_2_20.png",
+                                          "settle_side_2_21.png",
+                                          "settle_side_2_22.png",
+                                          "settle_side_2_23.png",
+                                          "settle_side_2_24.png",
+                                          "settle_side_2_25.png",
+                                          "settle_side_2_26.png",
+                                          "settle_side_2_27.png",
+                                          "settle_side_2_28.png",
+                                          "settle_side_2_29.png",
+                                          "settle_side_2_30.png",
+                                          "settle_side_2_31.png",
+                                          "settle_side_2_32.png"
+                                      ],
+                   "walkSettleTurn":  [
+                                          "settle_turn_1_1.png",
+                                          "settle_turn_1_2.png",
+                                          "settle_turn_1_3.png",
+                                          "settle_turn_1_4.png",
+                                          "settle_turn_1_5.png",
+                                          "settle_turn_1_6.png",
+                                          "settle_turn_1_7.png",
+                                          "settle_turn_1_8.png",
+                                          "settle_turn_1_9.png",
+                                          "settle_turn_1_10.png",
+                                          "settle_turn_1_11.png",
+                                          "settle_turn_1_12.png",
+                                          "settle_turn_1_13.png",
+                                          "settle_turn_1_14.png",
+                                          "settle_turn_1_15.png",
+                                          "settle_turn_1_16.png",
+                                          "settle_turn_1_17.png",
+                                          "settle_turn_1_18.png",
+                                          "settle_turn_1_19.png",
+                                          "settle_turn_1_20.png",
+                                          "settle_turn_1_21.png",
+                                          "settle_turn_1_22.png",
+                                          "settle_turn_1_23.png",
+                                          "settle_turn_1_24.png",
+                                          "settle_turn_1_25.png",
+                                          "settle_turn_1_26.png",
+                                          "settle_turn_1_27.png",
+                                          "settle_turn_1_28.png",
+                                          "settle_turn_1_29.png",
+                                          "settle_turn_1_30.png",
+                                          "settle_turn_1_31.png",
+                                          "settle_turn_1_32.png",
+                                          "settle_turn_2_1.png",
+                                          "settle_turn_2_2.png",
+                                          "settle_turn_2_3.png",
+                                          "settle_turn_2_4.png",
+                                          "settle_turn_2_5.png",
+                                          "settle_turn_2_6.png",
+                                          "settle_turn_2_7.png",
+                                          "settle_turn_2_8.png",
+                                          "settle_turn_2_9.png",
+                                          "settle_turn_2_10.png",
+                                          "settle_turn_2_11.png",
+                                          "settle_turn_2_12.png",
+                                          "settle_turn_2_13.png",
+                                          "settle_turn_2_14.png",
+                                          "settle_turn_2_15.png",
+                                          "settle_turn_2_16.png",
+                                          "settle_turn_2_17.png",
+                                          "settle_turn_2_18.png",
+                                          "settle_turn_2_19.png",
+                                          "settle_turn_2_20.png",
+                                          "settle_turn_2_21.png",
+                                          "settle_turn_2_22.png",
+                                          "settle_turn_2_23.png",
+                                          "settle_turn_2_24.png",
+                                          "settle_turn_2_25.png",
+                                          "settle_turn_2_26.png",
+                                          "settle_turn_2_27.png",
+                                          "settle_turn_2_28.png",
+                                          "settle_turn_2_29.png",
+                                          "settle_turn_2_30.png",
+                                          "settle_turn_2_31.png",
+                                          "settle_turn_2_32.png"
+                                      ]
+               },
+    "frameDurationsMs":  {
+                             "idle":  [
+                                          4200,
+                                          120,
+                                          3300,
+                                          110
+                                      ]
+                         },
+    "eyePositionsPx":  {
+                           "left":  {
+                                        "y":  58,
+                                        "x":  51.32
+                                    },
+                           "right":  {
+                                         "y":  58,
+                                         "x":  75.68
+                                     }
+                       },
+    "assetKind":  "optional-personal-fan-art",
+    "walkCycleDistancePx":  28,
+    "walkRig":  {
+                    "turn":  {
+                                 "nearFoot":  "rig_turn_near.png",
+                                 "body":  "rig_turn_body.png",
+                                 "farFoot":  "rig_turn_far.png"
+                             },
+                    "version":  1,
+                    "side":  {
+                                 "nearFoot":  "rig_side_near.png",
+                                 "body":  "rig_side_body.png",
+                                 "farFoot":  "rig_side_far.png"
+                             },
+                    "footLiftPx":  4
+                },
+    "groundedWalk":  {
+                         "settleLevels":  2,
+                         "frameCount":  32,
+                         "version":  1,
+                         "stanceFraction":  0.6,
+                         "footLiftPx":  4,
+                         "contactY":  122,
+                         "hipY":  112,
+                         "contacts":  [
+                                          {
+                                              "phase":  0,
+                                              "near":  {
+                                                           "planted":  true,
+                                                           "lift":  0,
+                                                           "x":  8.4
+                                                       },
+                                              "far":  {
+                                                          "planted":  true,
+                                                          "lift":  0,
+                                                          "x":  -5.6000000000000005
+                                                      },
+                                              "bodyBob":  0.58249223594996224
+                                          },
+                                          {
+                                              "phase":  0.03125,
+                                              "near":  {
+                                                           "planted":  true,
+                                                           "lift":  0,
+                                                           "x":  7.5249999999999995
+                                                       },
+                                              "far":  {
+                                                          "planted":  true,
+                                                          "lift":  0,
+                                                          "x":  -6.4750000000000005
+                                                      },
+                                              "bodyBob":  0.70010634268632721
+                                          },
+                                          {
+                                              "phase":  0.0625,
+                                              "near":  {
+                                                           "planted":  true,
+                                                           "lift":  0,
+                                                           "x":  6.6499999999999995
+                                                       },
+                                              "far":  {
+                                                          "planted":  true,
+                                                          "lift":  0,
+                                                          "x":  -7.3500000000000005
+                                                      },
+                                              "bodyBob":  0.71113560522849906
+                                          },
+                                          {
+                                              "phase":  0.09375,
+                                              "near":  {
+                                                           "planted":  true,
+                                                           "lift":  0,
+                                                           "x":  5.7749999999999995
+                                                       },
+                                              "far":  {
+                                                          "planted":  true,
+                                                          "lift":  0,
+                                                          "x":  -8.225
+                                                      },
+                                              "bodyBob":  0.61390091833494631
+                                          },
+                                          {
+                                              "phase":  0.125,
+                                              "near":  {
+                                                           "planted":  true,
+                                                           "lift":  0,
+                                                           "x":  4.8999999999999995
+                                                       },
+                                              "far":  {
+                                                          "planted":  false,
+                                                          "lift":  0.15224093497742672,
+                                                          "x":  -8.785546875
+                                                      },
+                                              "bodyBob":  0.42320538165058058
+                                          },
+                                          {
+                                              "phase":  0.15625,
+                                              "near":  {
+                                                           "planted":  true,
+                                                           "lift":  0,
+                                                           "x":  4.0249999999999995
+                                                       },
+                                              "far":  {
+                                                          "planted":  false,
+                                                          "lift":  0.73121343167270958,
+                                                          "x":  -8.4695983886718746
+                                                      },
+                                              "bodyBob":  0.16808066197625168
+                                          },
+                                          {
+                                              "phase":  0.1875,
+                                              "near":  {
+                                                           "planted":  true,
+                                                           "lift":  0,
+                                                           "x":  3.1499999999999995
+                                                       },
+                                              "far":  {
+                                                          "planted":  false,
+                                                          "lift":  1.6098193559677441,
+                                                          "x":  -7.416650390625
+                                                      },
+                                              "bodyBob":  -0.11263281482896642
+                                          },
+                                          {
+                                              "phase":  0.21875,
+                                              "near":  {
+                                                           "planted":  true,
+                                                           "lift":  0,
+                                                           "x":  2.2749999999999995
+                                                       },
+                                              "far":  {
+                                                          "planted":  false,
+                                                          "lift":  2.580569354508925,
+                                                          "x":  -5.7869201660156246
+                                                      },
+                                              "bodyBob":  -0.37619896659548335
+                                          },
+                                          {
+                                              "phase":  0.25,
+                                              "near":  {
+                                                           "planted":  true,
+                                                           "lift":  0,
+                                                           "x":  1.3999999999999997
+                                                       },
+                                              "far":  {
+                                                          "planted":  false,
+                                                          "lift":  3.4142135623730958,
+                                                          "x":  -3.7406249999999974
+                                                      },
+                                              "bodyBob":  -0.58249223594996213
+                                          },
+                                          {
+                                              "phase":  0.28125,
+                                              "near":  {
+                                                           "planted":  true,
+                                                           "lift":  0,
+                                                           "x":  0.52499999999999969
+                                                       },
+                                              "far":  {
+                                                          "planted":  false,
+                                                          "lift":  3.9138806714644181,
+                                                          "x":  -1.4379821777343726
+                                                      },
+                                              "bodyBob":  -0.70010634268632721
+                                          },
+                                          {
+                                              "phase":  0.3125,
+                                              "near":  {
+                                                           "planted":  true,
+                                                           "lift":  0,
+                                                           "x":  -0.35000000000000031
+                                                       },
+                                              "far":  {
+                                                          "planted":  false,
+                                                          "lift":  3.9615705608064613,
+                                                          "x":  0.96079101562500058
+                                                      },
+                                              "bodyBob":  -0.71113560522849906
+                                          },
+                                          {
+                                              "phase":  0.34375,
+                                              "near":  {
+                                                           "planted":  true,
+                                                           "lift":  0,
+                                                           "x":  -1.2250000000000003
+                                                       },
+                                              "far":  {
+                                                          "planted":  false,
+                                                          "lift":  3.5460209067254742,
+                                                          "x":  3.2954772949218754
+                                                      },
+                                              "bodyBob":  -0.61390091833494631
+                                          },
+                                          {
+                                              "phase":  0.375,
+                                              "near":  {
+                                                           "planted":  true,
+                                                           "lift":  0,
+                                                           "x":  -2.1000000000000005
+                                                       },
+                                              "far":  {
+                                                          "planted":  false,
+                                                          "lift":  2.765366864730181,
+                                                          "x":  5.405859375
+                                                      },
+                                              "bodyBob":  -0.42320538165058058
+                                          },
+                                          {
+                                              "phase":  0.40625,
+                                              "near":  {
+                                                           "planted":  true,
+                                                           "lift":  0,
+                                                           "x":  -2.9750000000000005
+                                                       },
+                                              "far":  {
+                                                          "planted":  false,
+                                                          "lift":  1.8039657193408796,
+                                                          "x":  7.1317199707031254
+                                                      },
+                                              "bodyBob":  -0.16808066197625177
+                                          },
+                                          {
+                                              "phase":  0.4375,
+                                              "near":  {
+                                                           "planted":  true,
+                                                           "lift":  0,
+                                                           "x":  -3.8500000000000005
+                                                       },
+                                              "far":  {
+                                                          "planted":  false,
+                                                          "lift":  0.88885953396079631,
+                                                          "x":  8.312841796875
+                                                      },
+                                              "bodyBob":  0.11263281482896634
+                                          },
+                                          {
+                                              "phase":  0.46875,
+                                              "near":  {
+                                                           "planted":  true,
+                                                           "lift":  0,
+                                                           "x":  -4.7250000000000005
+                                                       },
+                                              "far":  {
+                                                          "planted":  false,
+                                                          "lift":  0.23615747130329029,
+                                                          "x":  8.7890075683593754
+                                                      },
+                                              "bodyBob":  0.37619896659548313
+                                          },
+                                          {
+                                              "phase":  0.5,
+                                              "near":  {
+                                                           "planted":  true,
+                                                           "lift":  0,
+                                                           "x":  -5.6000000000000005
+                                                       },
+                                              "far":  {
+                                                          "planted":  true,
+                                                          "lift":  0,
+                                                          "x":  8.4
+                                                      },
+                                              "bodyBob":  0.582492235949962
+                                          },
+                                          {
+                                              "phase":  0.53125,
+                                              "near":  {
+                                                           "planted":  true,
+                                                           "lift":  0,
+                                                           "x":  -6.4750000000000005
+                                                       },
+                                              "far":  {
+                                                          "planted":  true,
+                                                          "lift":  0,
+                                                          "x":  7.5249999999999995
+                                                      },
+                                              "bodyBob":  0.7001063426863271
+                                          },
+                                          {
+                                              "phase":  0.5625,
+                                              "near":  {
+                                                           "planted":  true,
+                                                           "lift":  0,
+                                                           "x":  -7.3500000000000005
+                                                       },
+                                              "far":  {
+                                                          "planted":  true,
+                                                          "lift":  0,
+                                                          "x":  6.6499999999999995
+                                                      },
+                                              "bodyBob":  0.71113560522849917
+                                          },
+                                          {
+                                              "phase":  0.59375,
+                                              "near":  {
+                                                           "planted":  true,
+                                                           "lift":  0,
+                                                           "x":  -8.225
+                                                       },
+                                              "far":  {
+                                                          "planted":  true,
+                                                          "lift":  0,
+                                                          "x":  5.7749999999999995
+                                                      },
+                                              "bodyBob":  0.61390091833494642
+                                          },
+                                          {
+                                              "phase":  0.625,
+                                              "near":  {
+                                                           "planted":  false,
+                                                           "lift":  0.15224093497742672,
+                                                           "x":  -8.785546875
+                                                       },
+                                              "far":  {
+                                                          "planted":  true,
+                                                          "lift":  0,
+                                                          "x":  4.8999999999999995
+                                                      },
+                                              "bodyBob":  0.42320538165058075
+                                          },
+                                          {
+                                              "phase":  0.65625,
+                                              "near":  {
+                                                           "planted":  false,
+                                                           "lift":  0.73121343167270958,
+                                                           "x":  -8.4695983886718746
+                                                       },
+                                              "far":  {
+                                                          "planted":  true,
+                                                          "lift":  0,
+                                                          "x":  4.0249999999999995
+                                                      },
+                                              "bodyBob":  0.16808066197625168
+                                          },
+                                          {
+                                              "phase":  0.6875,
+                                              "near":  {
+                                                           "planted":  false,
+                                                           "lift":  1.6098193559677441,
+                                                           "x":  -7.416650390625
+                                                       },
+                                              "far":  {
+                                                          "planted":  true,
+                                                          "lift":  0,
+                                                          "x":  3.1499999999999995
+                                                      },
+                                              "bodyBob":  -0.11263281482896609
+                                          },
+                                          {
+                                              "phase":  0.71875,
+                                              "near":  {
+                                                           "planted":  false,
+                                                           "lift":  2.580569354508925,
+                                                           "x":  -5.7869201660156246
+                                                       },
+                                              "far":  {
+                                                          "planted":  true,
+                                                          "lift":  0,
+                                                          "x":  2.2749999999999995
+                                                      },
+                                              "bodyBob":  -0.3761989665954833
+                                          },
+                                          {
+                                              "phase":  0.75,
+                                              "near":  {
+                                                           "planted":  false,
+                                                           "lift":  3.4142135623730958,
+                                                           "x":  -3.7406249999999974
+                                                       },
+                                              "far":  {
+                                                          "planted":  true,
+                                                          "lift":  0,
+                                                          "x":  1.3999999999999997
+                                                      },
+                                              "bodyBob":  -0.582492235949962
+                                          },
+                                          {
+                                              "phase":  0.78125,
+                                              "near":  {
+                                                           "planted":  false,
+                                                           "lift":  3.9138806714644181,
+                                                           "x":  -1.4379821777343726
+                                                       },
+                                              "far":  {
+                                                          "planted":  true,
+                                                          "lift":  0,
+                                                          "x":  0.52499999999999969
+                                                      },
+                                              "bodyBob":  -0.70010634268632721
+                                          },
+                                          {
+                                              "phase":  0.8125,
+                                              "near":  {
+                                                           "planted":  false,
+                                                           "lift":  3.9615705608064613,
+                                                           "x":  0.96079101562500058
+                                                       },
+                                              "far":  {
+                                                          "planted":  true,
+                                                          "lift":  0,
+                                                          "x":  -0.35000000000000031
+                                                      },
+                                              "bodyBob":  -0.71113560522849928
+                                          },
+                                          {
+                                              "phase":  0.84375,
+                                              "near":  {
+                                                           "planted":  false,
+                                                           "lift":  3.5460209067254742,
+                                                           "x":  3.2954772949218754
+                                                       },
+                                              "far":  {
+                                                          "planted":  true,
+                                                          "lift":  0,
+                                                          "x":  -1.2250000000000003
+                                                      },
+                                              "bodyBob":  -0.61390091833494664
+                                          },
+                                          {
+                                              "phase":  0.875,
+                                              "near":  {
+                                                           "planted":  false,
+                                                           "lift":  2.765366864730181,
+                                                           "x":  5.405859375
+                                                       },
+                                              "far":  {
+                                                          "planted":  true,
+                                                          "lift":  0,
+                                                          "x":  -2.1000000000000005
+                                                      },
+                                              "bodyBob":  -0.4232053816505813
+                                          },
+                                          {
+                                              "phase":  0.90625,
+                                              "near":  {
+                                                           "planted":  false,
+                                                           "lift":  1.8039657193408796,
+                                                           "x":  7.1317199707031254
+                                                       },
+                                              "far":  {
+                                                          "planted":  true,
+                                                          "lift":  0,
+                                                          "x":  -2.9750000000000005
+                                                      },
+                                              "bodyBob":  -0.1680806619762524
+                                          },
+                                          {
+                                              "phase":  0.9375,
+                                              "near":  {
+                                                           "planted":  false,
+                                                           "lift":  0.88885953396079631,
+                                                           "x":  8.312841796875
+                                                       },
+                                              "far":  {
+                                                          "planted":  true,
+                                                          "lift":  0,
+                                                          "x":  -3.8500000000000005
+                                                      },
+                                              "bodyBob":  0.11263281482896537
+                                          },
+                                          {
+                                              "phase":  0.96875,
+                                              "near":  {
+                                                           "planted":  false,
+                                                           "lift":  0.23615747130329029,
+                                                           "x":  8.7890075683593754
+                                                       },
+                                              "far":  {
+                                                          "planted":  true,
+                                                          "lift":  0,
+                                                          "x":  -4.7250000000000005
+                                                      },
+                                              "bodyBob":  0.37619896659548274
+                                          }
+                                      ],
+                         "bodyHeightPx":  90
+                     }
+}

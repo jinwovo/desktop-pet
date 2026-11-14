@@ -4,7 +4,7 @@
 
 .DESCRIPTION
     %LocalAppData%\DesktopPet\inbox 에 JSON 파일을 하나 떨어뜨리면 펫 앱이 그걸 감지해서
-    말풍선을 띄우고, 사용자가 클릭해서 확인할 때까지 계속 화내며 제자리 점프를 한다.
+    현재 숨김·방해금지·자동 닫힘 설정을 따르는 말풍선으로 알린다.
 
     펫 앱이 꺼져 있어도 파일은 남아 있다가 다음에 켤 때 표시된다.
 
@@ -15,7 +15,7 @@
     말풍선 제목 (기본값: "작업 완료").
 
 .PARAMETER Mood
-    shout(화내기, 기본) 또는 cry(울기).
+    gentle(조용한 완료 안내, 기본), shout(화내기), cry(울기).
 
 .EXAMPLE
     .\scripts\notify-pet.ps1 -Message "빌드 끝났어요. 확인해주세요!"
@@ -27,13 +27,16 @@ param(
 
     [string]$Title = "작업 완료",
 
-    [ValidateSet("shout", "cry")]
-    [string]$Mood = "shout"
+    [ValidateSet("shout", "cry", "gentle")]
+    [string]$Mood = "gentle",
+
+    [string]$InboxDirectory = (Join-Path $env:LOCALAPPDATA "DesktopPet\inbox")
 )
 
 $ErrorActionPreference = "Stop"
+$ProgressPreference = 'SilentlyContinue'
 
-$inbox = Join-Path $env:LOCALAPPDATA "DesktopPet\inbox"
+$inbox = [System.IO.Path]::GetFullPath($InboxDirectory)
 New-Item -ItemType Directory -Force -Path $inbox | Out-Null
 
 $payload = [ordered]@{
@@ -44,8 +47,9 @@ $payload = [ordered]@{
 
 # Write to a temp name first, then rename: the watcher must never see a half-written file.
 $stamp = (Get-Date).ToString("yyyyMMdd_HHmmss_fff")
-$tmp = Join-Path $inbox "$stamp.tmp"
-$final = Join-Path $inbox "$stamp.json"
+$notificationId = "{0}_{1}" -f $stamp, ([Guid]::NewGuid().ToString("N"))
+$tmp = Join-Path $inbox "$notificationId.tmp"
+$final = Join-Path $inbox "$notificationId.json"
 
 [System.IO.File]::WriteAllText($tmp, $payload, (New-Object System.Text.UTF8Encoding $false))
-Move-Item $tmp $final -Force
+Move-Item -LiteralPath $tmp -Destination $final

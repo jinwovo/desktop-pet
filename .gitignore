@@ -7,6 +7,7 @@ obj/
 
 # 퍼블리시 결과
 publish/
+artifacts/
 *.nupkg
 
 # OS / 편집기
@@ -14,6 +15,36 @@ Thumbs.db
 desktop.ini
 .idea/
 .vscode/
+.local/
 
 # 캐릭터 생성 중간 산출물 (원본 images/ 에서 언제든 다시 만들 수 있음)
 images/*.tmp
+
+# Local assistant configuration and private development assets
+/.claude/
+/.codex/
+/.agents/
+/.env
+/.env.*
+*.pfx
+*.snk
+*.pem
+/Assets/Characters/*
+!/Assets/Characters/Companion/
+!/Assets/Characters/Nimbus/
+!/Assets/Characters/Ember/
+/images/*
+!/images/companion-master-v1.png
+!/images/companion-walk-master-v2.png
+!/images/rig-companion-v7.png
+!/images/public-nimbus-master-v1.png
+!/images/public-ember-master-v1.png
+/docs/preview/*
+!/docs/preview/public-characters.png
+!/docs/preview/public-walk.gif
+!/docs/preview/public-walk.html
+!/docs/preview/public-settings.png
+!/docs/preview/live-rig-v8.png
+/docs/*_PASS.md
+/docs/ASSET_PROVENANCE.md
+/docs/PROJECT_REVIEW.md

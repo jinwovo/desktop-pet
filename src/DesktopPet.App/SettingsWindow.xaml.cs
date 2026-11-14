@@ -2,7 +2,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using DesktopPet.Core;
 
 namespace DesktopPet.App;
@@ -14,18 +16,57 @@ namespace DesktopPet.App;
 public partial class SettingsWindow : Window
 {
     private readonly MainWindow _pet;
-    private bool _loading;
+    private bool _loading = true;
+    private bool _closed;
+    private bool _characterImportBusy;
+    private Task _characterImportOperation = Task.CompletedTask;
+    private CharacterPresentation? _previewPresentation;
+    private MotionPreviewWindow? _motionPreview;
+    private readonly Stopwatch _previewClock = Stopwatch.StartNew();
+    private double _previewLastElapsedMs;
+    private double _previewAnimationMs;
+    private readonly WalkAppearanceController _walkAppearance = new(new Random(7));
+    private readonly PoseTransitionPresenter _poseTransition;
+    private PetState _lastPreviewState = PetState.Idle;
+    private double _previewVirtualPositionPx;
+    private bool _liveRigActive;
+    private TimeSpan? _lastPreviewRenderingTime;
+    private readonly DispatcherTimer _previewTimer = new() { Interval = TimeSpan.FromMilliseconds(50) };
+    private sealed record PreviewChoice(string Label, PetState State);
 
     public SettingsWindow(MainWindow pet)
     {
         _pet = pet;
         InitializeComponent();
+        _poseTransition = new PoseTransitionPresenter(PreviewImage, PreviousPreviewImage);
+        MaxHeight = Math.Max(500, SystemParameters.WorkArea.Height - 60);
         LoadFromPet();
+        RenderFocusTimer();
+        _pet.FocusTimerChanged += RenderFocusTimer;
+        _previewTimer.Tick += (_, _) => { if (!NeedsLiveRendering) RenderPreview(); };
+        Loaded += (_, _) => { _previewTimer.Start(); CompositionTarget.Rendering += OnPreviewRendering; };
+        Closed += (_, _) =>
+        {
+            _closed = true;
+            _pet.FocusTimerChanged -= RenderFocusTimer;
+            _previewTimer.Stop();
+            CompositionTarget.Rendering -= OnPreviewRendering;
+            _poseTransition.Reset();
+            PreviewRig.SetPresentation(null);
+            _motionPreview?.Close();
+        };
     }
 
     private void LoadFromPet()
     {
         _loading = true;
+        PreviewStateCombo.ItemsSource = new[]
+        {
+            new PreviewChoice("가만히 있기", PetState.Idle), new PreviewChoice("걷기", PetState.Walk),
+            new PreviewChoice("울기", PetState.Cry), new PreviewChoice("화내기", PetState.Angry),
+            new PreviewChoice("잠자기", PetState.Sleep), new PreviewChoice("떨어지기", PetState.Falling),
+        };
+        PreviewStateCombo.SelectedValue = PetState.Idle;
 
         CharacterCombo.ItemsSource = _pet.AvailableCharacterNames;
         CharacterCombo.SelectedItem = _pet.CurrentCharacterName;
@@ -36,6 +77,9 @@ public partial class SettingsWindow : Window
         HopCheck.IsChecked = _pet.HopEnabled;
         SleepCheck.IsChecked = _pet.SleepEnabled;
         WindowFallCheck.IsChecked = _pet.WindowFallEnabled;
+        CalmCheck.IsChecked = _pet.CalmBehaviorEnabled;
+        GentleCheck.IsChecked = _pet.AutoDismissNotifications;
+        QuietCheck.IsChecked = _pet.QuietMode;
 
         _loading = false;
 
@@ -56,25 +100,109 @@ public partial class SettingsWindow : Window
             return;
         }
 
-        var idle = Path.Combine(MainWindow.CharactersRoot, name, "idle.png");
-        if (File.Exists(idle))
+        try
         {
-            var bitmap = new BitmapImage();
-            bitmap.BeginInit();
-            bitmap.CacheOption = BitmapCacheOption.OnLoad; // don't keep the file locked
-            bitmap.UriSource = new Uri(idle);
-            bitmap.EndInit();
-            PreviewImage.Source = bitmap;
+            _poseTransition.Reset();
+            _previewPresentation = CharacterPresentation.Load(_pet.ResolveCharacterFolder(name));
+            PreviewRig.SetPresentation(_previewPresentation);
+            PreviewRig.Visibility = Visibility.Collapsed;
+            PreviewImage.Visibility = Visibility.Visible;
+            _liveRigActive = false;
+            _lastPreviewState = PetState.Idle;
+            _previewVirtualPositionPx = 0;
+            _previewClock.Restart();
+            _previewLastElapsedMs = _previewAnimationMs = 0;
+            _walkAppearance.Reset();
+            RenderPreview();
+            CharacterHint.Text = _previewPresentation.Definition.HasDirectionalWalk
+                ? "걷는 방향을 바라보며 움직여요."
+                : "동작을 골라 미리 볼 수 있어요.";
+        }
+        catch (Exception ex) when (ex is InvalidDataException or IOException or UnauthorizedAccessException)
+        {
+            _poseTransition.Reset();
+            PreviewImage.Source = null;
+            _previewPresentation = null;
+            PreviewRig.SetPresentation(null);
+            PreviewRig.Visibility = Visibility.Collapsed;
+            PreviewImage.Visibility = Visibility.Visible;
+            _liveRigActive = false;
+            CharacterHint.Text = "이미지를 읽을 수 없습니다.";
+        }
+    }
+
+    private void PreviewStateCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_loading) return;
+        _previewClock.Restart();
+        _previewLastElapsedMs = _previewAnimationMs = 0;
+        _walkAppearance.Reset();
+        RenderPreview();
+    }
+
+    private bool NeedsLiveRendering => _previewPresentation?.Definition.WalkRig is not null &&
+        (PreviewStateCombo.SelectedValue is PetState.Walk || _walkAppearance.IsSettling);
+
+    private void OnPreviewRendering(object? sender, EventArgs e)
+    {
+        if (!NeedsLiveRendering) return;
+        if (e is RenderingEventArgs rendering)
+        {
+            if (_lastPreviewRenderingTime == rendering.RenderingTime) return;
+            _lastPreviewRenderingTime = rendering.RenderingTime;
+        }
+        RenderPreview();
+    }
+
+    private void RenderPreview()
+    {
+        if (_previewPresentation is null) return;
+        var state = PreviewStateCombo.SelectedValue is PetState selected ? selected : PetState.Idle;
+        var now = _previewClock.Elapsed.TotalMilliseconds;
+        var elapsedMs = Math.Clamp(now - _previewLastElapsedMs, 0, 250);
+        _previewLastElapsedMs = now;
+        var definition = _previewPresentation.Definition;
+        // This swatch has constant virtual speed instead of a moving window. Its exact
+        // source-pixel travel still feeds the same distance gait as the desktop/physics preview.
+        var previousPosition = _previewVirtualPositionPx;
+        if (state == PetState.Walk)
+            _previewVirtualPositionPx += definition.WalkSpeedPxPerSec * _pet.CurrentWalkSpeedMultiplier * elapsedMs / 1000;
+        _walkAppearance.Update(state, true, definition.WalkSpeedPxPerSec * _pet.CurrentWalkSpeedMultiplier,
+            definition.WalkSpeedPxPerSec, elapsedMs / 1000, definition.WalkSpeedPxPerSec * _pet.CurrentWalkSpeedMultiplier,
+            _previewVirtualPositionPx - previousPosition, definition.WalkCycleDistancePx);
+        var displayWalkPose = _walkAppearance.DisplayWalkPose;
+        _previewAnimationMs = displayWalkPose ? _walkAppearance.AnimationElapsedMs : _previewAnimationMs + elapsedMs;
+        var frames = displayWalkPose ? definition.GetWalkFrames(_walkAppearance.View) : definition.GetFrames(state);
+        var path = displayWalkPose && definition.WalkCycleDistancePx is not null
+            ? definition.GetWalkFramePath(_walkAppearance.View, _walkAppearance.GaitPhase,
+                _walkAppearance.IsSettling ? _walkAppearance.SettleProgress : 0)
+            : definition.GetFramePath(displayWalkPose ? PetState.Walk : state, frames, _previewAnimationMs);
+        if (displayWalkPose && PreviewRig.HasRig)
+        {
+            if (!_liveRigActive)
+            {
+                _poseTransition.Reset();
+                PreviewImage.Visibility = Visibility.Hidden;
+                PreviewRig.Visibility = Visibility.Visible;
+                _liveRigActive = true;
+            }
+            PreviewRig.UpdatePose(_walkAppearance.View, _walkAppearance.GaitPhase,
+                _walkAppearance.IsSettling ? _walkAppearance.SettleProgress : 0, _walkAppearance.FacingRight);
         }
         else
         {
-            PreviewImage.Source = null;
+            if (_liveRigActive)
+            {
+                _poseTransition.Reset();
+                PreviewImage.Visibility = Visibility.Visible;
+                PreviewRig.Visibility = Visibility.Collapsed;
+                _liveRigActive = false;
+            }
+            _poseTransition.SetFrame(_previewPresentation.Frames[path], 1, frames,
+                (definition.WalkCycleDistancePx is null || !displayWalkPose) &&
+                (state != PetState.Walk || _lastPreviewState == PetState.Walk));
         }
-
-        var frameCount = Directory.Exists(Path.Combine(MainWindow.CharactersRoot, name))
-            ? Directory.GetFiles(Path.Combine(MainWindow.CharactersRoot, name), "*.png").Length
-            : 0;
-        CharacterHint.Text = $"프레임 {frameCount}장";
+        _lastPreviewState = state;
     }
 
     private void CharacterCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -84,7 +212,14 @@ public partial class SettingsWindow : Window
             return;
         }
 
-        _pet.SwitchCharacter(name);
+        try { _pet.SwitchCharacter(name); _motionPreview?.Close(); }
+        catch (Exception ex) when (ex is InvalidDataException or IOException or UnauthorizedAccessException)
+        {
+            System.Windows.MessageBox.Show(this, ex.Message, "캐릭터를 변경할 수 없습니다", MessageBoxButton.OK, MessageBoxImage.Warning);
+            _loading = true;
+            CharacterCombo.SelectedItem = _pet.CurrentCharacterName;
+            _loading = false;
+        }
         UpdatePreview();
     }
 
@@ -108,6 +243,7 @@ public partial class SettingsWindow : Window
 
         UpdateValueLabels();
         _pet.SetWalkSpeedMultiplier(SpeedSlider.Value);
+        _motionPreview?.SetSpeedMultiplier(_pet.CurrentWalkSpeedMultiplier);
     }
 
     private void Toggle_Changed(object sender, RoutedEventArgs e)
@@ -123,8 +259,109 @@ public partial class SettingsWindow : Window
         _pet.SetWindowFallEnabled(WindowFallCheck.IsChecked == true);
     }
 
-    private void FolderButton_Click(object sender, RoutedEventArgs e) =>
-        Process.Start(new ProcessStartInfo(MainWindow.CharactersRoot) { UseShellExecute = true });
+    private void AddCharacter_Click(object sender, RoutedEventArgs e)
+    {
+        if (_characterImportBusy) return;
+        var dialog = new Microsoft.Win32.OpenFolderDialog
+        {
+            Title = "추가할 캐릭터 폴더 선택",
+            Multiselect = false,
+        };
+        if (dialog.ShowDialog(this) == true) _characterImportOperation = ImportCharacterFolderAsync(dialog.FolderName);
+    }
+
+    private async Task ImportCharacterFolderAsync(string folder)
+    {
+        if (_characterImportBusy || _closed) return;
+        _characterImportBusy = true;
+        AddCharacterButton.IsEnabled = CharacterCombo.IsEnabled = false;
+        CharacterImportStatusText.Text = "캐릭터를 추가하고 있어요…";
+        CharacterImportStatusText.ToolTip = null;
+        try
+        {
+            var name = await _pet.ImportCharacterFolderAsync(folder);
+            if (_closed) return;
+            _motionPreview?.Close();
+            _loading = true;
+            try
+            {
+                CharacterCombo.ItemsSource = _pet.AvailableCharacterNames;
+                _pet.SwitchCharacter(name);
+                CharacterCombo.SelectedItem = name;
+            }
+            finally { _loading = false; }
+            UpdatePreview();
+            CharacterImportStatusText.Text = "새 캐릭터를 추가했어요.";
+        }
+        catch (Exception ex)
+        {
+            if (_closed) return;
+            _loading = true;
+            try { CharacterCombo.SelectedItem = _pet.CurrentCharacterName; }
+            finally { _loading = false; }
+            UpdatePreview();
+            CharacterImportStatusText.Text = "추가하지 못했어요. 캐릭터 폴더와 사용 권한을 확인해주세요.";
+            CharacterImportStatusText.ToolTip = ex.Message;
+        }
+        finally
+        {
+            _characterImportBusy = false;
+            if (!_closed) AddCharacterButton.IsEnabled = CharacterCombo.IsEnabled = true;
+        }
+    }
+
+    private void FolderButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            Directory.CreateDirectory(_pet.CustomCharactersRoot);
+            Process.Start(new ProcessStartInfo(_pet.CustomCharactersRoot) { UseShellExecute = true });
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
+        {
+            CharacterImportStatusText.Text = "보관 폴더를 열지 못했어요. 폴더의 사용 권한을 확인해주세요.";
+            CharacterImportStatusText.ToolTip = ex.Message;
+        }
+    }
+
+    private void Comfort_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_loading) return;
+        _pet.SetCalmBehavior(CalmCheck.IsChecked == true);
+        _pet.SetAutoDismissNotifications(GentleCheck.IsChecked == true);
+        _pet.SetQuietMode(QuietCheck.IsChecked == true);
+    }
+
+    private void AssistantConnections_Click(object sender, RoutedEventArgs e)
+    {
+        if (System.Windows.Application.Current is App app) app.ShowAssistantConnections();
+    }
+
+    private void MotionPreviewButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_previewPresentation is null) return;
+        _motionPreview?.Close();
+        _motionPreview = new MotionPreviewWindow(_previewPresentation, _pet.CurrentWalkSpeedMultiplier) { Owner = this };
+        _motionPreview.Closed += (_, _) => _motionPreview = null;
+        _motionPreview.Show();
+    }
 
     private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
+
+    private void RenderFocusTimer()
+    {
+        if (_closed) return;
+        FocusStatusText.Text = _pet.FocusTimerCaption;
+        FocusStartButton.Content = _pet.FocusStartCaption;
+        FocusStartButton.IsEnabled = _pet.FocusCanStart;
+        FocusPauseButton.Content = _pet.FocusSnapshot.Status == FocusTimerStatus.Paused ? "계속" : "일시정지";
+        FocusPauseButton.IsEnabled = _pet.FocusCanPause;
+        FocusRestartButton.IsEnabled = FocusStopButton.IsEnabled = _pet.FocusCanStop;
+    }
+
+    private void FocusStart_Click(object sender, RoutedEventArgs e) => _pet.StartFocusTimer();
+    private void FocusPause_Click(object sender, RoutedEventArgs e) => _pet.PauseOrResumeFocusTimer();
+    private void FocusRestart_Click(object sender, RoutedEventArgs e) => _pet.RestartFocusTimer();
+    private void FocusStop_Click(object sender, RoutedEventArgs e) => _pet.StopFocusTimer();
+    private void TestNotification_Click(object sender, RoutedEventArgs e) => _pet.SendTestNotification();
 }

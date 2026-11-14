@@ -1,0 +1,107 @@
+name: Windows distribution
+
+on:
+  workflow_call:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+  pull_request:
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "scripts/**"
+      - "Hooks/**"
+      - "Assets/**"
+      - "DesktopPet.sln"
+      - "global.json"
+      - ".gitattributes"
+      - ".editorconfig"
+      - "character-packs/**"
+      - "README*"
+      - "docs/**"
+      - ".github/**"
+
+permissions:
+  contents: read
+
+jobs:
+  verify-and-package:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: powershell
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "10.0.x"
+      - name: Read source version
+        run: |
+          [xml]$project = Get-Content src/DesktopPet.App/DesktopPet.App.csproj
+          $releaseVersion = [string]$project.Project.PropertyGroup.Version
+          if ($releaseVersion -notmatch '^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$') { throw 'Invalid source version' }
+          Add-Content -LiteralPath $env:GITHUB_ENV -Value "DESKTOPPET_RELEASE_VERSION=$releaseVersion"
+      - name: Restore and build
+        run: |
+          dotnet restore DesktopPet.sln
+          if ($LASTEXITCODE -ne 0) { throw "Restore failed" }
+          dotnet build DesktopPet.sln -c Release --no-restore
+          if ($LASTEXITCODE -ne 0) { throw "Build failed" }
+      - name: Core regression checks
+        run: |
+          dotnet tests/DesktopPet.RegressionTests/bin/Release/net10.0-windows/DesktopPet.RegressionTests.dll
+          if ($LASTEXITCODE -ne 0) { throw "Core checks failed" }
+      - name: UI regression checks
+        run: |
+          dotnet tests/DesktopPet.UiSmokeTests/bin/Release/net10.0-windows/DesktopPet.UiSmokeTests.dll --capture
+          if ($LASTEXITCODE -ne 0) { throw "UI checks failed" }
+      - name: Hook, installer and character checks
+        run: |
+          & ./tests/assistant-hooks-regression.ps1
+          & ./tests/package-regression.ps1
+          & ./tests/install-regression.ps1
+          & ./tests/character-builder-regression.ps1
+          & ./tests/companion-walk-regression.ps1
+          & ./tests/public-characters-regression.ps1
+          & ./tests/public-source-regression.ps1
+          & ./tests/notify-command-regression.ps1
+          & ./tests/public-docs-regression.ps1
+          & ./tests/optional-pack-regression.ps1
+          if (Test-Path -LiteralPath './Assets/Characters/치이카와/character.json') { & ./tests/personal-characters-regression.ps1 }
+      - name: Verify UI with public assets only
+        run: |
+          $publicUi = Join-Path $env:RUNNER_TEMP "DesktopPet-public-ui"
+          dotnet publish tests/DesktopPet.UiSmokeTests/DesktopPet.UiSmokeTests.csproj -c Release --no-restore -p:DistributionBuild=true -o $publicUi
+          if ($LASTEXITCODE -ne 0) { throw "Public UI publish failed" }
+          dotnet (Join-Path $publicUi "DesktopPet.UiSmokeTests.dll") --capture
+          if ($LASTEXITCODE -ne 0) { throw "Public UI checks failed" }
+      - name: Create self-contained public ZIP
+        run: ./scripts/package-release.ps1 -Version $env:DESKTOPPET_RELEASE_VERSION
+      - name: Create optional character pack ZIP
+        run: ./scripts/package-character-packs.ps1 -Version $env:DESKTOPPET_RELEASE_VERSION -OutputDirectory artifacts/releases
+      - name: Validate extracted release and startup
+        run: |
+          . ./scripts/package-release.ps1
+          $archive = Get-Item ("./artifacts/releases/DesktopPet-" + $env:DESKTOPPET_RELEASE_VERSION + "-win-x64.zip")
+          $smokeRoot = Join-Path $env:RUNNER_TEMP ("DesktopPet-release-smoke-" + [Guid]::NewGuid().ToString("N"))
+          Expand-Archive -LiteralPath $archive.FullName -DestinationPath $smokeRoot
+          Test-DesktopPetReleasePayload -Directory $smokeRoot -ExpectedVersion $env:DESKTOPPET_RELEASE_VERSION -ExpectedDeployment "self-contained-single-file"
+          $process = Start-Process -FilePath (Join-Path $smokeRoot "DesktopPet.App.exe") -ArgumentList "--version" -WindowStyle Hidden -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw "Packaged startup failed" }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DesktopPet-public-windows
+          path: |
+            artifacts/releases/*.zip
+            artifacts/releases/*.sha256
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: UI-previews
+          path: |
+            tests/DesktopPet.UiSmokeTests/bin/Release/net10.0-windows/*-v4.png
+            tests/DesktopPet.UiSmokeTests/bin/Release/net10.0-windows/live-rig-v8.png
+            tests/DesktopPet.UiSmokeTests/bin/Release/net10.0-windows/character-walk-v8.html
+          if-no-files-found: ignore
