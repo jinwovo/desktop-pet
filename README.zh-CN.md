@@ -18,7 +18,7 @@ DesktopPet 可以提醒本地 Claude Code、Codex 的回复完成，提供 25 �
 
 公开角色包括 **Companion、Nimbus 和 Ember**。制作方式与素材来源见[公开素材记录](docs/PUBLIC_ASSET_PROVENANCE.md)。已有的逐帧角色包也可继续使用。
 
-仓库也在 [character-packs/fan-art](character-packs/fan-art/README.md) 中提供可选的 **Chiikawa（吉伊卡哇）、Baikinman（细菌人）和 Hello Kitty 同人角色包**。它们与原创角色分开标注，项目 MIT 许可不授予第三方角色权利。默认 Windows ZIP 包含三款原创角色；可在设置中导入可选包，或使用 `-p:PersonalBuild=true` 构建。
+仓库也在 [character-packs/fan-art](character-packs/fan-art/README.md) 中提供可选的 **Chiikawa、Baikinman、Hello Kitty、Pompompurin（布丁狗）、Cinnamoroll（大耳狗）和 Kuromi（酷洛米）六款同人角色包**。它们与原创角色分开标注，项目 MIT 许可不授予第三方角色权利。默认 Windows ZIP 包含三款原创角色；可在设置中导入可选包，或使用 `-p:PersonalBuild=true` 构建全部九款角色。
 
 ## 快速开始
 
@@ -55,6 +55,7 @@ dotnet build DesktopPet.sln -c Release --no-restore
 | 未读通知 | 自动隐藏不等于删除；可从托盘重新查看并点击确认。 |
 | 专注计时器 | 手动控制固定的 25 分钟专注与 5 分钟休息。 |
 | 导入角色 | 选择包含 `character.json` 和 PNG 的单独角色文件夹。 |
+| 角色画廊 | 按韩语、英语名称或别名搜索，按类别筛选，分别预览和应用角色。 |
 | 减少打扰 | 可隐藏宠物、开启免打扰、调整大小和速度、关闭可选效果。 |
 
 文档提供英语、韩语和简体中文版本。当前程序界面主要使用**韩语**，本说明附有关键按钮的韩语名称。构建目标为 Windows x64；不提供 macOS、Linux 或原生 ARM64 安装包。
@@ -150,7 +151,7 @@ powershell -NoProfile -File tests/package-regression.ps1
 构建公开 Windows x64 包：
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 0.5.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 0.6.0
 ```
 
 输出位于 `artifacts/releases/`，包含 self-contained ZIP 与 SHA256 文件。缺少运行时包时构建会失败，不会静默切换为其他部署方式。[Windows 工作流](.github/workflows/windows-release.yml)配置了测试与构建产物；存在该文件不等于远程构建已通过或版本已经发布。
@@ -184,6 +185,14 @@ powershell -NoProfile -File scripts/package-release.ps1 -Version 0.5.0
 ![公共角色与动作](docs/preview/public-characters.png)
 
 GIF 根据实际移动记录生成，并非帧率基准测试。桌面宠物、动作测试窗口和设置预览共用连续步态渲染器。阅读[角色包指南](docs/CHARACTER_PACKS.md)，了解如何添加原创伙伴。
+
+## 切换前先浏览角色
+
+打开设置中的 **갤러리 · 검색**（画廊 / 搜索），输入韩语、英语名称或别名，并按原创、同人或自定义角色筛选。选择卡片后会显示静态预览。**움직임 미리보기**（动作预览）在单独窗口中展示动作；只有点击 **이 친구와 함께하기**（使用这位伙伴）才会切换桌面宠物。搜索和预览不会改变当前角色。列表只解码小缩略图，动作预览只加载所选角色。
+
+本次新增的布丁狗（Pompompurin）、大耳狗（Cinnamoroll）和酷洛米（Kuromi）分别位列[2026 年三丽鸥角色大赏官方结果](https://corporate.sanrio.co.jp/en/news/20260628_03.html)的第 1、2、4 名。本仓库提供的是 AI 辅助创作的同人图片，并非三丽鸥官方素材。[制作记录](character-packs/fan-art/POPULAR_ASSETS.md)包含提示词及可复现的生成流程。
+
+![布丁狗、大耳狗和酷洛米的动作与图层预览](character-packs/fan-art/popular-characters-preview.png)
 
 ## 准备公开发布
 

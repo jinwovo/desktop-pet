@@ -4,6 +4,7 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 $documents = @('README.md','README.ko.md','README.zh-CN.md','CONTRIBUTING.md','SECURITY.md','CHANGELOG.md',
     'docs\DISTRIBUTION.md','docs\CHARACTER_PACKS.md','docs\PUBLIC_ASSET_PROVENANCE.md','docs\PUBLIC_RELEASE.md',
     'character-packs\fan-art\README.md','character-packs\fan-art\NOTICE.md')
+$documents += 'character-packs\fan-art\POPULAR_ASSETS.md'
 $checked = 0
 foreach ($relative in $documents) {
     $path = Join-Path $repoRoot $relative

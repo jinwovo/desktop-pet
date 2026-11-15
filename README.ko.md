@@ -18,7 +18,7 @@ DesktopPet은 로컬 Claude Code·Codex의 응답 완료를 알려주고, 25분 
 
 공용 캐릭터는 **Companion·Nimbus·Ember**입니다. 제작 방식과 원화 기록은 [공용 자산 제작 기록](docs/PUBLIC_ASSET_PROVENANCE.md)에 정리했습니다. 기존 프레임 방식의 사용자 스킨도 사용할 수 있습니다.
 
-저장소에는 선택형 **치이카와·세균맨·헬로키티 팬아트 팩**도 [character-packs/fan-art](character-packs/fan-art/README.md)에 포함합니다. 오리지널 캐릭터와 구분하며 기존 캐릭터의 권리까지 MIT로 허가하는 것은 아닙니다. 기본 Windows ZIP에는 오리지널3종이 들어 있습니다. 선택형 팩은 설정의 캐릭터 추가로 가져오거나 `-p:PersonalBuild=true`로 빌드해 사용할 수 있습니다.
+저장소에는 선택형 **치이카와·세균맨·헬로키티·폼폼푸린·시나모롤·쿠로미 팬아트 6종**도 [character-packs/fan-art](character-packs/fan-art/README.md)에 포함합니다. 오리지널 캐릭터와 구분하며 기존 캐릭터의 권리까지 MIT로 허가하는 것은 아닙니다. 기본 Windows ZIP에는 오리지널3종이 들어 있습니다. 선택형 팩은 설정의 캐릭터 추가로 가져오거나 `-p:PersonalBuild=true`로 빌드해 총9종을 사용할 수 있습니다.
 
 ## 빠른 시작
 
@@ -55,6 +55,7 @@ dotnet build DesktopPet.sln -c Release --no-restore
 | 미확인 알림 보관 | 자동 닫힘은 삭제가 아닙니다. 트레이에서 다시 읽고 클릭해 확인합니다. |
 | 집중 타이머 | 고정된 25분 집중·5분 휴식을 직접 제어합니다. |
 | 캐릭터 추가 | `character.json`과 PNG가 들어 있는 개별 폴더를 가져옵니다. |
+| 캐릭터 갤러리 | 한국어·영어 이름으로 검색하고 종류별로 좁힌 뒤 미리보기와 적용을 따로 실행합니다. |
 | 방해 줄이기 | 숨김·방해 금지·크기·속도와 선택적 효과를 설정합니다. |
 
 설명서는 영어·한국어·간체중국어로 제공합니다. 현재 앱 UI는 주로 **한국어**입니다. 빌드 대상은 Windows x64이며 macOS·Linux·네이티브 ARM64 패키지는 제공하지 않습니다.
@@ -150,7 +151,7 @@ powershell -NoProfile -File tests/package-regression.ps1
 공용 Windows x64 배포를 만들려면 다음을 실행합니다.
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 0.5.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 0.6.0
 ```
 
 `artifacts/releases/`에 self-contained ZIP과 SHA256을 만듭니다. 필요한 런타임 팩이 없으면 실패하며 배포 종류를 몰래 바꾸지 않습니다. [Windows 워크플로](.github/workflows/windows-release.yml)는 검사와 아티팩트 생성을 설정한 파일이며, 파일이 있다고 원격 빌드나 공개 릴리스가 성공했다는 뜻은 아닙니다.
@@ -184,6 +185,14 @@ powershell -NoProfile -File scripts/package-release.ps1 -Version 0.5.0
 ![공개용 캐릭터와 동작](docs/preview/public-characters.png)
 
 GIF는 실제 이동 기록으로 만든 미리보기이며 FPS 벤치마크가 아닙니다. 실제 펫·움직임 시험·설정 미리보기가 같은 연속 보행 렌더러를 사용합니다. [캐릭터 팩 안내](docs/CHARACTER_PACKS.md)에서 나만의 친구를 추가하는 방법을 확인하세요.
+
+## 바꾸기 전에 갤러리에서 살펴보기
+
+설정의 **갤러리 · 검색**에서 한국어·영어 이름이나 별칭으로 검색하고 오리지널·팬아트·사용자 캐릭터를 골라 볼 수 있습니다. 카드를 선택하면 정적 미리보기가 표시됩니다. **움직임 미리보기**는 별도 창에서 동작을 확인하고, **이 친구와 함께하기**를 눌러야 실제 펫이 바뀝니다. 검색과 미리보기만으로 현재 캐릭터가 바뀌지는 않습니다. 목록은 작은 썸네일만 읽고 움직임 미리보기는 선택한 캐릭터를 불러옵니다.
+
+폼폼푸린·시나모롤·쿠로미는 [2026 산리오 캐릭터 대상 공식 결과](https://corporate.sanrio.co.jp/en/news/20260628_03.html)의 1위·2위·4위 캐릭터를 골라 추가했습니다. 이 저장소의 그림은 AI를 보조 도구로 사용한 팬아트입니다. 산리오 공식 이미지가 아니며, [제작 기록](character-packs/fan-art/POPULAR_ASSETS.md)에서 프롬프트와 재현 가능한 생성 과정을 확인할 수 있습니다.
+
+![폼폼푸린·시나모롤·쿠로미의 동작과 리그 미리보기](character-packs/fan-art/popular-characters-preview.png)
 
 ## GitHub 공개 준비
 

@@ -108,6 +108,16 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Public UI publish failed" }
           dotnet (Join-Path $publicUi "DesktopPet.UiSmokeTests.dll") --capture
           if ($LASTEXITCODE -ne 0) { throw "Public UI checks failed" }
+      - name: Verify all nine characters and gallery
+        run: |
+          $personalUi = Join-Path $env:RUNNER_TEMP "DesktopPet-nine-character-ui"
+          dotnet publish tests/DesktopPet.UiSmokeTests/DesktopPet.UiSmokeTests.csproj -c Release --no-restore -p:PersonalBuild=true -o $personalUi
+          if ($LASTEXITCODE -ne 0) { throw "Nine-character UI publish failed" }
+          dotnet (Join-Path $personalUi "DesktopPet.UiSmokeTests.dll") --personal-pack --capture
+          if ($LASTEXITCODE -ne 0) { throw "Nine-character UI checks failed" }
+          dotnet (Join-Path $personalUi "DesktopPet.UiSmokeTests.dll") --gallery-capture
+          if ($LASTEXITCODE -ne 0) { throw "Nine-character gallery capture failed" }
+          Copy-Item -LiteralPath (Join-Path $personalUi 'character-gallery-v060.png') -Destination tests/DesktopPet.UiSmokeTests/bin/Release/net10.0-windows/character-gallery-v060.png
       - name: Create self-contained public ZIP
         run: ./scripts/package-release.ps1 -Version $env:DESKTOPPET_RELEASE_VERSION
       - name: Create optional character pack ZIP
@@ -136,4 +146,6 @@ jobs:
             tests/DesktopPet.UiSmokeTests/bin/Release/net10.0-windows/*-v4.png
             tests/DesktopPet.UiSmokeTests/bin/Release/net10.0-windows/live-rig-v8.png
             tests/DesktopPet.UiSmokeTests/bin/Release/net10.0-windows/character-walk-v8.html
+            tests/DesktopPet.UiSmokeTests/bin/Release/net10.0-windows/gallery-fixture.png
+            tests/DesktopPet.UiSmokeTests/bin/Release/net10.0-windows/character-gallery-v060.png
           if-no-files-found: ignore

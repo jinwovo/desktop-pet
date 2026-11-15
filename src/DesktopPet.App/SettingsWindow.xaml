@@ -35,7 +35,10 @@
         <!-- character -->
         <Border Style="{StaticResource Card}">
             <StackPanel>
-                <TextBlock Text="캐릭터" Style="{StaticResource SectionLabel}" />
+                <DockPanel Margin="0,0,0,8">
+                    <Button x:Name="GalleryButton" Content="갤러리 · 검색" DockPanel.Dock="Right" Padding="9,4" Click="Gallery_Click"/>
+                    <TextBlock Text="캐릭터" Style="{StaticResource SectionLabel}" VerticalAlignment="Center"/>
+                </DockPanel>
                 <DockPanel>
                     <Border DockPanel.Dock="Left"
                             Width="144" Height="144"

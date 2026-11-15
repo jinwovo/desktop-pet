@@ -16,6 +16,36 @@ public sealed class CharacterPresentation
     public CharacterDefinition Definition { get; }
     public IReadOnlyDictionary<string, BitmapImage> Frames { get; }
 
+    /// <summary>Decode only the idle PNG for a static gallery card, with dimensions checked before WIC.</summary>
+    public static BitmapImage LoadThumbnail(string folder, int maximumPixelSize = 128)
+    {
+        if (maximumPixelSize is < 1 or > 256) throw new ArgumentOutOfRangeException(nameof(maximumPixelSize));
+        var definition = CharacterLoader.Load(folder);
+        var path = definition.GetFrames(PetState.Idle)[0];
+        if (!string.Equals(Path.GetExtension(path), ".png", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidDataException("갤러리 미리보기에는 PNG 그림이 필요합니다.");
+        try
+        {
+            using var stream = File.OpenRead(path);
+            ValidatePngHeader(stream, definition, path);
+            var image = new BitmapImage();
+            image.BeginInit();
+            image.CacheOption = BitmapCacheOption.OnLoad;
+            image.StreamSource = stream;
+            if (definition.FrameWidth >= definition.FrameHeight) image.DecodePixelWidth = Math.Min(maximumPixelSize, definition.FrameWidth);
+            else image.DecodePixelHeight = Math.Min(maximumPixelSize, definition.FrameHeight);
+            image.EndInit();
+            if (image.PixelWidth > maximumPixelSize || image.PixelHeight > maximumPixelSize)
+                throw new InvalidDataException("미리보기 그림의 크기가 올바르지 않습니다.");
+            image.Freeze();
+            return image;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException or ArgumentException or FormatException)
+        {
+            throw new InvalidDataException($"캐릭터 미리보기를 읽을 수 없습니다. {ex.Message}", ex);
+        }
+    }
+
     public static CharacterPresentation Load(string folder, bool includeRasterGait = false)
     {
         var definition = CharacterLoader.Load(folder);

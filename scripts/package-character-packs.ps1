@@ -5,9 +5,10 @@
     Validates all declared PNGs before copying, writes a per-file hash manifest and ZIP checksum,
     and refuses existing destinations. Dot-sourcing defines functions without publishing a package.
 #>
-param([string]$Version = '0.5.0', [string]$OutputDirectory = '', [string]$SourceDirectory = '')
+param([string]$Version = '0.6.0', [string]$OutputDirectory = '', [string]$SourceDirectory = '')
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'Install-DesktopPetPayload.ps1')
+. (Join-Path $PSScriptRoot 'Get-DesktopPetFanArtCatalog.ps1')
 
 function Get-DesktopPetFanArtPackInventory {
     param([Parameter(Mandatory=$true)][string]$Directory, [Parameter(Mandatory=$true)][string]$ExpectedName)
@@ -86,7 +87,7 @@ function Get-DesktopPetFanArtPackInventory {
 function New-DesktopPetCharacterPacksPackage {
     param([Parameter(Mandatory=$true)][string]$SourceDirectory,
           [Parameter(Mandatory=$true)][string]$DestinationDirectory,
-          [string]$ReleaseVersion='0.5.0')
+          [string]$ReleaseVersion='0.6.0')
     if ($ReleaseVersion -notmatch '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z]+(?:[.-][0-9A-Za-z]+)*)?$') { throw 'Use a semantic character-pack version.' }
     $repoRoot = Split-Path -Parent $PSScriptRoot
     $source = Get-DesktopPetInstallPath $SourceDirectory
@@ -97,17 +98,19 @@ function New-DesktopPetCharacterPacksPackage {
     if ([IO.File]::Exists($output)) { throw 'Optional-pack output must be a directory.' }
     $zip = Join-Path $output ("DesktopPet-$ReleaseVersion-fan-art-packs.zip")
     if ((Test-Path -LiteralPath $zip) -or (Test-Path -LiteralPath ($zip+'.sha256'))) { throw 'Optional pack ZIP or checksum already exists; existing content is never overwritten.' }
-    $names = @('치이카와','세균맨','헬로키티')
+    $catalog = Get-DesktopPetFanArtCatalog -Path (Join-Path $source 'catalog.json')
+    $names = @($catalog.characters | ForEach-Object { $_.name })
     $packs = @()
     foreach ($name in $names) { $packs += Get-DesktopPetFanArtPackInventory -Directory (Join-Path $source $name) -ExpectedName $name }
-    foreach ($notice in 'README.md','NOTICE.md') {
+    $collectionFiles = @('README.md','NOTICE.md','POPULAR_ASSETS.md','catalog.json')
+    foreach ($notice in $collectionFiles) {
         $noticePath = Join-Path $source $notice
         Assert-DesktopPetNoReparsePoint $noticePath
         if (-not [IO.File]::Exists($noticePath)) { throw "Optional collection is missing $notice" }
     }
     $stage = Join-Path $output ('DesktopPet-fan-art-packs-'+[Guid]::NewGuid().ToString('N'))
     [void][IO.Directory]::CreateDirectory($stage)
-    foreach ($notice in 'README.md','NOTICE.md') { [IO.File]::Copy((Join-Path $source $notice),(Join-Path $stage $notice),$false) }
+    foreach ($notice in $collectionFiles) { [IO.File]::Copy((Join-Path $source $notice),(Join-Path $stage $notice),$false) }
     $entries = @()
     foreach ($pack in $packs) {
         foreach ($relative in $pack.Files) {
@@ -124,7 +127,7 @@ function New-DesktopPetCharacterPacksPackage {
         $relative = Get-DesktopPetPayloadRelativePath -Root $stage -Path $file.FullName
         $entries += [ordered]@{path=$relative.Replace('\','/');length=$file.Length;sha256=(Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()}
     }
-    $manifest = [ordered]@{schemaVersion=1;version=$ReleaseVersion;assetKind='optional-personal-fan-art';characters=$names;notice='NOTICE.md';files=@($entries)}
+    $manifest = [ordered]@{schemaVersion=1;version=$ReleaseVersion;assetKind='optional-personal-fan-art';characters=$names;catalog='catalog.json';notice='NOTICE.md';provenance='POPULAR_ASSETS.md';files=@($entries)}
     [IO.File]::WriteAllText((Join-Path $stage 'CHARACTER_PACKS_MANIFEST.json'),($manifest|ConvertTo-Json -Depth 6),(New-Object Text.UTF8Encoding $false))
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     [IO.Compression.ZipFile]::CreateFromDirectory($stage,$zip,[IO.Compression.CompressionLevel]::Optimal,$false)

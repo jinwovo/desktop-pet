@@ -19,10 +19,21 @@ internal static class Program
         Directory.CreateDirectory(folder);
         var brokenName = "SmokeBroken-" + Guid.NewGuid().ToString("N");
         var brokenFolder = Path.Combine(MainWindow.CharactersRoot, brokenName);
-        Directory.CreateDirectory(brokenFolder);
         MainWindow? pet = null;
         try
         {
+            if (args.Contains("--gallery-capture"))
+            {
+                CharacterGalleryRegressionTests.CaptureInstalledGallery(folder);
+                return 0;
+            }
+            if (args.Contains("--gallery-only"))
+            {
+                CharacterGalleryRegressionTests.Run(folder, args.Contains("--capture"));
+                Console.WriteLine("Character gallery UI regression checks passed");
+                return 0;
+            }
+            Directory.CreateDirectory(brokenFolder);
             WindowCaptureRegressionTests.Run();
             pet = new MainWindow(new CharacterLibrary(MainWindow.CharactersRoot, Path.Combine(folder, "custom-characters")));
             Check(!pet.ShowActivated, "Pet can activate while showing");
@@ -269,9 +280,9 @@ internal static class Program
             VerifyConnections(folder, pet, args.Contains("--capture"));
             VerifyCharacterImport(pet, folder, args.Contains("--capture"));
             FocusTimerUiTests.Run(folder);
+            CharacterGalleryRegressionTests.Run(folder, args.Contains("--capture"));
             if (args.Contains("--personal-pack")) VerifyPersonalSelection(pet);
-            var total = args.Contains("--personal-pack") ? 41 : 40;
-            Console.WriteLine($"{total}/{total} UI smoke checks passed");
+            Console.WriteLine("All UI smoke checks passed");
             return 0;
         }
         catch (Exception ex) { Console.Error.WriteLine(ex); return 1; }
@@ -290,7 +301,7 @@ internal static class Program
                 Directory.Delete(target, recursive: true);
             var characterRoot = Path.TrimEndingDirectorySeparator(Path.GetFullPath(MainWindow.CharactersRoot)) + Path.DirectorySeparatorChar;
             var characterTarget = Path.GetFullPath(brokenFolder);
-            if (characterTarget.StartsWith(characterRoot, StringComparison.OrdinalIgnoreCase) && Path.GetFileName(characterTarget).StartsWith("SmokeBroken-"))
+            if (characterTarget.StartsWith(characterRoot, StringComparison.OrdinalIgnoreCase) && Path.GetFileName(characterTarget).StartsWith("SmokeBroken-") && Directory.Exists(characterTarget))
                 Directory.Delete(characterTarget, recursive: true);
         }
     }
@@ -474,17 +485,20 @@ internal static class Program
 
     private static void VerifyPersonalSelection(MainWindow pet)
     {
-        foreach (var name in new[] { "치이카와", "세균맨", "헬로키티" })
+        foreach (var name in new[] { "치이카와", "세균맨", "헬로키티", "폼폼푸린", "시나모롤", "쿠로미" })
         {
             Check(pet.AvailableCharacterNames.Contains(name), "Requested personal character is absent: " + name);
             pet.SwitchCharacter(name);
             Check(pet.CurrentCharacterName == name && ((CharacterDefinition)Get(pet, "_character")!).HasDirectionalWalk,
                 "Personal character did not activate its directional presentation: " + name);
+            Check(((CharacterDefinition)Get(pet, "_character")!).WalkRig is not null &&
+                ((System.Collections.IDictionary)Get(pet, "_frameCache")!).Count == 19,
+                "Personal character did not use its bounded 19-texture live presentation: " + name);
         }
         pet.SwitchCharacter("Companion");
         ((DispatcherTimer)Get(pet, "_settingsSaveTimer")!).Stop();
         Set(pet, "_settingsDirty", false);
-        Console.WriteLine("PASS Chiikawa, Baikinman and Hello Kitty can be selected without changing existing character folders");
+        Console.WriteLine("PASS All six optional fan-art characters activate directional live rigs with 19 decoded textures each without changing existing character folders");
     }
 
     private static void VerifyImageHeaderGuard(string folder, string validFrame)

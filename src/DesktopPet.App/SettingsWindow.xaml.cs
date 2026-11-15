@@ -30,6 +30,7 @@ public partial class SettingsWindow : Window
     private PetState _lastPreviewState = PetState.Idle;
     private double _previewVirtualPositionPx;
     private bool _liveRigActive;
+    private CharacterGalleryWindow? _characterGallery;
     private TimeSpan? _lastPreviewRenderingTime;
     private readonly DispatcherTimer _previewTimer = new() { Interval = TimeSpan.FromMilliseconds(50) };
     private sealed record PreviewChoice(string Label, PetState State);
@@ -54,6 +55,7 @@ public partial class SettingsWindow : Window
             _poseTransition.Reset();
             PreviewRig.SetPresentation(null);
             _motionPreview?.Close();
+            _characterGallery?.Close();
         };
     }
 
@@ -347,6 +349,22 @@ public partial class SettingsWindow : Window
     }
 
     private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
+
+    private void Gallery_Click(object sender, RoutedEventArgs e)
+    {
+        if (_characterGallery is not null) { _characterGallery.Activate(); return; }
+        _characterGallery = new CharacterGalleryWindow(_pet) { Owner = this };
+        _characterGallery.CharacterApplied += name =>
+        {
+            _loading = true;
+            CharacterCombo.ItemsSource = _pet.AvailableCharacterNames;
+            CharacterCombo.SelectedItem = name;
+            _loading = false;
+            UpdatePreview();
+        };
+        _characterGallery.Closed += (_, _) => _characterGallery = null;
+        _characterGallery.Show();
+    }
 
     private void RenderFocusTimer()
     {

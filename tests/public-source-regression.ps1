@@ -19,18 +19,34 @@ foreach ($relative in 'DesktopPet.sln','README.md','README.ko.md','README.zh-CN.
     'Assets\Characters\Companion\character.json','Assets\Characters\Companion\idle.png',
     'Assets\Characters\Nimbus\character.json','Assets\Characters\Ember\character.json',
     'Hooks\assistant-stop-hook.ps1','docs\PUBLIC_ASSET_PROVENANCE.md') { Write-SourceFixture $fixture $relative }
-Write-SourceFixture $fixture 'character-packs\fan-art\치이카와\character.json' 'selected optional pack'
-Write-SourceFixture $fixture 'character-packs\fan-art\치이카와\idle.png' 'selected optional image'
+$catalogPath = Join-Path $repoRoot 'character-packs\fan-art\catalog.json'
+$catalog = Get-DesktopPetFanArtCatalog -Path $catalogPath
+foreach ($character in $catalog.characters) {
+    $prefix = 'character-packs\fan-art\'+$character.name
+    $definition = @{name=$character.name;assetKind='optional-personal-fan-art';frameSizePx=@{width=128;height=128};frames=@{idle=@('idle.png')}}
+    Write-SourceFixture $fixture ($prefix+'\character.json') ($definition | ConvertTo-Json -Depth 4)
+    [IO.File]::Copy((Join-Path (Join-Path $repoRoot $prefix) 'idle.png'),(Join-Path (Join-Path $fixture $prefix) 'idle.png'),$false)
+    Write-SourceFixture $fixture ($prefix+'\private-unreferenced.png') 'PRIVATE_EXPORT_CANARY'
+}
+Write-SourceFixture $fixture 'character-packs\fan-art\catalog.json' ([IO.File]::ReadAllText($catalogPath))
+foreach ($relative in 'character-packs\fan-art\POPULAR_ASSETS.md','character-packs\fan-art\popular-characters-preview.png',
+    'character-packs\fan-art\masters\popular-pompompurin-v1.png',
+    'character-packs\fan-art\masters\popular-cinnamoroll-v1.png',
+    'character-packs\fan-art\masters\popular-kuromi-v1.png') { Write-SourceFixture $fixture $relative 'selected new artwork provenance' }
 foreach ($relative in '.claude\settings.json','.codex\auth.json','.env','src\DesktopPet.Core\secrets.json',
     'src\DesktopPet.Core\bin\Release\Private.cs','Assets\Characters\PrivateFanArt\idle.png',
     'images\private-source.png','docs\preview\personal-characters-v6.png','.local\private.json',
     '.github\.codex\auth.json','.github\.claude\settings.json','scripts\.aws\credentials.ps1',
-    'src\.agents\private.cs','character-packs\fan-art\UnselectedPrivate\idle.png') {
+    'src\.agents\private.cs','character-packs\fan-art\UnselectedPrivate\idle.png',
+    'character-packs\fan-art\masters\unselected-private.png') {
     Write-SourceFixture $fixture $relative 'PRIVATE_EXPORT_CANARY'
 }
 $selected = @(Get-DesktopPetPublicSourceFiles $fixture)
 Assert-Source ($selected -contains 'src\DesktopPet.Core\Example.cs') 'Public code was omitted.'
 Assert-Source ($selected -contains 'character-packs\fan-art\치이카와\idle.png') 'Explicitly selected optional pack was omitted.'
+foreach ($character in $catalog.characters) { Assert-Source ($selected -contains ('character-packs\fan-art\'+$character.name+'\idle.png')) 'A curated optional pack was omitted.' }
+Assert-Source ($selected -contains 'character-packs\fan-art\POPULAR_ASSETS.md' -and $selected -contains 'character-packs\fan-art\masters\popular-kuromi-v1.png') 'New artwork provenance was omitted.'
+Assert-Source ($selected -contains 'character-packs\fan-art\popular-characters-preview.png') 'New artwork preview was omitted.'
 foreach ($relative in $selected) {
     Assert-Source (-not [IO.File]::ReadAllText((Join-Path $fixture $relative)).Contains('PRIVATE_EXPORT_CANARY')) 'Private content entered the source allowlist.'
 }

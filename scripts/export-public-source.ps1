@@ -10,11 +10,13 @@ param([string]$OutputDirectory = '')
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'Install-DesktopPetPayload.ps1')
+. (Join-Path $PSScriptRoot 'Get-DesktopPetFanArtCatalog.ps1')
 
 function Get-DesktopPetPublicSourceFiles {
     param([Parameter(Mandatory = $true)][string]$SourceRoot)
     $root = Get-DesktopPetInstallPath $SourceRoot
     Assert-DesktopPetNoReparsePoint $root
+    . (Join-Path $PSScriptRoot 'package-character-packs.ps1')
     $files = New-Object 'System.Collections.Generic.List[string]'
     $fixed = @(
         'DesktopPet.sln', 'global.json', '.gitignore', '.gitattributes', '.editorconfig',
@@ -22,10 +24,19 @@ function Get-DesktopPetPublicSourceFiles {
         'docs\DISTRIBUTION.md', 'docs\PUBLIC_ASSET_PROVENANCE.md', 'docs\CHARACTER_PACKS.md', 'docs\PUBLIC_RELEASE.md',
         'docs\preview\public-characters.png', 'docs\preview\public-walk.gif', 'docs\preview\public-walk.html',
         'docs\preview\public-settings.png', 'docs\preview\live-rig-v8.png',
+        'docs\preview\character-gallery-v060.png',
         'images\companion-master-v1.png', 'images\companion-walk-master-v2.png', 'images\rig-companion-v7.png',
         'images\public-nimbus-master-v1.png', 'images\public-ember-master-v1.png'
         'Assets\Characters\Nimbus\.desktop-pet-public-generated', 'Assets\Characters\Ember\.desktop-pet-public-generated'
-        'character-packs\fan-art\README.md', 'character-packs\fan-art\NOTICE.md'
+        'character-packs\fan-art\README.md', 'character-packs\fan-art\NOTICE.md',
+        'character-packs\fan-art\catalog.json', 'character-packs\fan-art\POPULAR_ASSETS.md',
+        'character-packs\fan-art\popular-characters-preview.png',
+        'character-packs\fan-art\masters\popular-pompompurin-v1.png',
+        'character-packs\fan-art\masters\popular-cinnamoroll-v1.png',
+        'character-packs\fan-art\masters\popular-kuromi-v1.png'
+        'character-packs\fan-art\폼폼푸린\.desktop-pet-popular-generated',
+        'character-packs\fan-art\시나모롤\.desktop-pet-popular-generated',
+        'character-packs\fan-art\쿠로미\.desktop-pet-popular-generated'
     )
     foreach ($relative in $fixed) {
         $path = Assert-DesktopPetChildPath -Root $root -Path (Join-Path $root $relative)
@@ -40,9 +51,18 @@ function Get-DesktopPetPublicSourceFiles {
         'Assets\Characters\Companion' = @('.png','.json')
         'Assets\Characters\Nimbus' = @('.png','.json')
         'Assets\Characters\Ember' = @('.png','.json')
-        'character-packs\fan-art\치이카와' = @('.png','.json')
-        'character-packs\fan-art\세균맨' = @('.png','.json')
-        'character-packs\fan-art\헬로키티' = @('.png','.json')
+    }
+    # Keep compatibility with source-only fixtures without a collection, while any present
+    # collection must pass the same curated identity boundary as the optional ZIP.
+    $catalogPath = Join-Path $root 'character-packs\fan-art\catalog.json'
+    if (-not [IO.File]::Exists($catalogPath)) { $catalogPath = Join-Path (Split-Path -Parent $PSScriptRoot) 'character-packs\fan-art\catalog.json' }
+    $catalog = Get-DesktopPetFanArtCatalog -Path $catalogPath
+    foreach ($character in $catalog.characters) {
+        $prefix = 'character-packs\fan-art\'+$character.name
+        $folder = Join-Path $root $prefix
+        if (-not [IO.Directory]::Exists($folder)) { continue }
+        $pack = Get-DesktopPetFanArtPackInventory -Directory $folder -ExpectedName $character.name
+        foreach ($relative in $pack.Files) { $files.Add($prefix+'\'+$relative.Replace('/','\')) }
     }
     foreach ($prefix in $rules.Keys) {
         $folder = Join-Path $root $prefix

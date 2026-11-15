@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Version matching the checked-out source (for example 0.5.0)
+        description: Version matching the checked-out source (for example 0.6.0)
         required: true
-        default: "0.5.0"
+        default: "0.6.0"
         type: string
 
 permissions:
@@ -54,7 +54,8 @@ jobs:
           $notes = @"
           Windows 10/11 x64 portable release. Extract the entire ZIP and run DesktopPet.App.exe.
 
-          Includes Companion, Nimbus and Ember, local AI completion hooks, a focus timer and quiet notification controls.
+          Includes Companion, Nimbus and Ember, a searchable character gallery, local AI completion hooks, a focus timer and quiet notification controls.
+          The optional pack adds Chiikawa, Baikinman, Hello Kitty, Pompompurin, Cinnamoroll and Kuromi.
           This package includes the .NET runtime. See README.md, README.ko.md and README.zh-CN.md for setup.
           Optional third-party fan-art packs are separate downloads; see their included NOTICE. The project MIT license does not grant third-party character rights.
           Codex hooks still require your trust review; DesktopPet does not approve hooks on your behalf.

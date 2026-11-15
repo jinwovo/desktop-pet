@@ -45,6 +45,7 @@ images/*.tmp
 !/docs/preview/public-walk.html
 !/docs/preview/public-settings.png
 !/docs/preview/live-rig-v8.png
+!/docs/preview/character-gallery-v060.png
 /docs/*_PASS.md
 /docs/ASSET_PROVENANCE.md
 /docs/PROJECT_REVIEW.md

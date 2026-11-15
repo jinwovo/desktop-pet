@@ -18,7 +18,7 @@ DesktopPet is a Windows desktop pet with gentle completion notifications for loc
 
 The public collection contains **Companion**, **Nimbus**, and **Ember**. Character creation and source records are documented in [Public asset provenance](docs/PUBLIC_ASSET_PROVENANCE.md). Existing frame-based custom packs remain supported.
 
-The repository also includes optional **Chiikawa, Baikinman and Hello Kitty fan-art packs** in [character-packs/fan-art](character-packs/fan-art/README.md). They are identified separately from the original collection and are not covered by the project's MIT grant for third-party character rights. The default Windows ZIP includes the three original characters; import optional packs through Settings or build with `-p:PersonalBuild=true`.
+The repository also includes six optional **Chiikawa, Baikinman, Hello Kitty, Pompompurin, Cinnamoroll and Kuromi fan-art packs** in [character-packs/fan-art](character-packs/fan-art/README.md). They are identified separately from the original collection and are not covered by the project's MIT grant for third-party character rights. The default Windows ZIP includes the three original characters; import optional packs through Settings or build with `-p:PersonalBuild=true` for all nine companions.
 
 ## Quick start
 
@@ -55,6 +55,7 @@ NuGet access is needed for missing build or runtime packs. Runtime use does not 
 | Unread inbox | Auto-hide retains a receipt. Review saved notifications from the tray and click to acknowledge them. |
 | Focus timer | Fixed 25-minute focus and 5-minute break sessions with explicit controls. |
 | Custom characters | Import an extracted folder containing `character.json` and its PNG resources. |
+| Character gallery | Search Korean/English aliases, filter original/fan-art/custom packs, preview motion and apply explicitly. |
 | Quiet controls | Hide the pet, enable Do not disturb, adjust size/speed, or disable optional effects. |
 
 Documentation is available in three languages. The application currently uses primarily **Korean UI labels**; this README includes the labels needed to find its controls. The build targets Windows x64; macOS, Linux, and native ARM64 packages are not provided.
@@ -150,7 +151,7 @@ The suites use fixture directories and do not register hooks in your real assist
 To create a public Windows x64 package:
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 0.5.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 0.6.0
 ```
 
 The output is a self-contained ZIP and a SHA256 sidecar under `artifacts/releases/`. Missing runtime packs cause a build failure; the script does not silently change deployment type. The [Windows workflow](.github/workflows/windows-release.yml) is configured to run checks and create artifacts; its presence does not imply a successful remote build or a published release.
@@ -187,6 +188,16 @@ The GIF is a recorded movement preview, not an FPS benchmark. The desktop pet, m
 
 ## Public release preparation
 
-See [Public release guide](docs/PUBLIC_RELEASE.md) for a clean source export, draft GitHub release workflow, validation status and suggested repository description/topics. The exporter excludes local assistant configurations and unselected private development artwork. The three explicitly selected fan-art packs have their own notice and directory.
+See [Public release guide](docs/PUBLIC_RELEASE.md) for a clean source export, draft GitHub release workflow, validation status and suggested repository description/topics. The exporter excludes local assistant configurations and unselected private development artwork. The six explicitly selected fan-art packs have their own notice and directory.
+
+## Browse before switching
+
+Open Settings → **갤러리 · 검색** (Gallery / search). Type a Korean or English name, narrow the collection, and select a card. **움직임 미리보기** opens a separate motion preview; **이 친구와 함께하기** applies the selection. Searching and previewing do not change your active pet. Only card thumbnails are decoded for the grid; a motion preview loads the selected character.
+
+Pompompurin, Cinnamoroll and Kuromi were selected from the official [2026 Sanrio ranking](https://corporate.sanrio.co.jp/en/news/20260628_03.html), where they placed first, second and fourth. The artwork here is AI-assisted fan art, not official Sanrio assets. [Creation records](character-packs/fan-art/POPULAR_ASSETS.md) include the prompts and reproducible generator.
+
+![Nine-character gallery](docs/preview/character-gallery-v060.png)
+
+![New optional character poses](character-packs/fan-art/popular-characters-preview.png)
 
 Planned contribution areas include full UI localization, smoother body-angle transitions, keyboard accessibility and more original character packs. These are ideas, not shipped features. If DesktopPet is useful to you, a star helps others discover it; reproducible issues and small contributions are equally welcome.

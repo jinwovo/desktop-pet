@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "assetKind": "optional-personal-fan-art",
+  "characters": [
+    { "id": "chiikawa", "name": "치이카와", "englishName": "Chiikawa", "aliases": ["치이카와", "Chiikawa", "ちいかわ"], "popularity": { "source": "https://www.chiikawa-info.jp/", "rank": null } },
+    { "id": "baikinman", "name": "세균맨", "englishName": "Baikinman", "aliases": ["세균맨", "Baikinman", "ばいきんまん"], "popularity": { "source": "https://www.anpanman.jp/", "rank": null } },
+    { "id": "hello-kitty", "name": "헬로키티", "englishName": "Hello Kitty", "aliases": ["헬로키티", "Hello Kitty", "HelloKitty", "ハローキティ"], "popularity": { "source": "https://www.sanrio.co.jp/characters/hellokitty/", "rank": null } },
+    { "id": "pompompurin", "name": "폼폼푸린", "englishName": "Pompompurin", "aliases": ["폼폼푸린", "Pompompurin", "Purin", "ポムポムプリン"], "popularity": { "source": "https://corporate.sanrio.co.jp/en/news/20260628_03.html", "rank": 1 } },
+    { "id": "cinnamoroll", "name": "시나모롤", "englishName": "Cinnamoroll", "aliases": ["시나모롤", "Cinnamoroll", "Cinnamon", "シナモロール"], "popularity": { "source": "https://corporate.sanrio.co.jp/en/news/20260628_03.html", "rank": 2 } },
+    { "id": "kuromi", "name": "쿠로미", "englishName": "Kuromi", "aliases": ["쿠로미", "Kuromi", "クロミ"], "popularity": { "source": "https://corporate.sanrio.co.jp/en/news/20260628_03.html", "rank": 4 } }
+  ]
+}
