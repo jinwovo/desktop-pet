@@ -21,7 +21,8 @@ function Get-DesktopPetPublicSourceFiles {
     $fixed = @(
         'DesktopPet.sln', 'global.json', '.gitignore', '.gitattributes', '.editorconfig',
         'README.md', 'README.ko.md', 'README.zh-CN.md', 'CONTRIBUTING.md', 'SECURITY.md', 'CHANGELOG.md', 'LICENSE',
-        'docs\DISTRIBUTION.md', 'docs\PUBLIC_ASSET_PROVENANCE.md', 'docs\CHARACTER_PACKS.md', 'docs\PUBLIC_RELEASE.md', 'docs\REFERENCE_REVIEW.ko.md',
+        'docs\DISTRIBUTION.md', 'docs\PUBLIC_ASSET_PROVENANCE.md', 'docs\CHARACTER_PACKS.md', 'docs\PUBLIC_RELEASE.md', 'docs\REFERENCE_REVIEW.ko.md', 'docs\NVIDIA_WORK.md',
+        'tests\test_nvidia_work.py',
         'docs\preview\public-characters.png', 'docs\preview\public-walk.gif', 'docs\preview\public-walk.html',
         'docs\preview\public-settings.png', 'docs\preview\live-rig-v8.png',
         'docs\preview\character-gallery-v060.png',

@@ -192,6 +192,8 @@ See [Public release guide](docs/PUBLIC_RELEASE.md) for a clean source export, dr
 
 [Desktop-pet reference review (Korean)](docs/REFERENCE_REVIEW.ko.md) compares six projects at source level, identifies current gaps and records proposed improvements and reuse constraints. Proposed features in that review are not shipped behavior.
 
+Developers can optionally use the [NVIDIA work helper](docs/NVIDIA_WORK.md) for explicit code-review prompts with four-model fallback. This is a separate development tool; desktop app users do not need API credentials.
+
 ## Browse before switching
 
 Open Settings → **갤러리 · 검색** (Gallery / search). Type a Korean or English name, narrow the collection, and select a card. **움직임 미리보기** opens a separate motion preview; **이 친구와 함께하기** applies the selection. Searching and previewing do not change your active pet. Only card thumbnails are decoded for the grid; a motion preview loads the selected character.

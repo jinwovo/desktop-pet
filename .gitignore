@@ -16,6 +16,8 @@ desktop.ini
 .idea/
 .vscode/
 .local/
+__pycache__/
+*.py[cod]
 
 # 캐릭터 생성 중간 산출물 (원본 images/ 에서 언제든 다시 만들 수 있음)
 images/*.tmp
