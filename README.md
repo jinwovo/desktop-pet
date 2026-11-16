@@ -190,6 +190,8 @@ The GIF is a recorded movement preview, not an FPS benchmark. The desktop pet, m
 
 See [Public release guide](docs/PUBLIC_RELEASE.md) for a clean source export, draft GitHub release workflow, validation status and suggested repository description/topics. The exporter excludes local assistant configurations and unselected private development artwork. The six explicitly selected fan-art packs have their own notice and directory.
 
+[Desktop-pet reference review (Korean)](docs/REFERENCE_REVIEW.ko.md) compares six projects at source level, identifies current gaps and records proposed improvements and reuse constraints. Proposed features in that review are not shipped behavior.
+
 ## Browse before switching
 
 Open Settings → **갤러리 · 검색** (Gallery / search). Type a Korean or English name, narrow the collection, and select a card. **움직임 미리보기** opens a separate motion preview; **이 친구와 함께하기** applies the selection. Searching and previewing do not change your active pet. Only card thumbnails are decoded for the grid; a motion preview loads the selected character.
