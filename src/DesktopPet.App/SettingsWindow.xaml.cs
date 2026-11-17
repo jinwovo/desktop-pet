@@ -36,6 +36,7 @@ public partial class SettingsWindow : Window
     private TimeSpan? _lastPreviewRenderingTime;
     private readonly DispatcherTimer _previewTimer = new() { Interval = TimeSpan.FromMilliseconds(50) };
     private sealed record PreviewChoice(string Label, PetState State);
+    private sealed record MonitorChoice(string Label, DesktopRect Area);
 
     public SettingsWindow(MainWindow pet)
     {
@@ -101,11 +102,33 @@ public partial class SettingsWindow : Window
         QuietEndBox.Text = QuietHours.Format(_pet.QuietHoursEndMinute);
         FocusMinutesBox.Text = _pet.FocusMinutes.ToString(System.Globalization.CultureInfo.InvariantCulture);
         BreakMinutesBox.Text = _pet.BreakMinutes.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        LoadMonitorChoices();
 
         _loading = false;
 
         UpdateValueLabels();
         UpdatePreview();
+    }
+
+    private void LoadMonitorChoices()
+    {
+        var selected = (MonitorTargetCombo.SelectedItem as MonitorChoice)?.Area;
+        var choices = _pet.DesktopWorkAreas.Select((area, i) => new MonitorChoice(
+            $"{i + 1} · {area.Width:0}×{area.Height:0} · ({area.Left:0}, {area.Top:0})", area)).ToArray();
+        MonitorTargetCombo.ItemsSource = choices;
+        MonitorTargetCombo.SelectedItem = choices.FirstOrDefault(choice => choice.Area == selected) ?? choices.FirstOrDefault();
+    }
+
+    private void RecoverPet_Click(object sender, RoutedEventArgs e)
+    {
+        if (MonitorTargetCombo.SelectedItem is not MonitorChoice choice || !_pet.TryRecoverPet(choice.Area))
+        {
+            LoadMonitorChoices();
+            RecoveryStatusText.Text = UiText.Get("화면 구성이 바뀌었어요. 목록에서 다시 선택해주세요.");
+            return;
+        }
+        VisibleCheck.IsChecked = _pet.IsPetVisible;
+        RecoveryStatusText.Text = UiText.Get("선택한 화면으로 데려왔어요. 알림과 집중 시간은 유지합니다.");
     }
 
     private void Language_Changed(object sender, SelectionChangedEventArgs e)

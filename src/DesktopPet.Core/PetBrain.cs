@@ -139,6 +139,23 @@ public sealed class PetBrain
         _groundOffset = groundOffset;
     }
 
+    /// <summary>Explicit user recovery: land at a monitor's floor and discard old throw/walk momentum.</summary>
+    public void PlaceOnDesktop(DesktopRect workArea)
+    {
+        if (!workArea.IsValid) throw new ArgumentOutOfRangeException(nameof(workArea));
+        X = workArea.Left + (workArea.Width - _frameWidth) / 2;
+        Y = workArea.Bottom - _groundOffset;
+        _fallVelocityX = _fallVelocityY = _walkVelocityX = 0;
+        _dragOffsetX = _dragOffsetY = 0;
+        _isHopping = false;
+        IsNagging = false;
+        _gentleHoldUntilMs = 0;
+        _pokeStreak = 0;
+        _lastActivityMs = _totalElapsedMs;
+        _lookCooldownUntilMs = _totalElapsedMs + LookCooldownMs;
+        ChangeState(PetState.Idle);
+    }
+
     public void Tick(double dtSeconds, PetPoint cursorScreenPos)
     {
         if (!double.IsFinite(dtSeconds) || dtSeconds <= 0) return;

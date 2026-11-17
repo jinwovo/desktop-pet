@@ -302,6 +302,7 @@ internal static class Program
             PreferencesBackupUiTests.Run(folder);
             LocalizationUiTests.Run(folder);
             DiagnosticsUiTests.Run(folder);
+            PetRecoveryUiTests.Run(folder);
             FullscreenUiTests.Run(folder);
             ArchiveImportUiTests.Run(folder);
             PlatformMonitorUiTests.Run(pet);

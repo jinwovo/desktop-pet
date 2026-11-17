@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.50.0 — monitor position recovery
+
+- Add a monitor picker and explicit recovery button in Settings; the tray can bring the pet to the monitor nearest the pointer.
+- Land at the selected work-area floor, clear old drag/throw/walk momentum and gait history, refresh platform scans and show a manually hidden pet while preserving fullscreen cooperation.
+- Preserve unread receipts, quiet mode and focus countdown. Reject a monitor removed since selection and refresh the picker without moving the pet.
+
 ## 0.30.0 — reviewed local diagnostics
 
 - Show app version and a manually opened official release page in Settings; never auto-download or execute updates.

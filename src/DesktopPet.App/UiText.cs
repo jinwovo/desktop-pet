@@ -57,6 +57,12 @@ public static class UiText
     }
     private static readonly Dictionary<string, (string English, string Chinese)> Translations = new(StringComparer.Ordinal)
     {
+        ["펫 위치 복구"] = ("Recover pet position", "恢复宠物位置"),
+        ["선택한 화면으로 데려오기"] = ("Bring to selected monitor", "移到所选屏幕"),
+        ["펫 데려오기"] = ("Bring pet here", "将宠物带到这里"),
+        ["선택한 화면 바닥으로 이동합니다. 트레이의 펫 데려오기는 마우스가 있는 화면을 사용해요."] = ("Move to the selected monitor's floor. The tray action uses the monitor nearest your pointer.", "移到所选屏幕底部；托盘操作使用鼠标所在或最近的屏幕。"),
+        ["화면 구성이 바뀌었어요. 목록에서 다시 선택해주세요."] = ("Displays changed. Choose from the refreshed list.", "屏幕配置已变，请从刷新后的列表重选。"),
+        ["선택한 화면으로 데려왔어요. 알림과 집중 시간은 유지합니다."] = ("Pet recovered. Notifications and focus time are preserved.", "已恢复位置，保留通知与专注时间。"),
         ["진단 보고서"] = ("Diagnostic report", "诊断报告"),
         ["DesktopPet 진단 보고서"] = ("DesktopPet diagnostic report", "DesktopPet 诊断报告"),
         ["릴리스 페이지"] = ("Release page", "版本发布"),

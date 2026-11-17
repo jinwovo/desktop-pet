@@ -93,6 +93,15 @@
         <!-- size / speed -->
         <Border Style="{StaticResource Card}">
             <StackPanel>
+                <TextBlock Text="펫 위치 복구" Style="{StaticResource SectionLabel}"/>
+                <ComboBox x:Name="MonitorTargetCombo" DisplayMemberPath="Label"/>
+                <Button x:Name="RecoverPetButton" Content="선택한 화면으로 데려오기" Padding="10,5" HorizontalAlignment="Left" Margin="0,6,0,0" Click="RecoverPet_Click"/>
+                <TextBlock x:Name="RecoveryStatusText" FontSize="11" Foreground="#777777" TextWrapping="Wrap" Margin="0,6,0,0"
+                           Text="선택한 화면 바닥으로 이동합니다. 트레이의 펫 데려오기는 마우스가 있는 화면을 사용해요."/>
+            </StackPanel>
+        </Border>
+        <Border Style="{StaticResource Card}">
+            <StackPanel>
                 <TextBlock Text="크기와 속도" Style="{StaticResource SectionLabel}" />
 
                 <DockPanel Margin="0,2,0,0">

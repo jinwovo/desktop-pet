@@ -63,6 +63,7 @@ dotnet build DesktopPet.sln -c Release --no-restore
 | 모션 설정 | 최대 30/60/120 FPS를 선택합니다. 움직임 줄이기는 점프·강한 알림·창 캡처·페이드를 억제하고 원래 효과 설정은 보존합니다. |
 | 설정 백업 | 화면·동작·타이머 설정을 JSON으로 백업·복원합니다. AI 연결·훅 허용·개인 경로는 옮기지 않습니다. |
 | 로컬 진단 | 버전·렌더링 상태를 확인한 뒤 JSON으로 저장합니다. 개인 경로·대화·키·훅 설정은 제외하며, 업데이트는 공식 릴리스 링크에서 직접 받습니다. |
+| 펫 위치 복구 | 설정에서 화면을 골라 데려오거나 트레이의 **펫 데려오기**로 마우스에 가까운 화면으로 옮깁니다. 미확인 알림과 집중 시간은 유지합니다. |
 
 설정 상단의 **언어**에서 한국어·영어·간체중국어를 선택합니다. 설정·트레이·주요 상태 문구에 적용하며 새 프로필은 Windows 언어를 따를 수 있습니다. 일부 고급 창·오류 상세·캐릭터 제작자가 쓴 설명은 한국어로 남습니다. 빌드 대상은 Windows x64이며 macOS·Linux·네이티브 ARM64 패키지는 제공하지 않습니다.
 
@@ -160,7 +161,7 @@ powershell -NoProfile -File tests/package-regression.ps1
 공용 Windows x64 배포를 만들려면 다음을 실행합니다.
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 0.30.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 0.50.0
 ```
 
 `artifacts/releases/`에 self-contained ZIP과 SHA256을 만듭니다. 필요한 런타임 팩이 없으면 실패하며 배포 종류를 몰래 바꾸지 않습니다. [Windows 워크플로](.github/workflows/windows-release.yml)는 검사와 아티팩트 생성을 설정한 파일이며, 파일이 있다고 원격 빌드나 공개 릴리스가 성공했다는 뜻은 아닙니다.

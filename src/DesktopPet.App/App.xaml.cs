@@ -54,7 +54,7 @@ public partial class App : System.Windows.Application
         }
         if (e.Args.Contains("--version", StringComparer.Ordinal))
         {
-            Console.WriteLine(typeof(App).Assembly.GetName().Version?.ToString() ?? "0.30.0");
+            Console.WriteLine(typeof(App).Assembly.GetName().Version?.ToString() ?? "0.50.0");
             Shutdown();
             return;
         }
@@ -152,6 +152,7 @@ public partial class App : System.Windows.Application
         var visibilityItem = new WinForms.ToolStripMenuItem(UiText.Get("펫 보이기"));
         visibilityItem.Click += (_, _) => petWindow.SetVisible(!petWindow.IsPetVisible);
         menu.Items.Add(visibilityItem);
+        menu.Items.Add(UiText.Get("펫 데려오기"), null, (_, _) => petWindow.TryRecoverPet());
 
         // Reflect current state each time the menu opens, since the settings window can change it.
         menu.Opening += (_, _) =>

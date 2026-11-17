@@ -18,6 +18,7 @@ public partial class MainWindow : Window
     private readonly CharacterLibrary _characterLibrary;
     private readonly FocusTimer _focusTimer;
     private readonly TimeProvider _quietClock;
+    private readonly Func<IReadOnlyList<DesktopRect>>? _workAreasProvider;
     private bool _scheduledQuietActive;
     private readonly DispatcherTimer _quietHoursTimer = new() { Interval = TimeSpan.FromSeconds(15) };
     private readonly DispatcherTimer _focusTickTimer = new() { Interval = TimeSpan.FromSeconds(1) };
@@ -82,12 +83,14 @@ public partial class MainWindow : Window
 
     public MainWindow() : this(null) { }
 
-    public MainWindow(CharacterLibrary? characterLibrary, FocusTimer? focusTimer = null, string? inboxDirectory = null, TimeProvider? quietClock = null)
+    public MainWindow(CharacterLibrary? characterLibrary, FocusTimer? focusTimer = null, string? inboxDirectory = null, TimeProvider? quietClock = null,
+        Func<IReadOnlyList<DesktopRect>>? workAreasProvider = null)
     {
         _characterLibrary = characterLibrary ?? new CharacterLibrary(CharactersRoot, Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DesktopPet", "Characters"));
         _focusTimer = focusTimer ?? new FocusTimer();
         _quietClock = quietClock ?? TimeProvider.System;
+        _workAreasProvider = workAreasProvider;
         _inboxDirectory = Path.GetFullPath(inboxDirectory ?? NotificationInbox.DefaultFolder);
         InitializeComponent();
         _poseTransition = new PoseTransitionPresenter(PetImage, PreviousPetImage, FlipTransform);
@@ -691,7 +694,45 @@ public partial class MainWindow : Window
         WindowFallEnabledChanged?.Invoke(CanUseWindowFall);
     }
 
-    private List<DesktopRect> BuildMonitorWorkAreas() =>
+    public IReadOnlyList<DesktopRect> DesktopWorkAreas => BuildMonitorWorkAreas();
+
+    public bool TryRecoverPet(DesktopRect? preferredMonitor = null)
+    {
+        if (_disposed) return false;
+        var areas = BuildMonitorWorkAreas();
+        if (areas.Count == 0 || areas.Any(area => !area.IsValid)) return false;
+        DesktopRect target;
+        if (preferredMonitor is { } preferred)
+        {
+            if (!areas.Contains(preferred)) return false;
+            target = preferred;
+        }
+        else
+        {
+            var cursor = WinForms.Cursor.Position;
+            var x = cursor.X / _dpiScale; var y = cursor.Y / _dpiScale;
+            target = areas.OrderBy(area => area.DistanceSquared(x, y)).First();
+        }
+        CancelInteraction();
+        _windowPlatformMonitor?.Pause();
+        _platformLayout.UpdateWorkAreas(areas);
+        _platformLayout.UpdateWindowPlatforms(Array.Empty<Platform>());
+        _brain.PlaceOnDesktop(target);
+        _walkAppearance.Reset(); _poseTransition.Reset();
+        _lastGaitPositionX = _brain.X;
+        _lastNativeX = _lastNativeY = int.MinValue;
+        _lastTickTimestamp = Stopwatch.GetTimestamp();
+        _framePacer.Reset();
+        MoveWindowTo(_brain.X, _brain.Y, forceTopmost: true);
+        var wasHidden = !_settings.Visible;
+        _settings.Visible = true;
+        RefreshAttentionState();
+        if (IsPresentationActive) _windowPlatformMonitor?.Resume();
+        if (wasHidden) ScheduleSettingsSave();
+        return true;
+    }
+
+    private List<DesktopRect> BuildMonitorWorkAreas() => _workAreasProvider?.Invoke().ToList() ??
         MonitorHelper.GetWorkAreasPx()
             .Select(rect => new DesktopRect(rect.Left / _dpiScale, rect.Top / _dpiScale, rect.Right / _dpiScale, rect.Bottom / _dpiScale))
             .ToList();

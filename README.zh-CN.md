@@ -63,6 +63,7 @@ dotnet build DesktopPet.sln -c Release --no-restore
 | 动效设置 | 可设 30/60/120 FPS 工作上限；减少动效会抑制自动跳跃、强提醒、窗口捕获和淡入淡出，保留原有特效偏好。 |
 | 设置备份 | 导出/恢复显示、行为和计时 JSON；助手注册、钩子信任及本地路径保留在当前机器。 |
 | 本地诊断 | 预览并保存版本、渲染状态 JSON，不含私人路径、对话、密钥或钩子配置；通过官方版本链接手动更新。 |
+| 恢复宠物位置 | 在设置中选择屏幕，或使用托盘的 **Bring pet here** 移到鼠标附近的屏幕，保留未读通知与专注时间。 |
 
 设置顶部的**语言**（`언어`）支持韩语、英语和简体中文，覆盖设置、托盘及主要状态信息。新配置可跟随 Windows 语言。部分高级窗口、错误详情及角色作者描述仍为韩语。构建目标为 Windows x64；不提供 macOS、Linux 或原生 ARM64 安装包。
 
@@ -159,7 +160,7 @@ powershell -NoProfile -File tests/package-regression.ps1
 构建公开 Windows x64 包：
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 0.30.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 0.50.0
 ```
 
 输出位于 `artifacts/releases/`，包含 self-contained ZIP 与 SHA256 文件。缺少运行时包时构建会失败，不会静默切换为其他部署方式。[Windows 工作流](.github/workflows/windows-release.yml)配置了测试与构建产物；存在该文件不等于远程构建已通过或版本已经发布。

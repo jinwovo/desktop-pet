@@ -63,6 +63,7 @@ NuGet access is needed for missing build or runtime packs. Runtime use does not 
 | Motion comfort | Choose a 30/60/120 FPS work cap and reduced motion; optional hops, nagging bounce, window capture and fades pause without changing saved effect choices. |
 | Settings backup | Export/restore portable display, behavior and timer JSON. Assistant registration/trust and local paths stay on the current machine. |
 | Local diagnostics | Preview and save a small JSON report for issues; no private paths, chat contents, keys or hook configuration. Settings also links to official releases for manual updates. |
+| Recover a lost pet | Choose a monitor in Settings, or use **Bring pet here** in the tray for the pointer's nearest screen. Recovery preserves unread notifications and focus time. |
 
 Settings and the tray support **Korean, English and Simplified Chinese**. Choose **Language** (`언어`) at the top of Settings; new profiles can follow Windows. Some advanced dialogs, error details and character-authored descriptions retain Korean. The build targets Windows x64; macOS, Linux, and native ARM64 packages are not provided.
 
@@ -160,7 +161,7 @@ The suites use fixture directories and do not register hooks in your real assist
 To create a public Windows x64 package:
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 0.30.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 0.50.0
 ```
 
 The output is a self-contained ZIP and a SHA256 sidecar under `artifacts/releases/`. Missing runtime packs cause a build failure; the script does not silently change deployment type. The [Windows workflow](.github/workflows/windows-release.yml) is configured to run checks and create artifacts; its presence does not imply a successful remote build or a published release.
