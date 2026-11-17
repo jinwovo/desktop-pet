@@ -22,6 +22,11 @@ internal static class Program
         MainWindow? pet = null;
         try
         {
+            if (args.Contains("--fullscreen-only"))
+            {
+                FullscreenUiTests.Run(folder);
+                return 0;
+            }
             if (args.Contains("--gallery-capture"))
             {
                 CharacterGalleryRegressionTests.CaptureInstalledGallery(folder);
@@ -280,6 +285,7 @@ internal static class Program
             VerifyConnections(folder, pet, args.Contains("--capture"));
             VerifyCharacterImport(pet, folder, args.Contains("--capture"));
             FocusTimerUiTests.Run(folder);
+            FullscreenUiTests.Run(folder);
             PlatformMonitorUiTests.Run(pet);
             CharacterGalleryRegressionTests.Run(folder, args.Contains("--capture"));
             if (args.Contains("--personal-pack")) VerifyPersonalSelection(pet);

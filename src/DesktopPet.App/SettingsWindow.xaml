@@ -124,6 +124,7 @@
             <StackPanel>
                 <TextBlock Text="동작" Style="{StaticResource SectionLabel}" />
                 <CheckBox x:Name="VisibleCheck" Content="펫 보이기" Checked="Toggle_Changed" Unchecked="Toggle_Changed" />
+                <CheckBox x:Name="FullscreenCheck" Content="전체화면 앱을 사용할 때 잠시 숨기기" Checked="Fullscreen_Changed" Unchecked="Fullscreen_Changed" />
                 <CheckBox x:Name="HopCheck" Content="창 사이를 뛰어다니기" Checked="Toggle_Changed" Unchecked="Toggle_Changed" />
                 <CheckBox x:Name="SleepCheck" Content="오래 방치하면 잠자기" Checked="Toggle_Changed" Unchecked="Toggle_Changed" />
                 <CheckBox x:Name="CalmCheck" Content="차분한 움직임" Checked="Comfort_Changed" Unchecked="Comfort_Changed" />

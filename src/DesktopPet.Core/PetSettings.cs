@@ -10,6 +10,7 @@ public sealed class PetSettings
     public double ScaleMultiplier { get; set; } = 1.0;
     public double WalkSpeedMultiplier { get; set; } = 1.0;
     public bool Visible { get; set; } = true;
+    public bool PauseDuringFullscreen { get; set; } = true;
 
     /// <summary>Animate other applications' windows falling into the taskbar when they close.</summary>
     public bool WindowFallEnabled { get; set; }

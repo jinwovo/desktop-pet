@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.7.0 — fullscreen and session cooperation
+
+- Temporarily pause the pet, bubbles, platform scanning and optional window-fall capture while a foreground window covers the pet's monitor.
+- Pause presentation on session lock and system suspend, preserving manual visibility, durable notifications and the logical focus timer. Refresh foreground state on unlock/resume.
+- Add a default-on fullscreen cooperation checkbox. Own/shell/minimized/invisible windows and fullscreen on another monitor are excluded.
+- Check fullscreen using local foreground geometry only; no screenshots or window titles are needed. Add pure geometry/settings cases and isolated WPF lock/power/notification tests.
+
 ## 0.6.1 — pause hidden background scans
 
 - Stop window-platform scanning while the pet is hidden, including a hidden startup. Showing the pet requests an immediate background refresh.

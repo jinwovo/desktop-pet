@@ -18,6 +18,9 @@ public partial class MainWindow : Window
     private readonly CharacterLibrary _characterLibrary;
     private readonly FocusTimer _focusTimer;
     private readonly DispatcherTimer _focusTickTimer = new() { Interval = TimeSpan.FromSeconds(1) };
+    private readonly DispatcherTimer _attentionTimer = new() { Interval = TimeSpan.FromMilliseconds(500) };
+    private PetSuppressionReason _suppressionReasons;
+    private bool? _appliedVisibility;
     private readonly string _inboxDirectory;
     private string? _lastFocusCaption;
     private FocusTimerStatus? _lastFocusStatus;
@@ -89,6 +92,7 @@ public partial class MainWindow : Window
         _notificationPopupTimer.Tick += (_, _) => OnNotificationPopupElapsed();
         _duplicateCleanupTimer.Tick += (_, _) => RetryDuplicateCleanup();
         _focusTickTimer.Tick += (_, _) => UpdateFocusTimer();
+        _attentionTimer.Tick += (_, _) => RefreshAttentionState();
         _focusTimer.SessionCompleted += OnFocusSessionCompleted;
     }
 
@@ -144,12 +148,13 @@ public partial class MainWindow : Window
         _lastGaitPositionX = _brain.X;
 
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
+        Microsoft.Win32.SystemEvents.SessionSwitch += OnSessionSwitch;
+        Microsoft.Win32.SystemEvents.PowerModeChanged += OnPowerModeChanged;
 
         var ownProcessId = (uint)Environment.ProcessId;
         _windowPlatformMonitor = new WindowPlatformMonitor(
             () => WindowPlatformScanner.Scan(ownProcessId, _dpiScale),
             _platformLayout.UpdateWindowPlatforms);
-        if (_settings.Visible) _windowPlatformMonitor.Resume();
 
         _bubble = new SpeechBubbleWindow();
         _bubble.Acknowledged += AcknowledgeNotification;
@@ -166,10 +171,7 @@ public partial class MainWindow : Window
         MoveWindowTo(startX, startY); // avoid a visible flash at the WPF-default position before the first rendered frame
 
         _lastTickTimestamp = Stopwatch.GetTimestamp();
-        if (_settings.Visible)
-        {
-            StartRenderLoop();
-        }
+        RefreshAttentionState();
         _inbox.Start();
     }
 
@@ -257,13 +259,64 @@ public partial class MainWindow : Window
     public void SetVisible(bool visible)
     {
         if (_settings.Visible == visible) return;
+        _settings.Visible = visible;
+        RefreshAttentionState();
+        ScheduleSettingsSave();
+    }
+
+    public void SetPauseDuringFullscreen(bool enabled)
+    {
+        if (_settings.PauseDuringFullscreen == enabled) return;
+        _settings.PauseDuringFullscreen = enabled;
+        RefreshAttentionState();
+        ScheduleSettingsSave();
+    }
+
+    private void RefreshAttentionState()
+    {
+        if (_disposed) return;
+        var reasons = _suppressionReasons;
+        var sessionPaused = (reasons & (PetSuppressionReason.SessionLocked | PetSuppressionReason.Suspended)) != 0;
+        if (!_settings.PauseDuringFullscreen) reasons &= ~PetSuppressionReason.Fullscreen;
+        else if (_hwnd != IntPtr.Zero)
+        {
+            var fullscreen = _settings.Visible && !sessionPaused && ForegroundFullscreenDetector.ShouldPause(_hwnd);
+            reasons = fullscreen ? reasons | PetSuppressionReason.Fullscreen : reasons & ~PetSuppressionReason.Fullscreen;
+        }
+        SetTemporarySuppression(reasons);
+        ApplyPetVisibility();
+        UpdateAttentionPolling();
+    }
+
+    private void SetTemporarySuppression(PetSuppressionReason reasons)
+    {
+        if (_disposed || _suppressionReasons == reasons) return;
+        _suppressionReasons = reasons;
+        ApplyPetVisibility();
+        UpdateAttentionPolling();
+    }
+
+    private void UpdateAttentionPolling()
+    {
+        var sessionPaused = (_suppressionReasons & (PetSuppressionReason.SessionLocked | PetSuppressionReason.Suspended)) != 0;
+        var enabled = !_disposed && _hwnd != IntPtr.Zero && _settings.Visible && _settings.PauseDuringFullscreen && !sessionPaused;
+        if (enabled && !_attentionTimer.IsEnabled) _attentionTimer.Start();
+        else if (!enabled) _attentionTimer.Stop();
+    }
+
+    private void ApplyPetVisibility()
+    {
+        var visible = _settings.Visible && !IsTemporarilyPaused;
+        if (_appliedVisibility == visible) return;
+        _appliedVisibility = visible;
         Visibility = visible ? Visibility.Visible : Visibility.Hidden;
 
-        // No point simulating or rendering a pet nobody can see.
         if (visible)
         {
             _windowPlatformMonitor?.Resume();
-            _lastTickTimestamp = Stopwatch.GetTimestamp(); // avoid one huge dt after a long hide
+            _lastTickTimestamp = Stopwatch.GetTimestamp();
+            _lastRenderingTime = null;
+            _lastTopmostTimestamp = 0;
             StartRenderLoop();
         }
         else
@@ -277,13 +330,13 @@ public partial class MainWindow : Window
             StopRenderLoop();
         }
 
-        _settings.Visible = visible;
-        ScheduleSettingsSave();
+        PresentationVisibilityChanged?.Invoke(visible);
         if (visible && _activeNotification is not null) ShowActiveNotification();
     }
 
     private void StartRenderLoop()
     {
+        if (_disposed || !_settings.Visible || IsTemporarilyPaused) return;
         if (_renderLoopRunning)
         {
             return;
@@ -316,6 +369,9 @@ public partial class MainWindow : Window
     public double CurrentScaleMultiplier => _settings.ScaleMultiplier;
     public double CurrentWalkSpeedMultiplier => _settings.WalkSpeedMultiplier;
     public bool IsPetVisible => _settings.Visible;
+    public bool IsTemporarilyPaused => _suppressionReasons != PetSuppressionReason.None;
+    public bool PauseDuringFullscreen => _settings.PauseDuringFullscreen;
+    public bool IsPresentationActive => !_disposed && _settings.Visible && !IsTemporarilyPaused;
     public bool HopEnabled => _settings.HopBetweenWindowsEnabled;
     public bool SleepEnabled => _settings.SleepEnabled;
     public bool WindowFallEnabled => _settings.WindowFallEnabled;
@@ -426,6 +482,7 @@ public partial class MainWindow : Window
 
     /// <summary>Raised when the window-fall feature is toggled, so the service can start/stop.</summary>
     public event Action<bool>? WindowFallEnabledChanged;
+    public event Action<bool>? PresentationVisibilityChanged;
     public event Action<string>? OperationFailed;
     public event Action<int>? PendingNotificationCountChanged;
     public event Action<string>? AssistantNotificationReceived;
@@ -520,6 +577,31 @@ public partial class MainWindow : Window
             Dispatcher.BeginInvoke(() => { if (!_disposed) _platformLayout.UpdateMonitors(BuildMonitorFloors()); });
     }
 
+    private void OnSessionSwitch(object sender, Microsoft.Win32.SessionSwitchEventArgs e)
+    {
+        if (e.Reason is Microsoft.Win32.SessionSwitchReason.SessionLock or Microsoft.Win32.SessionSwitchReason.SessionUnlock)
+            DispatchSessionState(PetSuppressionReason.SessionLocked, e.Reason == Microsoft.Win32.SessionSwitchReason.SessionLock);
+    }
+
+    private void OnPowerModeChanged(object sender, Microsoft.Win32.PowerModeChangedEventArgs e)
+    {
+        if (e.Mode is Microsoft.Win32.PowerModes.Suspend or Microsoft.Win32.PowerModes.Resume)
+            DispatchSessionState(PetSuppressionReason.Suspended, e.Mode == Microsoft.Win32.PowerModes.Suspend);
+    }
+
+    private void DispatchSessionState(PetSuppressionReason reason, bool enabled)
+    {
+        if (Dispatcher.HasShutdownStarted) return;
+        Dispatcher.BeginInvoke(() =>
+        {
+            if (_disposed) return;
+            // Refresh foreground state before applying the new session state, avoiding a
+            // one-frame flash over a fullscreen app when the session wakes/unlocks.
+            _suppressionReasons = enabled ? _suppressionReasons | reason : _suppressionReasons & ~reason;
+            RefreshAttentionState();
+        });
+    }
+
     private void ScheduleSettingsSave()
     {
         _settingsDirty = true;
@@ -548,6 +630,7 @@ public partial class MainWindow : Window
 
     private void CompositionTarget_Rendering(object? sender, EventArgs e)
     {
+        if (_disposed || !_settings.Visible || IsTemporarilyPaused) return;
         if (e is RenderingEventArgs rendering)
         {
             if (_lastRenderingTime == rendering.RenderingTime) return;
@@ -772,6 +855,7 @@ public partial class MainWindow : Window
     {
         if (_disposed) return;
         _disposed = true;
+        _attentionTimer.Stop();
         _windowPlatformMonitor?.Dispose();
         _focusTickTimer.Stop();
         _focusTimer.SessionCompleted -= OnFocusSessionCompleted;
@@ -783,6 +867,8 @@ public partial class MainWindow : Window
         _duplicateCleanupTimer.Stop();
         CancelInteraction();
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged;
+        Microsoft.Win32.SystemEvents.SessionSwitch -= OnSessionSwitch;
+        Microsoft.Win32.SystemEvents.PowerModeChanged -= OnPowerModeChanged;
         SaveSettings();
         _inbox?.Dispose();
         _bubble?.Shutdown();
@@ -843,7 +929,7 @@ public partial class MainWindow : Window
 
     private void ShowActiveNotification(bool userRequested = false, bool resetTimer = true)
     {
-        if (_activeNotification is null) return;
+        if (_activeNotification is null || IsTemporarilyPaused) return;
         if (!_settings.Visible)
         {
             if (!userRequested) return;

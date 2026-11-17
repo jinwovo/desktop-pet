@@ -21,6 +21,17 @@ public static class MonitorHelper
     [DllImport("user32.dll", CharSet = CharSet.Auto)]
     private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
 
+    [DllImport("user32.dll")]
+    private static extern IntPtr MonitorFromWindow(IntPtr hWnd, uint flags);
+
+    public static RECT? GetMonitorBoundsForWindow(IntPtr window)
+    {
+        if (window == IntPtr.Zero) return null;
+        var monitor = MonitorFromWindow(window, 2); // MONITOR_DEFAULTTONEAREST
+        var info = new MONITORINFO { cbSize = Marshal.SizeOf<MONITORINFO>() };
+        return monitor != IntPtr.Zero && GetMonitorInfo(monitor, ref info) ? info.rcMonitor : null;
+    }
+
     /// <summary>Work-area rect (excludes taskbar) of every connected monitor, in screen pixels.</summary>
     public static List<RECT> GetWorkAreasPx()
     {

@@ -76,6 +76,7 @@ public partial class SettingsWindow : Window
         ScaleSlider.Value = _pet.CurrentScaleMultiplier;
         SpeedSlider.Value = _pet.CurrentWalkSpeedMultiplier;
         VisibleCheck.IsChecked = _pet.IsPetVisible;
+        FullscreenCheck.IsChecked = _pet.PauseDuringFullscreen;
         HopCheck.IsChecked = _pet.HopEnabled;
         SleepCheck.IsChecked = _pet.SleepEnabled;
         WindowFallCheck.IsChecked = _pet.WindowFallEnabled;
@@ -93,6 +94,11 @@ public partial class SettingsWindow : Window
     {
         ScaleValue.Text = $"{ScaleSlider.Value * 100:F0}%";
         SpeedValue.Text = $"{SpeedSlider.Value:0.##}x";
+    }
+
+    private void Fullscreen_Changed(object sender, RoutedEventArgs e)
+    {
+        if (!_loading) _pet.SetPauseDuringFullscreen(FullscreenCheck.IsChecked == true);
     }
 
     private void UpdatePreview()
