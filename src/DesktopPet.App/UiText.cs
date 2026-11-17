@@ -1,0 +1,169 @@
+using System.Globalization;
+using System.Windows;
+using System.Windows.Controls;
+
+namespace DesktopPet.App;
+
+/// <summary>Small offline KO/EN/zh-CN UI catalog. Character names and user-entered text stay intact.</summary>
+public static class UiText
+{
+    private static string _language = "ko";
+    private static readonly DependencyProperty OriginalTextProperty = DependencyProperty.RegisterAttached(
+        "OriginalText", typeof(string), typeof(UiText), new PropertyMetadata(null));
+    private static readonly DependencyProperty OriginalTitleProperty = DependencyProperty.RegisterAttached(
+        "OriginalTitle", typeof(string), typeof(UiText), new PropertyMetadata(null));
+    public static string Language => _language;
+    public static event Action? LanguageChanged;
+    public static void SetLanguage(string preference)
+    {
+        if (preference is not ("auto" or "ko" or "en" or "zh-CN")) throw new ArgumentOutOfRangeException(nameof(preference));
+        var system = CultureInfo.CurrentUICulture.Name;
+        var language = preference == "auto" ? system.StartsWith("ko", StringComparison.OrdinalIgnoreCase) ? "ko" :
+            system.StartsWith("zh", StringComparison.OrdinalIgnoreCase) ? "zh-CN" : "en" : preference;
+        if (_language == language) return;
+        _language = language;
+        LanguageChanged?.Invoke();
+    }
+    public static string Get(string original) => !Translations.TryGetValue(original, out var text) ? original :
+        _language == "en" ? text.English : _language == "zh-CN" ? text.Chinese : original;
+    public static string Format(string original, params object[] values) => string.Format(CultureInfo.CurrentCulture, Get(original), values);
+    public static void Attach(Window window)
+    {
+        void Refresh() => TranslateWindow(window);
+        RoutedEventHandler loaded = (_, _) => Refresh();
+        window.Loaded += loaded;
+        LanguageChanged += Refresh;
+        window.Closed += (_, _) => { LanguageChanged -= Refresh; window.Loaded -= loaded; };
+        Refresh();
+    }
+    public static void TranslateWindow(Window window)
+    {
+        var original = (string?)window.GetValue(OriginalTitleProperty) ?? window.Title;
+        window.SetValue(OriginalTitleProperty, original);
+        window.Title = Get(original);
+        Walk(window);
+    }
+    private static void Walk(DependencyObject node)
+    {
+        var text = node is TextBlock block ? block.Text : node is ContentControl control && control.Content is string value ? value : null;
+        if (text is not null)
+        {
+            var original = (string?)node.GetValue(OriginalTextProperty) ?? text;
+            node.SetValue(OriginalTextProperty, original);
+            if (node is TextBlock target) target.Text = Get(original);
+            else if (node is ContentControl targetControl) targetControl.Content = Get(original);
+        }
+        foreach (var child in LogicalTreeHelper.GetChildren(node).OfType<DependencyObject>()) Walk(child);
+    }
+    private static readonly Dictionary<string, (string English, string Chinese)> Translations = new(StringComparer.Ordinal)
+    {
+        ["앱 종료"] = ("Exit", "退出"),
+        ["DesktopPet 설정"] = ("DesktopPet Settings", "DesktopPet 设置"),
+        ["캐릭터"] = ("Character", "角色"),
+        ["갤러리 · 검색"] = ("Gallery · Search", "画廊 · 搜索"),
+        ["동작 미리보기"] = ("Animation preview", "动作预览"),
+        ["캐릭터 추가"] = ("Add folder", "添加文件夹"),
+        ["ZIP 추가"] = ("Add ZIP", "添加 ZIP"),
+        ["보관 폴더 열기"] = ("Open library", "打开角色库"),
+        ["character.json이 있는 폴더나 캐릭터 ZIP을 추가하세요. 여러 캐릭터가 있으면 하나를 선택할 수 있어요."] = ("Add a character folder or ZIP. Collections let you choose one character.", "添加角色文件夹或 ZIP；合集可选择其中一个角色。"),
+        ["크기와 속도"] = ("Size and speed", "大小与速度"),
+        ["크기"] = ("Size", "大小"),
+        ["걷기 속도"] = ("Speed", "行走速度"),
+        ["집중 타이머"] = ("Focus timer", "专注计时器"),
+        ["시간 변경은 다음 시작·다시 시작부터 적용해요. 다음 세션은 직접 시작해요."] = ("Duration changes apply on the next start or restart. Start each session manually.", "新时长在下次开始或重启时生效。请手动开始每个阶段。"),
+        ["집중(분)"] = ("Focus (min)", "专注（分钟）"),
+        ["휴식(분)"] = ("Break (min)", "休息（分钟）"),
+        ["시간 적용"] = ("Apply time", "应用时长"),
+        ["집중 시작"] = ("Start focus", "开始专注"),
+        ["휴식 시작"] = ("Start break", "开始休息"),
+        ["일시정지"] = ("Pause", "暂停"),
+        ["계속"] = ("Resume", "继续"),
+        ["다시 시작"] = ("Restart", "重新开始"),
+        ["종료"] = ("Stop", "停止"),
+        ["닫기"] = ("Close", "关闭"),
+        ["취소"] = ("Cancel", "取消"),
+        ["모션과 화면 갱신"] = ("Motion and rendering", "动效与刷新"),
+        ["30 FPS · 절약"] = ("30 FPS · Save work", "30 FPS · 节约"),
+        ["60 FPS · 기본"] = ("60 FPS · Default", "60 FPS · 默认"),
+        ["120 FPS · 고주사율"] = ("120 FPS · High refresh", "120 FPS · 高刷新率"),
+        ["움직임 줄이기 · 점프·강한 알림·창 연출·페이드 끄기"] = ("Reduce motion: pause hops, strong alerts, window effects and fades", "减少动效：暂停跳跃、强提醒、窗口特效与淡入淡出"),
+        ["걷기와 발의 접지는 유지합니다. FPS는 최대 갱신 빈도이며 실제 성능은 화면과 PC에 따라 달라요."] = ("Walking and foot contact stay continuous. FPS is a work cap; actual performance depends on your display and PC.", "保留连续行走与脚部接地。FPS 是工作上限，实际性能取决于屏幕和电脑。"),
+        ["동작"] = ("Behavior", "行为"),
+        ["펫 보이기"] = ("Show pet", "显示宠物"),
+        ["전체화면 앱을 사용할 때 잠시 숨기기"] = ("Pause while a fullscreen app covers this monitor", "当前屏幕全屏时暂时隐藏"),
+        ["창 사이를 뛰어다니기"] = ("Hop between windows", "在窗口间跳跃"),
+        ["오래 방치하면 잠자기"] = ("Sleep after inactivity", "空闲后睡觉"),
+        ["차분한 움직임"] = ("Calm behavior", "安静行为"),
+        ["완료 말풍선을 잠시 후 닫기"] = ("Auto-hide completion bubbles", "自动隐藏完成气泡"),
+        ["방해 금지 · 말풍선 없이 보관"] = ("Do not disturb · Save without bubbles", "免打扰 · 仅保存通知"),
+        ["매일 예약 방해 금지"] = ("Daily quiet hours", "每日预约免打扰"),
+        ["예약 적용"] = ("Apply schedule", "应用时段"),
+        ["로컬 시간 HH:mm. 자정을 넘길 수 있고 같은 시간은 예약하지 않아요."] = ("Local HH:mm. Overnight intervals work; equal times are inactive.", "本地 HH:mm，支持跨午夜；起止相同则不启用时段。"),
+        ["테스트 알림"] = ("Test notification", "测试通知"),
+        ["창 닫을 때 떨어지는 연출"] = ("Window closing fall effect", "窗口关闭下落特效"),
+        ["창 연출을 끄면 다른 프로그램의 창을 주기적으로 캡처하지 않아 더 가볍습니다."] = ("Disabling window effects also disables periodic capture of other app windows.", "关闭窗口特效也会关闭其他应用窗口的定期捕获。"),
+        ["설정 백업과 복원"] = ("Settings backup and restore", "设置备份与恢复"),
+        ["설정 백업"] = ("Back up settings", "备份设置"),
+        ["설정 복원"] = ("Restore settings", "恢复设置"),
+        ["화면·동작·시간 설정만 옮깁니다. AI 연결·훅 허용·개인 경로는 포함하지 않아요."] = ("Transfer display, behavior and timers only. AI connections, hook trust and private paths stay here.", "仅转移显示、行为与计时设置，不包含 AI 连接、钩子信任或私人路径。"),
+        ["움직임 시험"] = ("Motion preview", "动作测试"),
+        ["AI 연결"] = ("AI connections", "AI 连接"),
+        ["설정..."] = ("Settings...", "设置..."),
+        ["AI 연결..."] = ("AI connections...", "AI 连接..."),
+        ["보관된 알림 확인"] = ("Review saved notifications", "查看已保存通知"),
+        ["보관된 알림 없음"] = ("No saved notifications", "没有已保存通知"),
+        ["기분 표현"] = ("Emotes", "表情"),
+        ["울기 😢"] = ("Cry 😢", "哭泣 😢"),
+        ["화내기 💢"] = ("Angry 💢", "生气 💢"),
+        ["집중"] = ("Focus", "专注"),
+        ["휴식"] = ("Break", "休息"),
+        ["집중 대기"] = ("Ready to focus", "等待专注"),
+        [" 일시정지"] = (" paused", "已暂停"),
+        [" 완료"] = (" complete", "已完成"),
+        ["가만히 있기"] = ("Idle", "静止"),
+        ["걷기"] = ("Walk", "行走"),
+        ["울기"] = ("Cry", "哭泣"),
+        ["화내기"] = ("Angry", "生气"),
+        ["잠자기"] = ("Sleep", "睡觉"),
+        ["떨어지기"] = ("Fall", "下落"),
+        ["걷는 방향을 바라보며 움직여요."] = ("Faces the direction of travel.", "朝行走方向移动。"),
+        ["동작을 골라 미리 볼 수 있어요."] = ("Choose an animation to preview.", "选择动作进行预览。"),
+        ["이미지를 읽을 수 없습니다."] = ("Cannot read the artwork.", "无法读取图像。"),
+        ["캐릭터를 추가하고 있어요…"] = ("Installing character…", "正在安装角色…"),
+        ["캐릭터 추가를 취소했어요."] = ("Character installation cancelled.", "已取消角色安装。"),
+        ["새 캐릭터를 추가했어요."] = ("Character installed.", "已安装角色。"),
+        ["추가하지 못했어요. 캐릭터 팩과 사용 권한을 확인해주세요."] = ("Installation failed. Check the pack and file permissions.", "安装失败，请检查角色包与文件权限。"),
+        ["보관 폴더를 열지 못했어요. 폴더의 사용 권한을 확인해주세요."] = ("Cannot open the library. Check folder permissions.", "无法打开角色库，请检查文件夹权限。"),
+        ["추가할 캐릭터 폴더 선택"] = ("Choose a character folder", "选择角色文件夹"),
+        ["추가할 캐릭터 ZIP 선택"] = ("Choose a character ZIP", "选择角色 ZIP"),
+        ["ZIP 캐릭터 선택"] = ("Choose a ZIP character", "选择 ZIP 角色"),
+        ["추가할 캐릭터를 선택하세요."] = ("Choose a character to install.", "选择要安装的角色。"),
+        ["선택한 캐릭터 추가"] = ("Install selected character", "安装所选角色"),
+        ["집중 1~180분, 휴식 1~60분을 입력해주세요."] = ("Enter focus 1–180 min and break 1–60 min.", "请输入专注 1–180 分钟、休息 1–60 分钟。"),
+        ["다음 시작·다시 시작부터 적용해요. 진행 중인 시간은 유지합니다."] = ("Applies on the next start/restart. Active time is preserved.", "下次开始或重启时生效，保留当前剩余时间。"),
+        ["00:00~23:59 사이 HH:mm 형식으로 입력해주세요."] = ("Enter HH:mm between 00:00 and 23:59.", "请输入 00:00 至 23:59 的 HH:mm 时间。"),
+        ["같은 시작·종료 시간은 예약을 활성화하지 않아요."] = ("Equal start/end times leave the schedule inactive.", "起止相同则不启用时段。"),
+        ["예약을 적용했어요. 미확인 알림은 계속 보관합니다."] = ("Schedule applied. Unread notifications stay saved.", "时段已应用，仍会保存未读通知。"),
+        ["설정을 백업했어요. AI 연결 정보는 포함하지 않았습니다."] = ("Settings backed up. AI connection data is excluded.", "已备份设置，不包含 AI 连接信息。"),
+        ["백업하지 못했어요. 저장 위치와 권한을 확인해주세요."] = ("Backup failed. Check the destination and permissions.", "备份失败，请检查位置与权限。"),
+        ["설정을 복원했어요. 설치되지 않은 캐릭터 대신 현재 친구를 유지합니다."] = ("Settings restored. The missing character was replaced by your current pet.", "设置已恢复；未安装的角色保留为当前宠物。"),
+        ["설정을 복원했어요. AI 연결과 진행 중인 집중 시간은 유지합니다."] = ("Settings restored. AI connections and the active countdown are preserved.", "设置已恢复，保留 AI 连接与当前倒计时。"),
+        ["복원하지 못했어요. 백업 형식과 캐릭터 파일을 확인해주세요."] = ("Restore failed. Check the backup format and character files.", "恢复失败，请检查备份格式与角色文件。"),
+        ["집중 시간 완료"] = ("Focus complete", "专注完成"),
+        ["휴식 시간 완료"] = ("Break complete", "休息完成"),
+        ["잠깐 쉬어가세요. 준비되면 휴식을 시작해요."] = ("Take a moment. Start a break when ready.", "休息一下，准备好后开始休息阶段。"),
+        ["쉬는 시간이 끝났어요. 준비되면 다시 집중해요."] = ("Your break ended. Start focusing when ready.", "休息结束，准备好后再次开始专注。"),
+        ["알림이 잘 도착했어요. 확인해보세요."] = ("The notification arrived. Try acknowledging it.", "通知已到达，请尝试确认。"),
+        ["한국어"] = ("한국어", "한국어"),
+        ["언어"] = ("Language", "语言"),
+        ["Windows 언어 사용"] = ("Use Windows language", "使用 Windows 语言"),
+        ["보관된 알림 확인 ({0})"] = ("Review saved notifications ({0})", "查看已保存通知（{0}）"),
+        ["DesktopPet · 알림 {0}개"] = ("DesktopPet · {0} unread", "DesktopPet · {0} 条未读"),
+        ["추가한 캐릭터"] = ("Custom", "自定义"),
+        ["오리지널"] = ("Original", "原创"),
+        ["팬아트 팩"] = ("Fan-art pack", "同人包"),
+        ["전체 친구"] = ("All characters", "全部角色"),
+        ["친구를 선택해보세요."] = ("Choose a companion.", "选择一个伙伴。"),
+        ["미리보기는 현재 친구를 바꾸지 않아요."] = ("Preview keeps the current pet unchanged.", "预览不会更换当前宠物。"),
+    };
+}

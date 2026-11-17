@@ -63,7 +63,7 @@ NuGet access is needed for missing build or runtime packs. Runtime use does not 
 | Motion comfort | Choose a 30/60/120 FPS work cap and reduced motion; optional hops, nagging bounce, window capture and fades pause without changing saved effect choices. |
 | Settings backup | Export/restore portable display, behavior and timer JSON. Assistant registration/trust and local paths stay on the current machine. |
 
-Documentation is available in three languages. The application currently uses primarily **Korean UI labels**; this README includes the labels needed to find its controls. The build targets Windows x64; macOS, Linux, and native ARM64 packages are not provided.
+Settings and the tray support **Korean, English and Simplified Chinese**. Choose **Language** (`언어`) at the top of Settings; new profiles can follow Windows. Some advanced dialogs, error details and character-authored descriptions retain Korean. The build targets Windows x64; macOS, Linux, and native ARM64 packages are not provided.
 
 ## Connect Claude Code and Codex
 
@@ -159,7 +159,7 @@ The suites use fixture directories and do not register hooks in your real assist
 To create a public Windows x64 package:
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 0.14.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 0.20.0
 ```
 
 The output is a self-contained ZIP and a SHA256 sidecar under `artifacts/releases/`. Missing runtime packs cause a build failure; the script does not silently change deployment type. The [Windows workflow](.github/workflows/windows-release.yml) is configured to run checks and create artifacts; its presence does not imply a successful remote build or a published release.

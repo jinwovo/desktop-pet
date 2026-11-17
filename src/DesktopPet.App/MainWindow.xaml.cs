@@ -123,6 +123,7 @@ public partial class MainWindow : Window
     {
         _dpiScale = VisualTreeHelper.GetDpi(this).DpiScaleX;
         _settings = PetSettings.Load();
+        UiText.SetLanguage(_settings.Language);
         _framePacer.MaximumFps = _settings.MaximumFps;
         _focusTimer.ConfigureDurations(TimeSpan.FromMinutes(_settings.FocusMinutes), TimeSpan.FromMinutes(_settings.BreakMinutes));
         RefreshQuietHours();
@@ -290,6 +291,7 @@ public partial class MainWindow : Window
         _focusTimer.ConfigureDurations(TimeSpan.FromMinutes(candidate.FocusMinutes), TimeSpan.FromMinutes(candidate.BreakMinutes));
         RefreshQuietHours();
         if (IsQuietNow) DismissForQuietMode();
+        UiText.SetLanguage(candidate.Language);
         RenderOptionsChanged?.Invoke(candidate.MaximumFps, candidate.ReducedMotion);
         RefreshAttentionState();
         WindowFallEnabledChanged?.Invoke(CanUseWindowFall);
@@ -421,6 +423,16 @@ public partial class MainWindow : Window
     public bool HopEnabled => _settings.HopBetweenWindowsEnabled;
     public bool SleepEnabled => _settings.SleepEnabled;
     public bool WindowFallEnabled => _settings.WindowFallEnabled;
+    public string UiLanguagePreference => _settings.Language;
+    public void SetLanguage(string language)
+    {
+        if (_disposed) return;
+        if (language is not ("auto" or "ko" or "en" or "zh-CN")) throw new ArgumentOutOfRangeException(nameof(language));
+        _settings.Language = language;
+        UiText.SetLanguage(language);
+        SynchronizeFocusTimer();
+        ScheduleSettingsSave();
+    }
     public bool CanUseWindowFall => _settings.WindowFallEnabled && !_settings.ReducedMotion;
     public bool ReducedMotion => _settings.ReducedMotion;
     public int MaximumFps => _settings.MaximumFps;
@@ -491,12 +503,12 @@ public partial class MainWindow : Window
         get
         {
             var snapshot = FocusSnapshot;
-            var kind = snapshot.Session == FocusSessionKind.Focus ? "집중" : "휴식";
+            var kind = snapshot.Session == FocusSessionKind.Focus ? UiText.Get("집중") : UiText.Get("휴식");
             var state = snapshot.Status switch
             {
-                FocusTimerStatus.Stopped => "집중 대기",
-                FocusTimerStatus.Paused => kind + " 일시정지",
-                FocusTimerStatus.Completed => kind + " 완료",
+                FocusTimerStatus.Stopped => UiText.Get("집중 대기"),
+                FocusTimerStatus.Paused => kind + UiText.Get(" 일시정지"),
+                FocusTimerStatus.Completed => kind + UiText.Get(" 완료"),
                 _ => kind,
             };
             var seconds = (int)Math.Ceiling(snapshot.Remaining.TotalSeconds);
@@ -504,7 +516,7 @@ public partial class MainWindow : Window
         }
     }
     public string FocusStartCaption => FocusSnapshot.Status == FocusTimerStatus.Completed && FocusSnapshot.Session == FocusSessionKind.Focus
-        ? "휴식 시작" : "집중 시작";
+        ? UiText.Get("휴식 시작") : UiText.Get("집중 시작");
     public bool FocusCanStart => FocusSnapshot.Status is FocusTimerStatus.Stopped or FocusTimerStatus.Completed;
     public bool FocusCanPause => FocusSnapshot.Status is FocusTimerStatus.Running or FocusTimerStatus.Paused;
     public bool FocusCanStop => FocusSnapshot.Status != FocusTimerStatus.Stopped;
@@ -562,15 +574,15 @@ public partial class MainWindow : Window
 
     private void OnFocusSessionCompleted(FocusSessionCompletion completion) => PublishLocalNotification(new PetNotification
     {
-        Title = completion.Session == FocusSessionKind.Focus ? "집중 시간 완료" : "휴식 시간 완료",
+        Title = completion.Session == FocusSessionKind.Focus ? UiText.Get("집중 시간 완료") : UiText.Get("휴식 시간 완료"),
         Message = completion.Session == FocusSessionKind.Focus
-            ? "잠깐 쉬어가세요. 준비되면 휴식을 시작해요." : "쉬는 시간이 끝났어요. 준비되면 다시 집중해요.",
+            ? UiText.Get("잠깐 쉬어가세요. 준비되면 휴식을 시작해요.") : UiText.Get("쉬는 시간이 끝났어요. 준비되면 다시 집중해요."),
         Mood = "gentle", Source = "focus-timer", EventId = Guid.NewGuid().ToString("N"), CreatedAtUtc = DateTimeOffset.UtcNow,
     });
 
     public void SendTestNotification() => PublishLocalNotification(new PetNotification
     {
-        Title = "테스트 알림", Message = "알림이 잘 도착했어요. 확인해보세요.", Mood = "gentle",
+        Title = UiText.Get("테스트 알림"), Message = UiText.Get("알림이 잘 도착했어요. 확인해보세요."), Mood = "gentle",
         Source = "test", EventId = Guid.NewGuid().ToString("N"), CreatedAtUtc = DateTimeOffset.UtcNow,
     });
 

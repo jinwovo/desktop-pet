@@ -10,7 +10,7 @@ public static class PetSettingsBackup
     public const int MaxBytes = 64 * 1024;
     private static readonly HashSet<string> Allowed = new(StringComparer.Ordinal)
     {
-        nameof(PetSettings.CharacterName), nameof(PetSettings.ScaleMultiplier), nameof(PetSettings.WalkSpeedMultiplier),
+        nameof(PetSettings.CharacterName), nameof(PetSettings.Language), nameof(PetSettings.ScaleMultiplier), nameof(PetSettings.WalkSpeedMultiplier),
         nameof(PetSettings.Visible), nameof(PetSettings.PauseDuringFullscreen), nameof(PetSettings.WindowFallEnabled),
         nameof(PetSettings.HopBetweenWindowsEnabled), nameof(PetSettings.SleepEnabled), nameof(PetSettings.CalmBehavior),
         nameof(PetSettings.ReducedMotion), nameof(PetSettings.MaximumFps), nameof(PetSettings.AutoDismissNotifications),

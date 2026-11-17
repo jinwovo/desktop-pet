@@ -26,11 +26,23 @@
         </Style>
         <Style TargetType="CheckBox">
             <Setter Property="Margin" Value="0,5,0,0" />
+            <Setter Property="ContentTemplate">
+                <Setter.Value><DataTemplate><TextBlock Text="{Binding}" TextWrapping="Wrap" MaxWidth="350"/></DataTemplate></Setter.Value>
+            </Setter>
         </Style>
     </Window.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
     <StackPanel Margin="16">
+        <DockPanel Margin="0,0,0,12">
+            <TextBlock Text="언어" VerticalAlignment="Center" Margin="0,0,10,0"/>
+            <ComboBox x:Name="LanguageCombo" SelectedValuePath="Tag" SelectionChanged="Language_Changed">
+                <ComboBoxItem Content="Windows 언어 사용" Tag="auto"/>
+                <ComboBoxItem Content="한국어" Tag="ko"/>
+                <ComboBoxItem Content="English" Tag="en"/>
+                <ComboBoxItem Content="简体中文" Tag="zh-CN"/>
+            </ComboBox>
+        </DockPanel>
 
         <!-- character -->
         <Border Style="{StaticResource Card}">

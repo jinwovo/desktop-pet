@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.20.0 — primary interface languages
+
+- Add persisted Korean/English/Simplified Chinese language selection with an offline UI catalog for primary Settings, tray controls, focus/quiet/backup status and ZIP selection.
+- New profiles can follow Windows language; older settings keep Korean. Character names, authored descriptions and user-entered text remain intact. Some advanced dialogs and error details retain Korean.
+- Refresh static and dynamic primary controls together, preserve physical motion/assistant preferences and remove closed-window language subscriptions. Include language in portable backups.
+
 ## 0.14.0 — portable settings backup
 
 - Export/import bounded, versioned JSON preferences through Settings. Transfer display, behavior, quiet hours and focus options; exclude assistant auto-registration/setup state, trust, inbox and local paths.

@@ -54,6 +54,7 @@ public partial class SettingsWindow : Window
             _closed = true;
             _pet.FocusTimerChanged -= RenderFocusTimer;
             _pet.RenderOptionsChanged -= ApplyRenderOptions;
+            UiText.LanguageChanged -= RefreshLanguage;
             _previewTimer.Stop();
             CompositionTarget.Rendering -= OnPreviewRendering;
             _poseTransition.Reset();
@@ -61,16 +62,19 @@ public partial class SettingsWindow : Window
             _motionPreview?.Close();
             _characterGallery?.Close();
         };
+        UiText.Attach(this);
+        UiText.LanguageChanged += RefreshLanguage;
     }
 
     private void LoadFromPet()
     {
         _loading = true;
+        LanguageCombo.SelectedValue = _pet.UiLanguagePreference;
         PreviewStateCombo.ItemsSource = new[]
         {
-            new PreviewChoice("가만히 있기", PetState.Idle), new PreviewChoice("걷기", PetState.Walk),
-            new PreviewChoice("울기", PetState.Cry), new PreviewChoice("화내기", PetState.Angry),
-            new PreviewChoice("잠자기", PetState.Sleep), new PreviewChoice("떨어지기", PetState.Falling),
+            new PreviewChoice(UiText.Get("가만히 있기"), PetState.Idle), new PreviewChoice(UiText.Get("걷기"), PetState.Walk),
+            new PreviewChoice(UiText.Get("울기"), PetState.Cry), new PreviewChoice(UiText.Get("화내기"), PetState.Angry),
+            new PreviewChoice(UiText.Get("잠자기"), PetState.Sleep), new PreviewChoice(UiText.Get("떨어지기"), PetState.Falling),
         };
         PreviewStateCombo.SelectedValue = PetState.Idle;
 
@@ -99,6 +103,20 @@ public partial class SettingsWindow : Window
 
         UpdateValueLabels();
         UpdatePreview();
+    }
+
+    private void Language_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (!_loading && LanguageCombo.SelectedValue is string language) _pet.SetLanguage(language);
+    }
+
+    private void RefreshLanguage()
+    {
+        if (_closed) return;
+        var selectedState = PreviewStateCombo.SelectedValue;
+        LoadFromPet();
+        if (selectedState is PetState state) PreviewStateCombo.SelectedValue = state;
+        RenderFocusTimer();
     }
 
     private void UpdateValueLabels()
@@ -147,8 +165,8 @@ public partial class SettingsWindow : Window
             _walkAppearance.Reset();
             RenderPreview();
             CharacterHint.Text = _previewPresentation.Definition.HasDirectionalWalk
-                ? "걷는 방향을 바라보며 움직여요."
-                : "동작을 골라 미리 볼 수 있어요.";
+                ? UiText.Get("걷는 방향을 바라보며 움직여요.")
+                : UiText.Get("동작을 골라 미리 볼 수 있어요.");
             if (_previewPresentation.Definition.BehaviorProfile.Description.Length > 0)
                 CharacterHint.Text += "\n" + _previewPresentation.Definition.BehaviorProfile.Description;
         }
@@ -161,7 +179,7 @@ public partial class SettingsWindow : Window
             PreviewRig.Visibility = Visibility.Collapsed;
             PreviewImage.Visibility = Visibility.Visible;
             _liveRigActive = false;
-            CharacterHint.Text = "이미지를 읽을 수 없습니다.";
+            CharacterHint.Text = UiText.Get("이미지를 읽을 수 없습니다.");
         }
     }
 
@@ -299,7 +317,7 @@ public partial class SettingsWindow : Window
         if (_characterImportBusy) return;
         var dialog = new Microsoft.Win32.OpenFolderDialog
         {
-            Title = "추가할 캐릭터 폴더 선택",
+            Title = UiText.Get("추가할 캐릭터 폴더 선택"),
             Multiselect = false,
         };
         if (dialog.ShowDialog(this) == true) _characterImportOperation = ImportCharacterFolderAsync(dialog.FolderName);
@@ -313,7 +331,7 @@ public partial class SettingsWindow : Window
         if (_characterImportBusy) return;
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
-            Title = "추가할 캐릭터 ZIP 선택",
+            Title = UiText.Get("추가할 캐릭터 ZIP 선택"),
             Filter = "캐릭터 ZIP (*.zip)|*.zip",
             Multiselect = false,
         };
@@ -341,7 +359,7 @@ public partial class SettingsWindow : Window
         if (_characterImportBusy || _closed) return;
         _characterImportBusy = true;
         AddArchiveButton.IsEnabled = AddCharacterButton.IsEnabled = CharacterCombo.IsEnabled = false;
-        CharacterImportStatusText.Text = "캐릭터를 추가하고 있어요…";
+        CharacterImportStatusText.Text = UiText.Get("캐릭터를 추가하고 있어요…");
         CharacterImportStatusText.ToolTip = null;
         try
         {
@@ -349,7 +367,7 @@ public partial class SettingsWindow : Window
             if (_closed) return;
             if (name is null)
             {
-                CharacterImportStatusText.Text = "캐릭터 추가를 취소했어요.";
+                CharacterImportStatusText.Text = UiText.Get("캐릭터 추가를 취소했어요.");
                 return;
             }
             _characterGallery?.RefreshCharacters();
@@ -363,7 +381,7 @@ public partial class SettingsWindow : Window
             }
             finally { _loading = false; }
             UpdatePreview();
-            CharacterImportStatusText.Text = "새 캐릭터를 추가했어요.";
+            CharacterImportStatusText.Text = UiText.Get("새 캐릭터를 추가했어요.");
         }
         catch (Exception ex)
         {
@@ -372,7 +390,7 @@ public partial class SettingsWindow : Window
             try { CharacterCombo.SelectedItem = _pet.CurrentCharacterName; }
             finally { _loading = false; }
             UpdatePreview();
-            CharacterImportStatusText.Text = "추가하지 못했어요. 캐릭터 팩과 사용 권한을 확인해주세요.";
+            CharacterImportStatusText.Text = UiText.Get("추가하지 못했어요. 캐릭터 팩과 사용 권한을 확인해주세요.");
             CharacterImportStatusText.ToolTip = ex.Message;
         }
         finally
@@ -391,7 +409,7 @@ public partial class SettingsWindow : Window
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
         {
-            CharacterImportStatusText.Text = "보관 폴더를 열지 못했어요. 폴더의 사용 권한을 확인해주세요.";
+            CharacterImportStatusText.Text = UiText.Get("보관 폴더를 열지 못했어요. 폴더의 사용 권한을 확인해주세요.");
             CharacterImportStatusText.ToolTip = ex.Message;
         }
     }
@@ -408,11 +426,11 @@ public partial class SettingsWindow : Window
     {
         if (!QuietHours.TryParse(QuietStartBox.Text, out var start) || !QuietHours.TryParse(QuietEndBox.Text, out var end))
         {
-            QuietHoursStatus.Text = "00:00~23:59 사이 HH:mm 형식으로 입력해주세요.";
+            QuietHoursStatus.Text = UiText.Get("00:00~23:59 사이 HH:mm 형식으로 입력해주세요.");
             return;
         }
         _pet.SetQuietHours(QuietHoursCheck.IsChecked == true, start, end);
-        QuietHoursStatus.Text = start == end ? "같은 시작·종료 시간은 예약을 활성화하지 않아요." : "예약을 적용했어요. 미확인 알림은 계속 보관합니다.";
+        QuietHoursStatus.Text = start == end ? UiText.Get("같은 시작·종료 시간은 예약을 활성화하지 않아요.") : UiText.Get("예약을 적용했어요. 미확인 알림은 계속 보관합니다.");
     }
 
     private void AssistantConnections_Click(object sender, RoutedEventArgs e)
@@ -431,7 +449,7 @@ public partial class SettingsWindow : Window
 
     private void BackupPreferences_Click(object sender, RoutedEventArgs e)
     {
-        var dialog = new Microsoft.Win32.SaveFileDialog { Title = "설정 백업", Filter = "DesktopPet 설정 (*.json)|*.json",
+        var dialog = new Microsoft.Win32.SaveFileDialog { Title = UiText.Get("설정 백업"), Filter = "DesktopPet 설정 (*.json)|*.json",
             FileName = "DesktopPet-preferences.json", DefaultExt = ".json", AddExtension = true, OverwritePrompt = true };
         if (dialog.ShowDialog(this) == true) BackupPreferencesToFile(dialog.FileName);
     }
@@ -441,17 +459,17 @@ public partial class SettingsWindow : Window
         try
         {
             _pet.SavePreferencesBackup(path);
-            PreferencesTransferStatus.Text = "설정을 백업했어요. AI 연결 정보는 포함하지 않았습니다.";
+            PreferencesTransferStatus.Text = UiText.Get("설정을 백업했어요. AI 연결 정보는 포함하지 않았습니다.");
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or System.Text.Json.JsonException)
         {
-            PreferencesTransferStatus.Text = "백업하지 못했어요. 저장 위치와 권한을 확인해주세요.";
+            PreferencesTransferStatus.Text = UiText.Get("백업하지 못했어요. 저장 위치와 권한을 확인해주세요.");
         }
     }
 
     private void RestorePreferences_Click(object sender, RoutedEventArgs e)
     {
-        var dialog = new Microsoft.Win32.OpenFileDialog { Title = "설정 복원", Filter = "DesktopPet 설정 (*.json)|*.json", Multiselect = false };
+        var dialog = new Microsoft.Win32.OpenFileDialog { Title = UiText.Get("설정 복원"), Filter = "DesktopPet 설정 (*.json)|*.json", Multiselect = false };
         if (dialog.ShowDialog(this) == true) RestorePreferencesFromFile(dialog.FileName);
     }
 
@@ -462,11 +480,11 @@ public partial class SettingsWindow : Window
             var missing = _pet.RestorePreferencesJson(PetSettingsBackup.ReadFile(path));
             LoadFromPet();
             RenderFocusTimer();
-            PreferencesTransferStatus.Text = missing ? "설정을 복원했어요. 설치되지 않은 캐릭터 대신 현재 친구를 유지합니다." : "설정을 복원했어요. AI 연결과 진행 중인 집중 시간은 유지합니다.";
+            PreferencesTransferStatus.Text = missing ? UiText.Get("설정을 복원했어요. 설치되지 않은 캐릭터 대신 현재 친구를 유지합니다.") : UiText.Get("설정을 복원했어요. AI 연결과 진행 중인 집중 시간은 유지합니다.");
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
         {
-            PreferencesTransferStatus.Text = "복원하지 못했어요. 백업 형식과 캐릭터 파일을 확인해주세요.";
+            PreferencesTransferStatus.Text = UiText.Get("복원하지 못했어요. 백업 형식과 캐릭터 파일을 확인해주세요.");
         }
     }
 
@@ -494,7 +512,7 @@ public partial class SettingsWindow : Window
         FocusStatusText.Text = _pet.FocusTimerCaption;
         FocusStartButton.Content = _pet.FocusStartCaption;
         FocusStartButton.IsEnabled = _pet.FocusCanStart;
-        FocusPauseButton.Content = _pet.FocusSnapshot.Status == FocusTimerStatus.Paused ? "계속" : "일시정지";
+        FocusPauseButton.Content = _pet.FocusSnapshot.Status == FocusTimerStatus.Paused ? UiText.Get("계속") : UiText.Get("일시정지");
         FocusPauseButton.IsEnabled = _pet.FocusCanPause;
         FocusRestartButton.IsEnabled = FocusStopButton.IsEnabled = _pet.FocusCanStop;
     }
@@ -505,11 +523,11 @@ public partial class SettingsWindow : Window
         if (!int.TryParse(FocusMinutesBox.Text, out var focus) || !int.TryParse(BreakMinutesBox.Text, out var rest) ||
             focus is < 1 or > 180 || rest is < 1 or > 60)
         {
-            FocusDurationStatus.Text = "집중 1~180분, 휴식 1~60분을 입력해주세요.";
+            FocusDurationStatus.Text = UiText.Get("집중 1~180분, 휴식 1~60분을 입력해주세요.");
             return;
         }
         _pet.SetFocusDurations(focus, rest);
-        FocusDurationStatus.Text = "다음 시작·다시 시작부터 적용해요. 진행 중인 시간은 유지합니다.";
+        FocusDurationStatus.Text = UiText.Get("다음 시작·다시 시작부터 적용해요. 진행 중인 시간은 유지합니다.");
     }
     private void FocusPause_Click(object sender, RoutedEventArgs e) => _pet.PauseOrResumeFocusTimer();
     private void FocusRestart_Click(object sender, RoutedEventArgs e) => _pet.RestartFocusTimer();

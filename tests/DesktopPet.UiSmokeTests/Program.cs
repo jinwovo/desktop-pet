@@ -300,6 +300,7 @@ internal static class Program
             QuietHoursUiTests.Run(folder);
             RenderOptionsUiTests.Run(folder);
             PreferencesBackupUiTests.Run(folder);
+            LocalizationUiTests.Run(folder);
             FullscreenUiTests.Run(folder);
             ArchiveImportUiTests.Run(folder);
             PlatformMonitorUiTests.Run(pet);

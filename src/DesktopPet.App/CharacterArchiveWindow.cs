@@ -16,20 +16,20 @@ public sealed class CharacterArchiveWindow : Window
 
     public CharacterArchiveWindow(IReadOnlyList<ArchiveCharacter> characters)
     {
-        Title = "ZIP 캐릭터 선택";
+        Title = UiText.Get("ZIP 캐릭터 선택");
         Width = 410;
         Height = 360;
         MinWidth = 330;
         MinHeight = 280;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         var panel = new DockPanel { Margin = new Thickness(18) };
-        var hint = new TextBlock { Text = "추가할 캐릭터를 선택하세요.", Margin = new Thickness(0, 0, 0, 12) };
+        var hint = new TextBlock { Text = UiText.Get("추가할 캐릭터를 선택하세요."), Margin = new Thickness(0, 0, 0, 12) };
         DockPanel.SetDock(hint, Dock.Top);
         panel.Children.Add(hint);
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right,
             Margin = new Thickness(0, 12, 0, 0) };
-        var cancel = new Button { Content = "취소", IsCancel = true, Padding = new Thickness(14, 6, 14, 6) };
-        var install = new Button { Name = "InstallArchiveCharacter", Content = "선택한 캐릭터 추가", IsDefault = true,
+        var cancel = new Button { Content = UiText.Get("취소"), IsCancel = true, Padding = new Thickness(14, 6, 14, 6) };
+        var install = new Button { Name = "InstallArchiveCharacter", Content = UiText.Get("선택한 캐릭터 추가"), IsDefault = true,
             Padding = new Thickness(14, 6, 14, 6), Margin = new Thickness(8, 0, 0, 0) };
         buttons.Children.Add(cancel);
         buttons.Children.Add(install);
@@ -45,5 +45,6 @@ public sealed class CharacterArchiveWindow : Window
         };
         panel.Children.Add(_characters);
         Content = panel;
+        UiText.Attach(this);
     }
 }

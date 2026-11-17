@@ -5,6 +5,15 @@ public static class PetSettingsBackupTests
 {
     public static IEnumerable<(string Name, Action Run)> Create()
     {
+        yield return ("Language preference is portable, bounded and preserves Korean for legacy settings", () =>
+        {
+            Check(JsonSerializer.Deserialize<PetSettings>("{}")!.Language == "ko", "Legacy language unexpectedly changed");
+            var baseline = new PetSettings { Language = "en" };
+            var imported = PetSettingsBackup.ReadJson(PetSettingsBackup.WriteJson(new PetSettings { Language = "zh-CN" }), baseline);
+            Check(imported.Language == "zh-CN" && baseline.Language == "en", "Language backup changed baseline or lost preference");
+            imported.Language = "unsupported"; imported.Normalize();
+            Check(imported.Language == "ko", "Unsupported language bypassed normalization");
+        });
         yield return ("Portable backups transfer behavior and timers while retaining machine-local assistant choices", () =>
         {
             var original = new PetSettings { CharacterName = "Nimbus", ScaleMultiplier = 1.5, FocusMinutes = 45, BreakMinutes = 10,

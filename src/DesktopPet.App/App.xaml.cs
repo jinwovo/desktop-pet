@@ -54,7 +54,7 @@ public partial class App : System.Windows.Application
         }
         if (e.Args.Contains("--version", StringComparer.Ordinal))
         {
-            Console.WriteLine(typeof(App).Assembly.GetName().Version?.ToString() ?? "0.14.0");
+            Console.WriteLine(typeof(App).Assembly.GetName().Version?.ToString() ?? "0.20.0");
             Shutdown();
             return;
         }
@@ -91,11 +91,12 @@ public partial class App : System.Windows.Application
 
         // Double-clicking the tray icon is the conventional shortcut to a settings window.
         _trayIcon.DoubleClick += (_, _) => ShowSettings(petWindow);
+        UiText.LanguageChanged += RefreshTrayLanguage;
         petWindow.OperationFailed += message => _trayIcon?.ShowBalloonTip(
             5000, "DesktopPet", message, WinForms.ToolTipIcon.Warning);
         petWindow.PendingNotificationCountChanged += count =>
         {
-            if (_trayIcon is not null) _trayIcon.Text = count > 0 ? $"DesktopPet · 알림 {count}개" : "DesktopPet";
+            if (_trayIcon is not null) _trayIcon.Text = count > 0 ? UiText.Format("DesktopPet · 알림 {0}개", count) : "DesktopPet";
         };
         petWindow.AutoConnectAssistantsChanged += enabled => { if (enabled) StartAssistantSetup(petWindow); };
         StartAssistantSetup(petWindow);
@@ -105,41 +106,50 @@ public partial class App : System.Windows.Application
     /// Tray menu is deliberately short: character, size and speed all live in the settings window,
     /// and duplicating them here just means two places to keep in sync.
     /// </summary>
+    private void RefreshTrayLanguage()
+    {
+        if (_trayIcon is null || MainWindow is not MainWindow pet) return;
+        var previous = _trayIcon.ContextMenuStrip;
+        _trayIcon.ContextMenuStrip = BuildTrayMenu(pet);
+        _trayIcon.Text = pet.PendingNotificationCount > 0 ? UiText.Format("DesktopPet · 알림 {0}개", pet.PendingNotificationCount) : "DesktopPet";
+        previous?.Dispose();
+    }
+
     private WinForms.ContextMenuStrip BuildTrayMenu(MainWindow petWindow)
     {
         var menu = new WinForms.ContextMenuStrip();
 
-        var settingsItem = menu.Items.Add("설정...", null, (_, _) => ShowSettings(petWindow));
+        var settingsItem = menu.Items.Add(UiText.Get("설정..."), null, (_, _) => ShowSettings(petWindow));
         settingsItem.Font = new System.Drawing.Font(menu.Font, System.Drawing.FontStyle.Bold);
-        menu.Items.Add("AI 연결...", null, (_, _) => ShowAssistantConnections());
-        var unreadItem = menu.Items.Add("보관된 알림 확인", null, (_, _) => petWindow.ShowUnreadNotifications());
+        menu.Items.Add(UiText.Get("AI 연결..."), null, (_, _) => ShowAssistantConnections());
+        var unreadItem = menu.Items.Add(UiText.Get("보관된 알림 확인"), null, (_, _) => petWindow.ShowUnreadNotifications());
 
         menu.Items.Add(new WinForms.ToolStripSeparator());
 
-        var focusMenu = new WinForms.ToolStripMenuItem("집중 타이머");
+        var focusMenu = new WinForms.ToolStripMenuItem(UiText.Get("집중 타이머"));
         var focusStatus = focusMenu.DropDownItems.Add(petWindow.FocusTimerCaption);
         focusStatus.Enabled = false;
-        var focusStart = focusMenu.DropDownItems.Add("집중 시작", null, (_, _) => petWindow.StartFocusTimer());
-        var focusPause = focusMenu.DropDownItems.Add("일시정지", null, (_, _) => petWindow.PauseOrResumeFocusTimer());
-        var focusRestart = focusMenu.DropDownItems.Add("다시 시작", null, (_, _) => petWindow.RestartFocusTimer());
-        var focusStop = focusMenu.DropDownItems.Add("종료", null, (_, _) => petWindow.StopFocusTimer());
+        var focusStart = focusMenu.DropDownItems.Add(UiText.Get("집중 시작"), null, (_, _) => petWindow.StartFocusTimer());
+        var focusPause = focusMenu.DropDownItems.Add(UiText.Get("일시정지"), null, (_, _) => petWindow.PauseOrResumeFocusTimer());
+        var focusRestart = focusMenu.DropDownItems.Add(UiText.Get("다시 시작"), null, (_, _) => petWindow.RestartFocusTimer());
+        var focusStop = focusMenu.DropDownItems.Add(UiText.Get("종료"), null, (_, _) => petWindow.StopFocusTimer());
         focusMenu.DropDownOpening += (_, _) =>
         {
             focusStatus.Text = petWindow.FocusTimerCaption;
             focusStart.Text = petWindow.FocusStartCaption;
             focusStart.Enabled = petWindow.FocusCanStart;
-            focusPause.Text = petWindow.FocusSnapshot.Status == FocusTimerStatus.Paused ? "계속" : "일시정지";
+            focusPause.Text = petWindow.FocusSnapshot.Status == FocusTimerStatus.Paused ? UiText.Get("계속") : UiText.Get("일시정지");
             focusPause.Enabled = petWindow.FocusCanPause;
             focusRestart.Enabled = focusStop.Enabled = petWindow.FocusCanStop;
         };
         menu.Items.Add(focusMenu);
 
-        var moodMenu = new WinForms.ToolStripMenuItem("기분 표현");
-        moodMenu.DropDownItems.Add("울기 😢", null, (_, _) => petWindow.TriggerEmote(PetState.Cry));
-        moodMenu.DropDownItems.Add("화내기 💢", null, (_, _) => petWindow.TriggerEmote(PetState.Angry));
+        var moodMenu = new WinForms.ToolStripMenuItem(UiText.Get("기분 표현"));
+        moodMenu.DropDownItems.Add(UiText.Get("울기 😢"), null, (_, _) => petWindow.TriggerEmote(PetState.Cry));
+        moodMenu.DropDownItems.Add(UiText.Get("화내기 💢"), null, (_, _) => petWindow.TriggerEmote(PetState.Angry));
         menu.Items.Add(moodMenu);
 
-        var visibilityItem = new WinForms.ToolStripMenuItem("펫 보이기");
+        var visibilityItem = new WinForms.ToolStripMenuItem(UiText.Get("펫 보이기"));
         visibilityItem.Click += (_, _) => petWindow.SetVisible(!petWindow.IsPetVisible);
         menu.Items.Add(visibilityItem);
 
@@ -149,11 +159,11 @@ public partial class App : System.Windows.Application
             visibilityItem.Checked = petWindow.IsPetVisible;
             unreadItem.Enabled = petWindow.PendingNotificationCount > 0;
             unreadItem.Text = petWindow.PendingNotificationCount > 0
-                ? $"보관된 알림 확인 ({petWindow.PendingNotificationCount})" : "보관된 알림 없음";
+                ? UiText.Format("보관된 알림 확인 ({0})", petWindow.PendingNotificationCount) : UiText.Get("보관된 알림 없음");
         };
 
         menu.Items.Add(new WinForms.ToolStripSeparator());
-        menu.Items.Add("종료", null, (_, _) => Shutdown());
+        menu.Items.Add(UiText.Get("앱 종료"), null, (_, _) => Shutdown());
 
         return menu;
     }
@@ -260,6 +270,7 @@ public partial class App : System.Windows.Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        UiText.LanguageChanged -= RefreshTrayLanguage;
         _assistantWindow?.Close();
         (MainWindow as MainWindow)?.DisposeResources();
         _windowFallService?.Dispose();

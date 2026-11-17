@@ -7,6 +7,7 @@ public sealed class PetSettings
 {
     public const string DefaultCharacterName = "Companion";
     public string CharacterName { get; set; } = DefaultCharacterName;
+    public string Language { get; set; } = "ko";
     public double ScaleMultiplier { get; set; } = 1.0;
     public double WalkSpeedMultiplier { get; set; } = 1.0;
     public bool Visible { get; set; } = true;
@@ -58,11 +59,12 @@ public sealed class PetSettings
             // Corrupt or unreadable settings file: start from defaults rather than failing to launch.
         }
 
-        return new PetSettings();
+        return new PetSettings { Language = "auto" };
     }
 
     public void Normalize()
     {
+        if (Language is not ("auto" or "ko" or "en" or "zh-CN")) Language = "ko";
         if (string.IsNullOrWhiteSpace(CharacterName) || CharacterName is "." or ".." ||
             CharacterName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
             CharacterName = DefaultCharacterName;

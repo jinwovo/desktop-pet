@@ -14,7 +14,7 @@ public sealed record CharacterGalleryItem(string Name, string EnglishName, Chara
 {
     public string CategoryLabel => Category switch
     {
-        CharacterGalleryCategory.Original => "오리지널", CharacterGalleryCategory.FanArt => "팬아트 팩", _ => "추가한 캐릭터",
+        CharacterGalleryCategory.Original => UiText.Get("오리지널"), CharacterGalleryCategory.FanArt => UiText.Get("팬아트 팩"), _ => UiText.Get("추가한 캐릭터"),
     };
 }
 
@@ -44,8 +44,8 @@ public partial class CharacterGalleryWindow : Window
         MaxHeight = Math.Max(MinHeight, SystemParameters.WorkArea.Height - 40);
         CategoryCombo.ItemsSource = new[]
         {
-            new CategoryChoice("전체 친구", CharacterGalleryCategory.All), new CategoryChoice("오리지널", CharacterGalleryCategory.Original),
-            new CategoryChoice("팬아트 팩", CharacterGalleryCategory.FanArt), new CategoryChoice("추가한 캐릭터", CharacterGalleryCategory.Custom),
+            new CategoryChoice(UiText.Get("전체 친구"), CharacterGalleryCategory.All), new CategoryChoice(UiText.Get("오리지널"), CharacterGalleryCategory.Original),
+            new CategoryChoice(UiText.Get("팬아트 팩"), CharacterGalleryCategory.FanArt), new CategoryChoice(UiText.Get("추가한 캐릭터"), CharacterGalleryCategory.Custom),
         };
         CategoryCombo.SelectedValue = CharacterGalleryCategory.All;
         Loaded += (_, _) => { if (!_started) { _started = true; RefreshCharacters(); } };
@@ -58,6 +58,7 @@ public partial class CharacterGalleryWindow : Window
             _lifetime.Dispose();
             _motionPreview?.Close();
         };
+        UiText.Attach(this);
     }
 
     public Task LoadingTask { get; private set; } = Task.CompletedTask;
@@ -178,7 +179,7 @@ public partial class CharacterGalleryWindow : Window
         var item = CharacterCards.SelectedItem as CharacterGalleryItem;
         PreviewImage.Source = item?.Thumbnail;
         SelectedNameText.Text = item?.Name ?? "";
-        SelectedDetailText.Text = item?.Detail ?? "친구를 선택해보세요.";
+        SelectedDetailText.Text = item?.Detail ?? UiText.Get("친구를 선택해보세요.");
         ApplyButton.IsEnabled = item is { IsAvailable: true };
         PreviewButton.IsEnabled = item is { IsAvailable: true } && !_previewBusy;
     }
@@ -202,7 +203,7 @@ public partial class CharacterGalleryWindow : Window
             _motionPreview?.Close();
             _motionPreview = new MotionPreviewWindow(presentation, _pet.CurrentWalkSpeedMultiplier, _pet.MaximumFps, _pet.ReducedMotion) { Owner = this };
             _motionPreview.Show();
-            StatusText.Text = "미리보기는 현재 친구를 바꾸지 않아요.";
+            StatusText.Text = UiText.Get("미리보기는 현재 친구를 바꾸지 않아요.");
         }
         catch (OperationCanceledException) { }
         catch (Exception ex) when (IsCharacterError(ex)) { if (!_closed) StatusText.Text = "움직임을 읽지 못했어요. 캐릭터 파일을 확인해주세요."; }
