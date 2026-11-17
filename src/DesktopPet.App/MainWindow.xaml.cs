@@ -138,7 +138,7 @@ public partial class MainWindow : Window
         Height = effHeight;
         Visibility = _settings.Visible ? Visibility.Visible : Visibility.Hidden;
 
-        _brain = new PetBrain(_platformLayout, effWidth, effGroundOffset, startX, startY)
+        _brain = new PetBrain(_platformLayout, effWidth, effGroundOffset, startX, startY, behaviorProfile: _character.BehaviorProfile)
         {
             WalkSpeedPxPerSec = effSpeed,
             HopBetweenPlatforms = _settings.HopBetweenWindowsEnabled,
@@ -195,6 +195,7 @@ public partial class MainWindow : Window
     {
         _poseTransition.Reset();
         _character = presentation.Definition;
+        if (_brain is not null) _brain.BehaviorProfile = _character.BehaviorProfile;
         PetRig.SetPresentation(presentation);
         PetRig.Visibility = Visibility.Collapsed;
         PetImage.Visibility = Visibility.Visible;

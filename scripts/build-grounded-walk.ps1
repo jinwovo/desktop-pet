@@ -7,6 +7,7 @@ param(
     [string]$PreviewPath=''
 )
 $ErrorActionPreference='Stop'
+. (Join-Path $PSScriptRoot 'Get-DesktopPetCharacterBehavior.ps1')
 Add-Type -AssemblyName System.Drawing
 $repoRoot=[IO.Path]::GetFullPath((Split-Path -Parent $PSScriptRoot)).TrimEnd('\')
 function Resolve-RigPath([string]$Path) {
@@ -109,6 +110,7 @@ foreach ($profile in $profiles) {
         } -Force
         # Keep blink/emote/rest timing; rig walking uses distance, not this legacy interval.
         $metadata.frameIntervalMs=$profile.Interval
+        Set-DesktopPetCharacterBehavior -Definition $metadata -Name $profile.Name -OnlyIfMissing
         [IO.File]::WriteAllText($manifestPath,($metadata|ConvertTo-Json -Depth 12),(New-Object Text.UTF8Encoding $false))
         Write-Output "Grounded gait built: $($profile.Name), stride $($profile.Distance)px, 32 phases + 2 settling banks"
     } finally { foreach ($part in $parts) {$part.Dispose()};$sheet.Dispose() }

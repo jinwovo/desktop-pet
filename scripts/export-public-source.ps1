@@ -20,6 +20,7 @@ function Get-DesktopPetPublicSourceFiles {
     $files = New-Object 'System.Collections.Generic.List[string]'
     $fixed = @(
         'DesktopPet.sln', 'global.json', '.gitignore', '.gitattributes', '.editorconfig',
+        'Assets\CharacterBehaviors.json',
         'README.md', 'README.ko.md', 'README.zh-CN.md', 'CONTRIBUTING.md', 'SECURITY.md', 'CHANGELOG.md', 'LICENSE',
         'docs\DISTRIBUTION.md', 'docs\PUBLIC_ASSET_PROVENANCE.md', 'docs\CHARACTER_PACKS.md', 'docs\PUBLIC_RELEASE.md', 'docs\REFERENCE_REVIEW.ko.md', 'docs\NVIDIA_WORK.md',
         'tests\test_nvidia_work.py',

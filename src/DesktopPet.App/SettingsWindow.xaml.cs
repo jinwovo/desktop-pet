@@ -125,6 +125,8 @@ public partial class SettingsWindow : Window
             CharacterHint.Text = _previewPresentation.Definition.HasDirectionalWalk
                 ? "걷는 방향을 바라보며 움직여요."
                 : "동작을 골라 미리 볼 수 있어요.";
+            if (_previewPresentation.Definition.BehaviorProfile.Description.Length > 0)
+                CharacterHint.Text += "\n" + _previewPresentation.Definition.BehaviorProfile.Description;
         }
         catch (Exception ex) when (ex is InvalidDataException or IOException or UnauthorizedAccessException)
         {

@@ -89,6 +89,7 @@ public static class CharacterLoader
             WalkSpeedPxPerSec = dto.WalkSpeedPxPerSec,
             WalkCycleDistancePx = dto.WalkCycleDistancePx,
             WalkRig = ResolveWalkRig(characterFolder, dto.WalkRig, jsonPath),
+            BehaviorProfile = dto.Behavior ?? CharacterBehaviorProfile.Default,
             FrameIntervalMs = dto.FrameIntervalMs,
             FrontFacingRest = dto.FrontFacingRest,
             FramesByState = framesByState,

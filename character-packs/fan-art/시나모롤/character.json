@@ -1,4 +1,13 @@
 {
+  "behavior": {
+    "walkWeight": 0.8,
+    "idleWeight": 1.2,
+    "sitWeight": 1.3,
+    "restDurationMultiplier": 1.2,
+    "walkDurationMultiplier": 0.9,
+    "sleepAfterIdleMs": 80000,
+    "description": "가볍게 산책하고 편안히 쉬는 친구"
+  },
     "name":  "시나모롤",
     "scale":  1,
     "assetKind":  "optional-personal-fan-art",

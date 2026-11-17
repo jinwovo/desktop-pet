@@ -1,4 +1,13 @@
 {
+  "behavior": {
+    "walkWeight": 1.4,
+    "idleWeight": 0.9,
+    "sitWeight": 0.8,
+    "restDurationMultiplier": 0.85,
+    "walkDurationMultiplier": 1.2,
+    "sleepAfterIdleMs": 120000,
+    "description": "긴 산책을 좋아하는 장난스러운 친구"
+  },
     "name":  "쿠로미",
     "scale":  1,
     "assetKind":  "optional-personal-fan-art",

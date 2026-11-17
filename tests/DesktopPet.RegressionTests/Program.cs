@@ -229,7 +229,8 @@ var tests = new (string Name, Action Run)[]
  .Concat(FocusTimerTests.Create())
  .Concat(WindowPlatformMonitorTests.Create())
  .Concat(FullscreenPolicyTests.Create())
- .Concat(MonitorTopologyTests.Create()).ToArray();
+ .Concat(MonitorTopologyTests.Create())
+ .Concat(BehaviorProfileTests.Create()).ToArray();
 
 var failures = 0;
 var skipped = 0;

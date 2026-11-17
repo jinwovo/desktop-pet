@@ -1,4 +1,13 @@
 {
+  "behavior": {
+    "walkWeight": 1.6,
+    "idleWeight": 0.8,
+    "sitWeight": 0.6,
+    "restDurationMultiplier": 0.8,
+    "walkDurationMultiplier": 1.3,
+    "sleepAfterIdleMs": 120000,
+    "description": "조금 더 오래 산책하는 활발한 친구"
+  },
     "name":  "Ember",
     "scale":  1,
     "assetKind":  "original-public",

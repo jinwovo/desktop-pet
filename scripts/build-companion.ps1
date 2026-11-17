@@ -8,6 +8,7 @@
 #>
 param([string]$OutputDirectory = '', [string]$PreviewPath = '')
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'Get-DesktopPetCharacterBehavior.ps1')
 Add-Type -AssemblyName System.Drawing
 $repoRoot = [IO.Path]::GetFullPath((Split-Path -Parent $PSScriptRoot)).TrimEnd('\')
 $rootPrefix = $repoRoot + '\'
@@ -173,6 +174,7 @@ try {
         eyePositionsPx = @{ left = @{ x = $eyeLeftX; y = $eyeY }; right = @{ x = $eyeRightX; y = $eyeY } }
     }
     $manifestPath = Resolve-CompanionPath (Join-Path $output 'character.json')
+    Set-DesktopPetCharacterBehavior -Definition $manifest -Name 'Companion'
     [IO.File]::WriteAllText($manifestPath, ($manifest | ConvertTo-Json -Depth 8), (New-Object Text.UTF8Encoding $false))
     [IO.File]::WriteAllText($marker, 'DesktopPet.Companion.v1', (New-Object Text.UTF8Encoding $false))
 

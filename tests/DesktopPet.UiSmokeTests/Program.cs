@@ -501,6 +501,8 @@ internal static class Program
             Check(((CharacterDefinition)Get(pet, "_character")!).WalkRig is not null &&
                 ((System.Collections.IDictionary)Get(pet, "_frameCache")!).Count == 19,
                 "Personal character did not use its bounded 19-texture live presentation: " + name);
+            Check(ReferenceEquals(((PetBrain)Get(pet, "_brain")!).BehaviorProfile,
+                ((CharacterDefinition)Get(pet, "_character")!).BehaviorProfile), "Switching a personal character did not apply its validated behavior: " + name);
         }
         pet.SwitchCharacter("Companion");
         ((DispatcherTimer)Get(pet, "_settingsSaveTimer")!).Stop();

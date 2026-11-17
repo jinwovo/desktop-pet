@@ -10,6 +10,7 @@ param(
     [string]$PreviewPath = ''
 )
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'Get-DesktopPetCharacterBehavior.ps1')
 Add-Type -AssemblyName System.Drawing
 $repoRoot = [IO.Path]::GetFullPath((Split-Path -Parent $PSScriptRoot)).TrimEnd('\')
 function Resolve-PersonalPath([string]$Path) {
@@ -118,6 +119,7 @@ foreach ($profile in $profiles) {
             eyePositionsPx=@{left=@{x=$leftX;y=$eyeY};right=@{x=$rightX;y=$eyeY}}
             assetKind='optional-personal-fan-art'
         }
+        Set-DesktopPetCharacterBehavior -Definition $manifest -Name $profile.Name
         [IO.File]::WriteAllText((Join-Path $folder 'character.json'),($manifest|ConvertTo-Json -Depth 8),(New-Object Text.UTF8Encoding $false))
         [IO.File]::WriteAllText($marker,'DesktopPet.Personal.v1',(New-Object Text.UTF8Encoding $false))
         $built+=@{Profile=$profile;Folder=$folder}

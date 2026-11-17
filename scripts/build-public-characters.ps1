@@ -5,6 +5,7 @@ param(
     [string]$PreviewPath = ''
 )
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'Get-DesktopPetCharacterBehavior.ps1')
 Add-Type -AssemblyName System.Drawing
 $repoRoot = [IO.Path]::GetFullPath((Split-Path -Parent $PSScriptRoot)).TrimEnd('\')
 function Resolve-PublicPath([string]$Path) {
@@ -130,6 +131,7 @@ foreach ($profile in $profiles) {
             walkRig=@{version=1;footLiftPx=4;side=@{body='rig_side_body.png';nearFoot='rig_side_near.png';farFoot='rig_side_far.png'};turn=@{body='rig_turn_body.png';nearFoot='rig_turn_near.png';farFoot='rig_turn_far.png'}}
             groundedWalk=@{version=1;frameCount=32;stanceFraction=0.6;footLiftPx=4;settleLevels=2;bodyHeightPx=90;hipY=112;contactY=122;contacts=$audit}
         }
+        Set-DesktopPetCharacterBehavior -Definition $metadata -Name $profile.Name
         [IO.File]::WriteAllText((Join-Path $folder 'character.json'),($metadata|ConvertTo-Json -Depth 12),(New-Object Text.UTF8Encoding $false))
         Write-Output "Original public character built: $($profile.Name)"
     } finally { foreach ($bitmap in $front+$parts) {$bitmap.Dispose()}; $sheet.Dispose() }

@@ -1,4 +1,13 @@
 {
+  "behavior": {
+    "walkWeight": 0.7,
+    "idleWeight": 1.2,
+    "sitWeight": 1.4,
+    "restDurationMultiplier": 1.25,
+    "walkDurationMultiplier": 0.85,
+    "sleepAfterIdleMs": 70000,
+    "description": "잠깐씩 걸으며 자주 쉬는 친구"
+  },
     "name":  "치이카와",
     "scale":  1,
     "frontFacingRest":  true,

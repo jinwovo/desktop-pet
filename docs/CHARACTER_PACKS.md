@@ -22,6 +22,26 @@ Omitted states fall back to idle. This minimal example is an importable static c
 
 Supported states are `idle`, `walk`, `sit`, `lookLeft`, `lookRight`, `drag`, `fall`, `cry`, `angry` and `sleep`. Directional gait arrays use `walkTurn`, `walkFront`, `walkSettleSide` and `walkSettleTurn`. Set `frontFacingRest: true` only when resting artwork is drawn facing forward. Optional `frameDurationsMs` arrays assign per-frame milliseconds to a resolved state sequence, for example an occasional short blink inside a long open-eye idle.
 
+## Optional character personality (0.9.0)
+
+Add a `behavior` object to the manifest to tune autonomous activity without changing walking speed or foot placement:
+
+```json
+"behavior": {
+  "walkWeight": 0.55,
+  "idleWeight": 1.3,
+  "sitWeight": 1.7,
+  "restDurationMultiplier": 1.4,
+  "walkDurationMultiplier": 0.75,
+  "sleepAfterIdleMs": 60000,
+  "description": "A relaxed companion that enjoys longer rests."
+}
+```
+
+Weights multiply the existing calm/lively probabilities; each must be finite, between 0 and 10, and at least one must be positive. Duration multipliers range from 0.25 to 4. The sleep threshold ranges from 15,000 to 1,800,000 milliseconds and still respects the user's sleep checkbox. Description is optional, limited to 80 characters without control characters, and appears in Settings. Missing, null or empty behavior retains the legacy defaults. Switching personality preserves the current motion and applies the new timing to subsequent action windows.
+
+The nine bundled/personal presets are recorded in [Assets/CharacterBehaviors.json](../Assets/CharacterBehaviors.json). Build scripts copy the matching preset into each manifest; the app reads the manifest and never needs the preset bank at runtime. Grounded-walk regeneration preserves an authored profile. Nimbus favors longer rests; Ember favors longer walks; Companion balances the two.
+
 ## Optional continuous walking rig
 
 The bundled public characters are complete examples. In addition to their fallback gait arrays they declare:

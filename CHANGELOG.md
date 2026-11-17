@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.0 — character personalities
+
+- Add optional validated behavior weights, rest/walk duration multipliers, sleep thresholds and short descriptions to character manifests.
+- Give all nine original/personal characters distinct presets, with a shared generation input that preserves profiles when rebuilding grounded walking artwork.
+- Apply the selected personality to autonomous behavior and show its description in Settings. Preserve speed, physical pose, gait and user sleep/calm preferences.
+- Retain exact default behavior for older manifests. Add validation, deterministic choice/timing, sleep opt-out and mid-walk character-profile regression cases.
+
 ## 0.8.0 — monitor topology and landing recovery
 
 - Represent monitor work areas with X/Y rectangles and choose the pet's floor using its actual desktop position. Fix drops on a lower stacked monitor snapping to the upper screen.

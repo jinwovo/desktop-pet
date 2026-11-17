@@ -1,4 +1,13 @@
 {
+  "behavior": {
+    "walkWeight": 0.8,
+    "idleWeight": 1.2,
+    "sitWeight": 1.3,
+    "restDurationMultiplier": 1.15,
+    "walkDurationMultiplier": 0.95,
+    "sleepAfterIdleMs": 90000,
+    "description": "산책과 휴식을 고르게 즐기는 친구"
+  },
     "name":  "Companion",
     "scale":  1,
     "frontFacingRest":  true,

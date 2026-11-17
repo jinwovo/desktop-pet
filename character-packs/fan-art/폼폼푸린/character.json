@@ -1,4 +1,13 @@
 {
+  "behavior": {
+    "walkWeight": 0.5,
+    "idleWeight": 1.4,
+    "sitWeight": 1.8,
+    "restDurationMultiplier": 1.4,
+    "walkDurationMultiplier": 0.75,
+    "sleepAfterIdleMs": 60000,
+    "description": "푹 쉬고 낮잠을 즐기는 느긋한 친구"
+  },
     "name":  "폼폼푸린",
     "scale":  1,
     "assetKind":  "optional-personal-fan-art",

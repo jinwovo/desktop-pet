@@ -61,13 +61,16 @@ public sealed class PetBrain
     private const double PokeStreakWindowMs = 1200;
     private const int PokesToAnger = 3;
 
-    /// <summary>How long the pet must go untouched, with the cursor idle, before dozing off.</summary>
-    private const double SleepAfterIdleMs = 90_000;
-
     /// <summary>Cursor movement beyond this counts as activity and resets the sleep timer.</summary>
     private const double CursorIdleToleragePx = 40;
 
     private readonly Random _rng;
+    private CharacterBehaviorProfile _behaviorProfile = CharacterBehaviorProfile.Default;
+    public CharacterBehaviorProfile BehaviorProfile
+    {
+        get => _behaviorProfile;
+        set => _behaviorProfile = value ?? throw new ArgumentNullException(nameof(value));
+    }
     private double _frameWidth;
     private double _groundOffset; // distance from the frame's top to the character's "feet" row (character.json anchor.y, scaled)
 
@@ -114,7 +117,8 @@ public sealed class PetBrain
         _ => 0,
     };
 
-    public PetBrain(PlatformLayout layout, double frameWidth, double groundOffset, double startX, double startY, Random? rng = null)
+    public PetBrain(PlatformLayout layout, double frameWidth, double groundOffset, double startX, double startY, Random? rng = null,
+        CharacterBehaviorProfile? behaviorProfile = null)
     {
         _layout = layout;
         _frameWidth = frameWidth;
@@ -122,6 +126,7 @@ public sealed class PetBrain
         X = startX;
         Y = startY;
         _rng = rng ?? new Random();
+        BehaviorProfile = behaviorProfile ?? CharacterBehaviorProfile.Default;
         ScheduleNextIdleDecision();
     }
 
@@ -616,7 +621,7 @@ public sealed class PetBrain
         }
 
         // Nobody's been around for a long while — settle down for a nap.
-        if (SleepEnabled && _totalElapsedMs - _lastActivityMs >= SleepAfterIdleMs)
+        if (SleepEnabled && _totalElapsedMs - _lastActivityMs >= BehaviorProfile.SleepAfterIdleMs)
         {
             ChangeState(PetState.Sleep);
             return;
@@ -630,15 +635,17 @@ public sealed class PetBrain
 
     private PetState PickNextRestState()
     {
-        // Weighted toward walking — standing still is what makes a desktop pet feel dead.
-        var roll = _rng.NextDouble();
-        if (roll < (CalmBehavior ? 0.42 : 0.7))
+        var walk = (CalmBehavior ? 42 : 70) * BehaviorProfile.WalkWeight;
+        var idle = (CalmBehavior ? 40 : 18) * BehaviorProfile.IdleWeight;
+        var sit = (CalmBehavior ? 18 : 12) * BehaviorProfile.SitWeight;
+        var roll = _rng.NextDouble() * (walk + idle + sit);
+        if (roll < walk)
         {
             _walkTargetDirection = _rng.NextDouble() < 0.5 ? -1 : 1;
             return PetState.Walk;
         }
 
-        return roll < (CalmBehavior ? 0.82 : 0.88) ? PetState.Idle : PetState.Sit;
+        return roll < walk + idle ? PetState.Idle : PetState.Sit;
     }
 
     private void ChangeState(PetState next)
@@ -664,8 +671,11 @@ public sealed class PetBrain
 
     private void ScheduleNextIdleDecision() => ScheduleNextActionWindow(CalmBehavior ? 2400 : 700, CalmBehavior ? 5600 : 2000);
 
-    private void ScheduleNextActionWindow(double minMs, double maxMs) =>
-        _nextStateDecisionAtMs = minMs + _rng.NextDouble() * (maxMs - minMs);
+    private void ScheduleNextActionWindow(double minMs, double maxMs)
+    {
+        var multiplier = State == PetState.Walk ? BehaviorProfile.WalkDurationMultiplier : BehaviorProfile.RestDurationMultiplier;
+        _nextStateDecisionAtMs = (minMs + _rng.NextDouble() * (maxMs - minMs)) * multiplier;
+    }
 
     public void BeginDrag(PetPoint cursorScreenPos)
     {

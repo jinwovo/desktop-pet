@@ -98,6 +98,9 @@ public sealed class CharacterDefinitionDto
     [JsonPropertyName("frontFacingRest")]
     public bool FrontFacingRest { get; set; }
 
+    [JsonPropertyName("behavior")]
+    public CharacterBehaviorProfile? Behavior { get; set; }
+
     private WalkRigDto? _walkRig;
     [JsonPropertyName("walkRig")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -127,6 +130,7 @@ public sealed class CharacterDefinition
     /// <summary>One complete gait cycle's travel in unscaled sprite pixels; null keeps legacy timing.</summary>
     public double? WalkCycleDistancePx { get; init; }
     public WalkRigDefinition? WalkRig { get; init; }
+    public CharacterBehaviorProfile BehaviorProfile { get; init; } = CharacterBehaviorProfile.Default;
     public int FrameIntervalMs { get; init; } = 250;
     /// <summary>Keep explicitly frontal resting artwork unmirrored after either walking direction.</summary>
     public bool FrontFacingRest { get; init; }

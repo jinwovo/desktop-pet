@@ -1,4 +1,13 @@
 {
+  "behavior": {
+    "walkWeight": 1.5,
+    "idleWeight": 0.9,
+    "sitWeight": 0.7,
+    "restDurationMultiplier": 0.9,
+    "walkDurationMultiplier": 1.15,
+    "sleepAfterIdleMs": 120000,
+    "description": "주변을 부지런히 돌아다니는 친구"
+  },
     "name":  "세균맨",
     "scale":  1,
     "frontFacingRest":  true,

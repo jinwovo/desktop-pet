@@ -1,4 +1,13 @@
 {
+  "behavior": {
+    "walkWeight": 0.9,
+    "idleWeight": 1.1,
+    "sitWeight": 1.2,
+    "restDurationMultiplier": 1.1,
+    "walkDurationMultiplier": 1,
+    "sleepAfterIdleMs": 90000,
+    "description": "차분하게 주변을 둘러보는 친구"
+  },
     "name":  "헬로키티",
     "scale":  1,
     "frontFacingRest":  true,

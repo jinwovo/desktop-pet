@@ -1,0 +1,11 @@
+{
+  "Companion": { "walkWeight": 0.8, "idleWeight": 1.2, "sitWeight": 1.3, "restDurationMultiplier": 1.15, "walkDurationMultiplier": 0.95, "sleepAfterIdleMs": 90000, "description": "산책과 휴식을 고르게 즐기는 친구" },
+  "Nimbus": { "walkWeight": 0.55, "idleWeight": 1.3, "sitWeight": 1.7, "restDurationMultiplier": 1.4, "walkDurationMultiplier": 0.75, "sleepAfterIdleMs": 60000, "description": "느긋하게 쉬다가 조용히 잠드는 친구" },
+  "Ember": { "walkWeight": 1.6, "idleWeight": 0.8, "sitWeight": 0.6, "restDurationMultiplier": 0.8, "walkDurationMultiplier": 1.3, "sleepAfterIdleMs": 120000, "description": "조금 더 오래 산책하는 활발한 친구" },
+  "치이카와": { "walkWeight": 0.7, "idleWeight": 1.2, "sitWeight": 1.4, "restDurationMultiplier": 1.25, "walkDurationMultiplier": 0.85, "sleepAfterIdleMs": 70000, "description": "잠깐씩 걸으며 자주 쉬는 친구" },
+  "세균맨": { "walkWeight": 1.5, "idleWeight": 0.9, "sitWeight": 0.7, "restDurationMultiplier": 0.9, "walkDurationMultiplier": 1.15, "sleepAfterIdleMs": 120000, "description": "주변을 부지런히 돌아다니는 친구" },
+  "헬로키티": { "walkWeight": 0.9, "idleWeight": 1.1, "sitWeight": 1.2, "restDurationMultiplier": 1.1, "walkDurationMultiplier": 1, "sleepAfterIdleMs": 90000, "description": "차분하게 주변을 둘러보는 친구" },
+  "폼폼푸린": { "walkWeight": 0.5, "idleWeight": 1.4, "sitWeight": 1.8, "restDurationMultiplier": 1.4, "walkDurationMultiplier": 0.75, "sleepAfterIdleMs": 60000, "description": "푹 쉬고 낮잠을 즐기는 느긋한 친구" },
+  "시나모롤": { "walkWeight": 0.8, "idleWeight": 1.2, "sitWeight": 1.3, "restDurationMultiplier": 1.2, "walkDurationMultiplier": 0.9, "sleepAfterIdleMs": 80000, "description": "가볍게 산책하고 편안히 쉬는 친구" },
+  "쿠로미": { "walkWeight": 1.4, "idleWeight": 0.9, "sitWeight": 0.8, "restDurationMultiplier": 0.85, "walkDurationMultiplier": 1.2, "sleepAfterIdleMs": 120000, "description": "긴 산책을 좋아하는 장난스러운 친구" }
+}
