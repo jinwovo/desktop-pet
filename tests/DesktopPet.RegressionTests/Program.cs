@@ -226,7 +226,8 @@ var tests = new (string Name, Action Run)[]
  .Concat(CharacterLibraryTests.Create())
  .Concat(GroundedGaitTests.Create())
  .Concat(WalkRigResourceTests.Create())
- .Concat(FocusTimerTests.Create()).ToArray();
+ .Concat(FocusTimerTests.Create())
+ .Concat(WindowPlatformMonitorTests.Create()).ToArray();
 
 var failures = 0;
 var skipped = 0;

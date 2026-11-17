@@ -283,6 +283,7 @@ public partial class SettingsWindow : Window
         {
             var name = await _pet.ImportCharacterFolderAsync(folder);
             if (_closed) return;
+            _characterGallery?.RefreshCharacters();
             _motionPreview?.Close();
             _loading = true;
             try

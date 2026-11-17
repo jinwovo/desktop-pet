@@ -23,7 +23,7 @@ public partial class MainWindow : Window
     private FocusTimerStatus? _lastFocusStatus;
     private IntPtr _hwnd;
     private PlatformLayout _platformLayout = null!;
-    private System.Threading.Timer? _windowPlatformTimer;
+    private WindowPlatformMonitor? _windowPlatformMonitor;
     private NotificationInbox? _inbox;
     private SpeechBubbleWindow? _bubble;
     private readonly List<InboxNotification> _unreadNotifications = new();
@@ -146,11 +146,10 @@ public partial class MainWindow : Window
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
 
         var ownProcessId = (uint)Environment.ProcessId;
-        // ~0.13ms per sweep, so this is cheap; 300ms is still well inside the time it takes a
-        // user to drag a window somewhere the pet might stand.
-        _windowPlatformTimer = new System.Threading.Timer(
-            _ => _platformLayout.UpdateWindowPlatforms(WindowPlatformScanner.Scan(ownProcessId, _dpiScale)),
-            null, TimeSpan.Zero, TimeSpan.FromMilliseconds(300));
+        _windowPlatformMonitor = new WindowPlatformMonitor(
+            () => WindowPlatformScanner.Scan(ownProcessId, _dpiScale),
+            _platformLayout.UpdateWindowPlatforms);
+        if (_settings.Visible) _windowPlatformMonitor.Resume();
 
         _bubble = new SpeechBubbleWindow();
         _bubble.Acknowledged += AcknowledgeNotification;
@@ -263,11 +262,13 @@ public partial class MainWindow : Window
         // No point simulating or rendering a pet nobody can see.
         if (visible)
         {
+            _windowPlatformMonitor?.Resume();
             _lastTickTimestamp = Stopwatch.GetTimestamp(); // avoid one huge dt after a long hide
             StartRenderLoop();
         }
         else
         {
+            _windowPlatformMonitor?.Pause();
             CancelInteraction();
             _poseTransition.Reset();
             _reviewingNotifications = false;
@@ -771,6 +772,7 @@ public partial class MainWindow : Window
     {
         if (_disposed) return;
         _disposed = true;
+        _windowPlatformMonitor?.Dispose();
         _focusTickTimer.Stop();
         _focusTimer.SessionCompleted -= OnFocusSessionCompleted;
         _focusTimer.Dispose();
@@ -783,7 +785,6 @@ public partial class MainWindow : Window
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged;
         SaveSettings();
         _inbox?.Dispose();
-        _windowPlatformTimer?.Dispose();
         _bubble?.Shutdown();
     }
 

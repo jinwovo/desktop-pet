@@ -93,6 +93,7 @@ The timer does not automatically chain sessions or restore an active countdown a
 - Auto-hide closes a bubble without deleting it; the unread tray entry remains available.
 - A burst shows the latest completion and retains unread receipts in arrival order.
 - A hidden pet stays hidden when a notification arrives.
+- Hiding pauses drawing and window-platform scanning. Showing the pet requests fresh platforms in the background; inbox delivery and the focus timer continue while hidden.
 - **Do not disturb** (`방해 금지`) saves notifications without automatic bubbles.
 - Window hopping and the window-fall effect are off by default. The latter captures other application windows locally while enabled; leave it off to avoid that capture workload.
 
@@ -151,7 +152,7 @@ The suites use fixture directories and do not register hooks in your real assist
 To create a public Windows x64 package:
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 0.6.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 0.6.1
 ```
 
 The output is a self-contained ZIP and a SHA256 sidecar under `artifacts/releases/`. Missing runtime packs cause a build failure; the script does not silently change deployment type. The [Windows workflow](.github/workflows/windows-release.yml) is configured to run checks and create artifacts; its presence does not imply a successful remote build or a published release.
@@ -195,6 +196,8 @@ See [Public release guide](docs/PUBLIC_RELEASE.md) for a clean source export, dr
 Developers can optionally use the [NVIDIA work helper](docs/NVIDIA_WORK.md) for explicit code-review prompts with four-model fallback. This is a separate development tool; desktop app users do not need API credentials.
 
 ## Browse before switching
+
+Importing through Settings refreshes an already-open gallery while keeping its search, category and selected card. Obsolete loads are cancelled so older results cannot replace the latest collection.
 
 Open Settings → **갤러리 · 검색** (Gallery / search). Type a Korean or English name, narrow the collection, and select a card. **움직임 미리보기** opens a separate motion preview; **이 친구와 함께하기** applies the selection. Searching and previewing do not change your active pet. Only card thumbnails are decoded for the grid; a motion preview loads the selected character.
 

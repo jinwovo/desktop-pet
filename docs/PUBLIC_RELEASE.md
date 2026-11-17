@@ -4,6 +4,8 @@ Target repository: [jinwovo/desktop-pet](https://github.com/jinwovo/desktop-pet)
 
 ## What is ready
 
+- An already-open gallery refreshes after Settings imports, retains filters and selected cards, and rejects obsolete or closed-window load results. Nine local gallery regression groups cover these flows and the existing preview/apply behavior.
+- Version 0.6.1 pauses hidden window-platform scans, queues an immediate background refresh on show and rejects stale in-flight results. It keeps native scans sequential and leaves notifications/focus timers running. Local core validation passes 139 cases with 7 link-privilege skips out of 146, and the nine-character WPF suite includes a real visibility/monitor wiring check. NVIDIA-assisted reviews are advisory; implementation is checked against local tests. This does not claim fullscreen, session-lock or stacked-monitor support, which remain separate work.
 - Three original public characters: Companion, Nimbus and Ember. The separate [optional pack directory](../character-packs/fan-art/README.md) contains six explicitly selected fan-art characters: Chiikawa, Baikinman, Hello Kitty, Pompompurin, Cinnamoroll and Kuromi. The default release keeps the original three; importing optional packs or building with `PersonalBuild=true` makes all nine available. `DistributionBuild=true` takes precedence and keeps the original three.
 - A character gallery with Korean/English name and alias search, original/fan-art/custom filters, static card previews, a separate motion preview and explicit application. Searching and previewing preserve the active desktop pet until **이 친구와 함께하기** is pressed.
 - The three new fan-art characters were selected from the official [2026 Sanrio Character Ranking](https://corporate.sanrio.co.jp/en/news/20260628_03.html), placing first, second and fourth respectively. [Creation records](../character-packs/fan-art/POPULAR_ASSETS.md), a versioned catalog and a [three-character preview](../character-packs/fan-art/popular-characters-preview.png) accompany the artwork. Third-party character rights and fan-art images are outside the MIT grant.
@@ -29,18 +31,18 @@ Review the exported folder before copying it into an authenticated clone of the 
 The default package is self-contained and requires access to missing NuGet runtime/build packs:
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 0.6.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 0.6.1
 ```
 
 An explicitly labelled alternative requires the user's .NET10 Desktop Runtime x64:
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 0.6.0 -FrameworkDependent
+powershell -NoProfile -File scripts/package-release.ps1 -Version 0.6.1 -FrameworkDependent
 ```
 
 The output directory is `artifacts/releases/`. Keep the entire ZIP layout. Compare its `.zip.sha256`, extract it and validate the manifest before reviewing the app on a test Windows profile. Do not use your real assistant configuration as a regression fixture.
 
-For GitHub, push the reviewed source through your normal authenticated workflow. Run **Windows distribution** to collect artifacts, or run **Draft GitHub release** with version `0.6.0` (or push a `v0.6.0` tag) to create a draft after checks. The draft includes the runtime-included app and separate optional character pack ZIPs, each with a checksum. It validates that its requested version matches the source and never replaces or publishes an existing release automatically. Review the draft assets and notes before publishing. See [GitHub's workflow trigger documentation](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow).
+For GitHub, push the reviewed source through your normal authenticated workflow. Run **Windows distribution** to collect artifacts, or run **Draft GitHub release** with version `0.6.1` (or push a `v0.6.1` tag) to create a draft after checks. The draft includes the runtime-included app and separate optional character pack ZIPs, each with a checksum. It validates that its requested version matches the source and never replaces or publishes an existing release automatically. Review the draft assets and notes before publishing. See [GitHub's workflow trigger documentation](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow).
 
 Review the gallery by searching Korean and English aliases, selecting a static card preview, opening **움직임 미리보기**, and applying with **이 친구와 함께하기**. Confirm that search and both preview steps leave the active desktop pet unchanged. For optional packs, verify six import folders plus the catalog, notices, provenance and per-file SHA256 inventory in the separate archive.
 

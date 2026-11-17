@@ -60,7 +60,7 @@ $sidecarOutput = Join-Path $root 'checksum-only'
 [void][IO.Directory]::CreateDirectory($sidecarOutput)
 $sidecar = Join-Path $sidecarOutput 'DesktopPet-0.6.0-fan-art-packs.zip.sha256'
 [IO.File]::WriteAllText($sidecar,'keep checksum')
-Assert-OptionalFailure { New-DesktopPetCharacterPacksPackage -SourceDirectory $source -DestinationDirectory $sidecarOutput }
+Assert-OptionalFailure { New-DesktopPetCharacterPacksPackage -SourceDirectory $source -DestinationDirectory $sidecarOutput -ReleaseVersion '0.6.0' }
 Assert-Optional ([IO.File]::ReadAllText($sidecar) -eq 'keep checksum') 'An existing checksum was overwritten.'
 Write-Output 'PASS Existing optional archives and checksum sidecars cannot be overwritten'
 

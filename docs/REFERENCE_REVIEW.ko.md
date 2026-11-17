@@ -17,6 +17,8 @@ eSheep과 VPet은 위의 확인 커밋으로 링크했습니다. 나머지 소�
 
 ## 먼저 적용할 개선
 
+후속 구현: 0.6.1에서 아래 1번 중 **수동 숨김 시 창 검색 중단·재표시 시 즉시 백그라운드 검색·오래된 결과 차단**과 열린 갤러리의 가져오기 후 갱신을 구현했습니다. 그 외 전체화면·잠금·모니터 배치 등의 제안은 여전히 미구현입니다. 이 문서의 문제 재현은 위에 명시한 0.6.0 기준 기록입니다.
+
 ### 1. 숨김·전체화면·잠금 상태의 작업 정책
 
 eSheep의 [CheckFullScreen](https://github.com/Adrianotiger/desktopPet/blob/72c0fca54bdf6204f7f9d223cc4284278a0f09b9/src/dotNet/FormPet.cs#L1259-L1286)은 전경 창이 모니터를 덮으면 `TopMost`를 해제합니다. 애니메이션이나 창 검색을 중단하는 구현은 아닙니다. 포커스를 바꾸는 호출과 의심스러운 좌표 계산도 있어 해당 메서드의 직접 복사는 추천하지 않습니다.
@@ -70,7 +72,7 @@ eSheep의 [Animations.cs](https://github.com/Adrianotiger/desktopPet/blob/72c0fc
 
 - **진단 정보 복사:** [Shijima inspector](https://github.com/pixelomer/Shijima-Qt/blob/main/ShimejiInspectorDialog.cc)를 참고해 실제 상태·WalkView·보행 위상·지지 바닥·DPI·버전을 출력합니다. 알림 본문, 프로젝트 경로와 토큰은 포함하지 않습니다. 현재의 독립 움직임 미리보기에 더해 사용자의 실제 보행 문제를 재현하는 데 도움이 됩니다.
 - **투명 여백 입력:** [ShijimaWidget의 알파 판정](https://github.com/pixelomer/Shijima-Qt/blob/main/ShijimaWidget.cc)과 [OpenPets 입력 처리](https://github.com/OpenPetsHQ/openpets/blob/main/apps/desktop/src/pet-window-interaction.ts)가 참고가 됩니다. 우리 코드는 명시적 알파 기반 입력 정책이 없습니다. 다만 WPF 투명 창의 실제 네이티브 동작을 시험하기 전에는 여백이 클릭을 차단한다고 단정할 수 없습니다. 다른 프로세스 창으로 클릭이 전달되는지, 드래그 캡처와 live-rig 변환이 유지되는지 확인해야 합니다.
-- **갤러리 갱신:** 열린 갤러리는 처음에만 목록을 읽습니다. 설정에서 팩을 가져온 뒤에는 콤보만 갱신되므로 라이브러리 변경 통지와 오래된 썸네일 작업 취소가 필요합니다.
+- **갤러리 갱신 — 0.6.1 구현 완료:** 설정에서 팩을 가져온 뒤 열려 있는 갤러리를 갱신합니다. 검색·분류·선택을 유지하고 오래된 썸네일 작업을 취소하며, 닫힌 창에는 결과를 적용하지 않습니다.
 - **큰 사용자 팩의 지연 캐시:** VPet의 [PNGAnimation](https://github.com/LorisYounger/VPet/blob/b04db827e80be6fbbdd74dd76b01c2641215b0ea/VPet-Simulator.Core/Graph/PNGAnimation.cs#L397-L452)과 [GraphCore](https://github.com/LorisYounger/VPet/blob/b04db827e80be6fbbdd74dd76b01c2641215b0ea/VPet-Simulator.Core/Graph/GraphCore.cs#L23-L47)를 참고할 수 있습니다. 현재 기본 팩은 이미 활성 이미지 19장만 읽으므로 렌더러 전체 교체의 이득은 작습니다.
 - **선택형 AI 진행 상태:** OpenPets의 [로컬 연동 구조](https://github.com/OpenPetsHQ/openpets/blob/main/apps/desktop/src/codemap.md)를 참고해 완료 외에 작업 중·사용자 입력 대기·오류 상태를 분리할 수 있습니다. 우리 앱의 내구성 있는 알림함과 Claude/Codex 연결은 이미 있으므로 이를 유지하면서 확장합니다. 플러그인 엔진·Electron 전체 도입은 현재 목표에 비해 범위가 큽니다.
 

@@ -22,6 +22,8 @@ public partial class CharacterGalleryWindow : Window
 {
     private readonly MainWindow _pet;
     private readonly CancellationTokenSource _lifetime = new();
+    private CancellationTokenSource? _loadCancellation;
+    private long _loadRevision;
     private IReadOnlyList<CharacterGalleryItem> _all = Array.Empty<CharacterGalleryItem>();
     private bool _closed, _started, _filtering, _previewBusy;
     private MotionPreviewWindow? _motionPreview;
@@ -45,8 +47,15 @@ public partial class CharacterGalleryWindow : Window
             new CategoryChoice("팬아트 팩", CharacterGalleryCategory.FanArt), new CategoryChoice("추가한 캐릭터", CharacterGalleryCategory.Custom),
         };
         CategoryCombo.SelectedValue = CharacterGalleryCategory.All;
-        Loaded += (_, _) => { if (!_started) { _started = true; LoadingTask = LoadCharactersAsync(); } };
-        Closed += (_, _) => { _closed = true; _lifetime.Cancel(); _motionPreview?.Close(); };
+        Loaded += (_, _) => { if (!_started) { _started = true; RefreshCharacters(); } };
+        Closed += (_, _) =>
+        {
+            _closed = true;
+            _lifetime.Cancel();
+            _loadCancellation?.Dispose();
+            _lifetime.Dispose();
+            _motionPreview?.Close();
+        };
     }
 
     public Task LoadingTask { get; private set; } = Task.CompletedTask;
@@ -54,7 +63,18 @@ public partial class CharacterGalleryWindow : Window
     public IReadOnlyList<CharacterGalleryItem> AllCharacters => _all;
     public event Action<string>? CharacterApplied;
 
-    private async Task LoadCharactersAsync()
+    /// <summary>Reload the library after import without applying a character or changing filters.</summary>
+    public void RefreshCharacters()
+    {
+        Dispatcher.VerifyAccess();
+        if (_closed || !_started) return;
+        _loadCancellation?.Cancel();
+        _loadCancellation?.Dispose();
+        _loadCancellation = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
+        LoadingTask = LoadCharactersAsync(++_loadRevision, _loadCancellation.Token);
+    }
+
+    private async Task LoadCharactersAsync(long revision, CancellationToken cancellation)
     {
         CountText.Text = "친구들을 불러오고 있어요…";
         try
@@ -66,7 +86,7 @@ public partial class CharacterGalleryWindow : Window
                 var result = new List<CharacterGalleryItem>();
                 foreach (var name in names)
                 {
-                    _lifetime.Token.ThrowIfCancellationRequested();
+                    cancellation.ThrowIfCancellationRequested();
                     var alias = aliases.GetValueOrDefault(name) ?? new Alias(name, []);
                     var category = CharacterGalleryCategory.Custom;
                     try
@@ -87,17 +107,19 @@ public partial class CharacterGalleryWindow : Window
                     }
                 }
                 return result;
-            }, _lifetime.Token);
-            if (_closed) return;
+            }, cancellation);
+            if (_closed || revision != _loadRevision) return;
+            var selectedName = (CharacterCards.SelectedItem as CharacterGalleryItem)?.Name ??
+                (_all.Count == 0 ? _pet.CurrentCharacterName : null);
             _all = items;
             FilterCharacters();
-            CharacterCards.SelectedItem = items.FirstOrDefault(item => item.Name == _pet.CurrentCharacterName);
+            CharacterCards.SelectedItem = CharacterCards.Items.OfType<CharacterGalleryItem>().FirstOrDefault(item => item.Name == selectedName);
             StatusText.Text = "현재 친구: " + _pet.CurrentCharacterName;
         }
         catch (OperationCanceledException) { }
         catch (Exception ex) when (IsCharacterError(ex))
         {
-            if (!_closed) { CountText.Text = "목록을 불러오지 못했어요."; StatusText.Text = "캐릭터 폴더를 확인하고 다시 열어주세요."; }
+            if (!_closed && revision == _loadRevision) { CountText.Text = "목록을 불러오지 못했어요."; StatusText.Text = "캐릭터 폴더를 확인하고 다시 열어주세요."; }
         }
     }
 
@@ -166,7 +188,7 @@ public partial class CharacterGalleryWindow : Window
 
     private async Task PreviewSelectedAsync()
     {
-        if (_previewBusy || CharacterCards.SelectedItem is not CharacterGalleryItem { IsAvailable: true } selected) return;
+        if (_closed || _previewBusy || CharacterCards.SelectedItem is not CharacterGalleryItem { IsAvailable: true } selected) return;
         _previewBusy = true;
         UpdateSelection();
         try

@@ -151,7 +151,7 @@ powershell -NoProfile -File tests/package-regression.ps1
 构建公开 Windows x64 包：
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 0.6.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 0.6.1
 ```
 
 输出位于 `artifacts/releases/`，包含 self-contained ZIP 与 SHA256 文件。缺少运行时包时构建会失败，不会静默切换为其他部署方式。[Windows 工作流](.github/workflows/windows-release.yml)配置了测试与构建产物；存在该文件不等于远程构建已通过或版本已经发布。
@@ -193,6 +193,10 @@ GIF 根据实际移动记录生成，并非帧率基准测试。桌面宠物、�
 本次新增的布丁狗（Pompompurin）、大耳狗（Cinnamoroll）和酷洛米（Kuromi）分别位列[2026 年三丽鸥角色大赏官方结果](https://corporate.sanrio.co.jp/en/news/20260628_03.html)的第 1、2、4 名。本仓库提供的是 AI 辅助创作的同人图片，并非三丽鸥官方素材。[制作记录](character-packs/fan-art/POPULAR_ASSETS.md)包含提示词及可复现的生成流程。
 
 ![布丁狗、大耳狗和酷洛米的动作与图层预览](character-packs/fan-art/popular-characters-preview.png)
+
+隐藏宠物时会暂停绘制和窗口平台扫描；再次显示时会立即安排后台刷新。通知接收和专注计时器在隐藏期间继续运行。
+
+通过设置导入角色后，已打开的画廊也会刷新，并保留搜索词、分类和选中的卡片。过期的缩略图加载会取消，关闭窗口后不会再更新列表。
 
 ## 准备公开发布
 

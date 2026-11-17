@@ -185,11 +185,63 @@ internal static class CharacterGalleryRegressionTests
                 Set(pet, "_settingsDirty", false);
                 Check(pet.CurrentCharacterName == "사용자 친구" && ((ComboBox)settings.FindName("CharacterCombo")).SelectedItem is "사용자 친구",
                     "Applying a gallery character left the parent settings selection stale");
+
+                var ownedSearch = (TextBox)ownedGallery.FindName("SearchBox");
+                var ownedCategory = (ComboBox)ownedGallery.FindName("CategoryCombo");
+                var ownedCards = (ListBox)ownedGallery.FindName("CharacterCards");
+                ownedSearch.Text = "사용자";
+                ownedCategory.SelectedValue = CharacterGalleryCategory.Custom;
+                ownedCards.SelectedItem = ownedGallery.AllCharacters.Single(item => item.Name == "사용자 친구");
+                var refreshApplications = 0;
+                ownedGallery.CharacterApplied += _ => refreshApplications++;
+                var imported = CreateCharacter(Path.Combine(fixture, "import-source"), "사용자 새 친구");
+                Wait((Task)Invoke(settings, "ImportCharacterFolderAsync", imported)!);
+                Wait(ownedGallery.LoadingTask);
+                saveTimer.Stop();
+                Set(pet, "_settingsDirty", false);
+                Check(ownedGallery.AllCharacters.Any(item => item.Name == "사용자 새 친구" && item.IsAvailable && item.Category == CharacterGalleryCategory.Custom) &&
+                    Names(ownedCards).SetEquals(new[] { "사용자 친구", "사용자 새 친구" }), "Successful Settings import left the open gallery stale");
+                Check(ownedSearch.Text == "사용자" && ownedCategory.SelectedValue is CharacterGalleryCategory.Custom &&
+                    ownedCards.SelectedItem is CharacterGalleryItem { Name: "사용자 친구" } && refreshApplications == 0 &&
+                    pet.CurrentCharacterName == "사용자 새 친구" && ((ComboBox)settings.FindName("CharacterCombo")).SelectedItem is "사용자 새 친구",
+                    "Refresh reset search/selection, applied a card or reversed the explicitly imported character");
+                Console.WriteLine("PASS Importing through Settings refreshes its open gallery while preserving search/category/card selection and avoiding an extra apply");
+
+                var activeBeforeRefresh = Get(pet, "_character");
+                var preferencesBeforeRefresh = JsonSerializer.Serialize(preferences);
+                ownedGallery.RefreshCharacters();
+                var olderLoad = ownedGallery.LoadingTask;
+                CreateCharacter(custom, "재검색 최신 친구");
+                ownedGallery.RefreshCharacters();
+                var latestLoad = ownedGallery.LoadingTask;
+                Wait(latestLoad);
+                Wait(olderLoad);
+                Check(ownedGallery.AllCharacters.Any(item => item.Name == "재검색 최신 친구" && item.IsAvailable) &&
+                    ownedSearch.Text == "사용자" && ownedCards.SelectedItem is CharacterGalleryItem { Name: "사용자 친구" } &&
+                    ReferenceEquals(Get(pet, "_character"), activeBeforeRefresh) && JsonSerializer.Serialize(preferences) == preferencesBeforeRefresh &&
+                    refreshApplications == 0 && !(bool)Get(pet, "_settingsDirty")!, "Rapid refresh published an older catalog or changed the active pet/preferences");
+                Console.WriteLine("PASS Rapid gallery refresh retains the newest library snapshot and preserves filters and active pet preferences");
                 settings.Close();
                 Check(!ownedGallery.IsVisible, "Closing settings retained its owned gallery");
                 Console.WriteLine("PASS Settings opens one owned gallery, synchronizes explicit application and closes the gallery with its parent");
             }
             finally { settings.Close(); }
+
+            var closingGallery = new CharacterGalleryWindow(pet);
+            try
+            {
+                closingGallery.Show();
+                closingGallery.RefreshCharacters();
+                var pendingLoad = closingGallery.LoadingTask;
+                closingGallery.Close();
+                var closedSnapshot = closingGallery.AllCharacters;
+                Wait(pendingLoad);
+                closingGallery.RefreshCharacters();
+                Check(ReferenceEquals(closingGallery.AllCharacters, closedSnapshot) && !closingGallery.IsVisible,
+                    "An outstanding or newly requested load mutated a closed gallery");
+                Console.WriteLine("PASS Closing a gallery cancels outstanding loading and ignores later refresh requests");
+            }
+            finally { closingGallery.Close(); }
         }
         finally
         {

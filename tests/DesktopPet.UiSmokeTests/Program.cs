@@ -280,6 +280,7 @@ internal static class Program
             VerifyConnections(folder, pet, args.Contains("--capture"));
             VerifyCharacterImport(pet, folder, args.Contains("--capture"));
             FocusTimerUiTests.Run(folder);
+            PlatformMonitorUiTests.Run(pet);
             CharacterGalleryRegressionTests.Run(folder, args.Contains("--capture"));
             if (args.Contains("--personal-pack")) VerifyPersonalSelection(pet);
             Console.WriteLine("All UI smoke checks passed");

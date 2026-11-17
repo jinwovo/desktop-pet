@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.1 — pause hidden background scans
+
+- Stop window-platform scanning while the pet is hidden, including a hidden startup. Showing the pet requests an immediate background refresh.
+- Use a single scan at a time and schedule subsequent scans after completion. Discard an old scan if the pet was hidden, shown again or disposed before it completed.
+- Keep notification intake and focus timers active while hidden. Native window enumeration remains off the UI thread, and disposal does not wait for a slow native scan.
+- Add nine deterministic/core timer regression groups and an actual pet-visibility wiring check; preserve all nine characters and the existing gallery.
+- Refresh an open gallery after importing through Settings. Preserve search, category and card selection, cancel obsolete thumbnail loads and ignore results after closure.
+- Use NVIDIA-assisted design/review through the optional development helper. No NVIDIA credential or model reply is bundled with the app.
+
 ## 0.6.0 — character gallery and expanded collection
 
 - Add Pompompurin, Cinnamoroll and Kuromi as optional AI-assisted fan-art packs, selected using the official 2026 Sanrio ranking. Existing six companions are preserved, giving personal builds nine choices.
