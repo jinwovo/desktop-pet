@@ -139,6 +139,15 @@
                 <CheckBox x:Name="CalmCheck" Content="차분한 움직임" Checked="Comfort_Changed" Unchecked="Comfort_Changed" />
                 <CheckBox x:Name="GentleCheck" Content="완료 말풍선을 잠시 후 닫기" Checked="Comfort_Changed" Unchecked="Comfort_Changed" />
                 <CheckBox x:Name="QuietCheck" Content="방해 금지 · 말풍선 없이 보관" Checked="Comfort_Changed" Unchecked="Comfort_Changed" />
+                <CheckBox x:Name="QuietHoursCheck" Content="매일 예약 방해 금지"/>
+                <WrapPanel Margin="24,6,0,0">
+                    <TextBox x:Name="QuietStartBox" Width="55" VerticalContentAlignment="Center"/>
+                    <TextBlock Text=" ~ " VerticalAlignment="Center"/>
+                    <TextBox x:Name="QuietEndBox" Width="55" VerticalContentAlignment="Center"/>
+                    <Button x:Name="QuietHoursApplyButton" Content="예약 적용" Padding="8,4" Margin="8,0,0,0" Click="QuietHoursApply_Click"/>
+                </WrapPanel>
+                <TextBlock x:Name="QuietHoursStatus" FontSize="11" Foreground="#777777" TextWrapping="Wrap" Margin="24,4,0,4"
+                           Text="로컬 시간 HH:mm. 자정을 넘길 수 있고 같은 시간은 예약하지 않아요."/>
                 <Button Content="테스트 알림" HorizontalAlignment="Left" Padding="10,5" Margin="0,5,0,6" Click="TestNotification_Click" />
                 <CheckBox x:Name="WindowFallCheck" Content="창 닫을 때 떨어지는 연출" Checked="Toggle_Changed" Unchecked="Toggle_Changed" />
                 <TextBlock Text="창 연출을 끄면 다른 프로그램의 창을 주기적으로 캡처하지 않아 더 가볍습니다."

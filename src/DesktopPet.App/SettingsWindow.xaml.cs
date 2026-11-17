@@ -83,6 +83,9 @@ public partial class SettingsWindow : Window
         CalmCheck.IsChecked = _pet.CalmBehaviorEnabled;
         GentleCheck.IsChecked = _pet.AutoDismissNotifications;
         QuietCheck.IsChecked = _pet.QuietMode;
+        QuietHoursCheck.IsChecked = _pet.QuietHoursEnabled;
+        QuietStartBox.Text = QuietHours.Format(_pet.QuietHoursStartMinute);
+        QuietEndBox.Text = QuietHours.Format(_pet.QuietHoursEndMinute);
         FocusMinutesBox.Text = _pet.FocusMinutes.ToString(System.Globalization.CultureInfo.InvariantCulture);
         BreakMinutesBox.Text = _pet.BreakMinutes.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
@@ -379,6 +382,17 @@ public partial class SettingsWindow : Window
         _pet.SetCalmBehavior(CalmCheck.IsChecked == true);
         _pet.SetAutoDismissNotifications(GentleCheck.IsChecked == true);
         _pet.SetQuietMode(QuietCheck.IsChecked == true);
+    }
+
+    private void QuietHoursApply_Click(object sender, RoutedEventArgs e)
+    {
+        if (!QuietHours.TryParse(QuietStartBox.Text, out var start) || !QuietHours.TryParse(QuietEndBox.Text, out var end))
+        {
+            QuietHoursStatus.Text = "00:00~23:59 사이 HH:mm 형식으로 입력해주세요.";
+            return;
+        }
+        _pet.SetQuietHours(QuietHoursCheck.IsChecked == true, start, end);
+        QuietHoursStatus.Text = start == end ? "같은 시작·종료 시간은 예약을 활성화하지 않아요." : "예약을 적용했어요. 미확인 알림은 계속 보관합니다.";
     }
 
     private void AssistantConnections_Click(object sender, RoutedEventArgs e)

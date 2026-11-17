@@ -98,6 +98,7 @@ dotnet build DesktopPet.sln -c Release --no-restore
 - 收到通知不会自动显示已隐藏的宠物。
 - 默认开启全屏暂时隐藏（`전체화면 앱을 사용할 때 잠시 숨기기`）。只判断宠物所在屏幕的前台窗口；锁屏与休眠也会暂停显示及可选捕获，恢复后保留手动隐藏设置。
 - **免打扰**（`방해 금지`）只保存通知，不自动弹出气泡。
+- **每日预约免打扰**（`매일 예약 방해 금지`）支持本地 `HH:mm` 和跨午夜时段，点击 `예약 적용` 生效。起止相同则不启用时段。保留手动免打扰及未读记录；时段结束不会重播旧气泡，可主动查看未读通知。
 - 窗口跳跃和窗口关闭下落效果默认关闭。开启后者时会在本机捕获其他应用窗口；关闭它可避免这部分捕获工作。
 
 ## 添加自己的角色
@@ -155,7 +156,7 @@ powershell -NoProfile -File tests/package-regression.ps1
 构建公开 Windows x64 包：
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 0.11.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 0.12.0
 ```
 
 输出位于 `artifacts/releases/`，包含 self-contained ZIP 与 SHA256 文件。缺少运行时包时构建会失败，不会静默切换为其他部署方式。[Windows 工作流](.github/workflows/windows-release.yml)配置了测试与构建产物；存在该文件不等于远程构建已通过或版本已经发布。

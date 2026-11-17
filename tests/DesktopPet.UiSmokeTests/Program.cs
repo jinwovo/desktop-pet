@@ -297,6 +297,7 @@ internal static class Program
             VerifyConnections(folder, pet, args.Contains("--capture"));
             VerifyCharacterImport(pet, folder, args.Contains("--capture"));
             FocusTimerUiTests.Run(folder);
+            QuietHoursUiTests.Run(folder);
             FullscreenUiTests.Run(folder);
             ArchiveImportUiTests.Run(folder);
             PlatformMonitorUiTests.Run(pet);

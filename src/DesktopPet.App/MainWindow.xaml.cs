@@ -17,6 +17,9 @@ public partial class MainWindow : Window
     private readonly Dictionary<string, BitmapImage> _frameCache = new();
     private readonly CharacterLibrary _characterLibrary;
     private readonly FocusTimer _focusTimer;
+    private readonly TimeProvider _quietClock;
+    private bool _scheduledQuietActive;
+    private readonly DispatcherTimer _quietHoursTimer = new() { Interval = TimeSpan.FromSeconds(15) };
     private readonly DispatcherTimer _focusTickTimer = new() { Interval = TimeSpan.FromSeconds(1) };
     private readonly DispatcherTimer _attentionTimer = new() { Interval = TimeSpan.FromMilliseconds(500) };
     private PetSuppressionReason _suppressionReasons;
@@ -78,11 +81,12 @@ public partial class MainWindow : Window
 
     public MainWindow() : this(null) { }
 
-    public MainWindow(CharacterLibrary? characterLibrary, FocusTimer? focusTimer = null, string? inboxDirectory = null)
+    public MainWindow(CharacterLibrary? characterLibrary, FocusTimer? focusTimer = null, string? inboxDirectory = null, TimeProvider? quietClock = null)
     {
         _characterLibrary = characterLibrary ?? new CharacterLibrary(CharactersRoot, Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DesktopPet", "Characters"));
         _focusTimer = focusTimer ?? new FocusTimer();
+        _quietClock = quietClock ?? TimeProvider.System;
         _inboxDirectory = Path.GetFullPath(inboxDirectory ?? NotificationInbox.DefaultFolder);
         InitializeComponent();
         _poseTransition = new PoseTransitionPresenter(PetImage, PreviousPetImage, FlipTransform);
@@ -93,6 +97,7 @@ public partial class MainWindow : Window
         _duplicateCleanupTimer.Tick += (_, _) => RetryDuplicateCleanup();
         _focusTickTimer.Tick += (_, _) => UpdateFocusTimer();
         _attentionTimer.Tick += (_, _) => RefreshAttentionState();
+        _quietHoursTimer.Tick += (_, _) => RefreshQuietHours();
         _focusTimer.SessionCompleted += OnFocusSessionCompleted;
     }
 
@@ -118,6 +123,7 @@ public partial class MainWindow : Window
         _dpiScale = VisualTreeHelper.GetDpi(this).DpiScaleX;
         _settings = PetSettings.Load();
         _focusTimer.ConfigureDurations(TimeSpan.FromMinutes(_settings.FocusMinutes), TimeSpan.FromMinutes(_settings.BreakMinutes));
+        RefreshQuietHours();
 
         var names = _characterLibrary.GetNames();
         if (names.Count == 0)
@@ -383,6 +389,33 @@ public partial class MainWindow : Window
     public bool CalmBehaviorEnabled => _settings.CalmBehavior;
     public bool AutoDismissNotifications => _settings.AutoDismissNotifications;
     public bool QuietMode => _settings.QuietMode;
+    public bool QuietHoursEnabled => _settings.QuietHoursEnabled;
+    public int QuietHoursStartMinute => _settings.QuietHoursStartMinute;
+    public int QuietHoursEndMinute => _settings.QuietHoursEndMinute;
+    public bool IsQuietNow => _settings.QuietMode || QuietHours.IsActive(_settings.QuietHoursEnabled,
+        _settings.QuietHoursStartMinute, _settings.QuietHoursEndMinute, _quietClock.GetLocalNow());
+
+    public void SetQuietHours(bool enabled, int startMinute, int endMinute)
+    {
+        if (_disposed) return;
+        _ = QuietHours.IsActive(enabled, startMinute, endMinute, _quietClock.GetLocalNow());
+        _settings.QuietHoursEnabled = enabled;
+        _settings.QuietHoursStartMinute = startMinute;
+        _settings.QuietHoursEndMinute = endMinute;
+        RefreshQuietHours();
+        ScheduleSettingsSave();
+    }
+
+    private void RefreshQuietHours()
+    {
+        if (_disposed) return;
+        var active = QuietHours.IsActive(_settings.QuietHoursEnabled, _settings.QuietHoursStartMinute,
+            _settings.QuietHoursEndMinute, _quietClock.GetLocalNow());
+        if (_settings.QuietHoursEnabled) _quietHoursTimer.Start();
+        else _quietHoursTimer.Stop();
+        if (active && !_scheduledQuietActive) DismissForQuietMode();
+        _scheduledQuietActive = active;
+    }
     public bool AutoConnectAssistants => _settings.AutoConnectAssistants;
     public bool AssistantSetupSeen => _settings.AssistantSetupSeen;
     public int PendingNotificationCount => _unreadNotifications.Count;
@@ -526,14 +559,16 @@ public partial class MainWindow : Window
     {
         if (_settings.QuietMode == enabled) return;
         _settings.QuietMode = enabled;
-        if (enabled)
-        {
-            _reviewingNotifications = false;
-            _notificationPopupTimer.Stop();
-            _bubble?.Dismiss();
-            _brain.StopNagging();
-        }
+        if (enabled) DismissForQuietMode();
         ScheduleSettingsSave();
+    }
+
+    private void DismissForQuietMode()
+    {
+        _reviewingNotifications = false;
+        _notificationPopupTimer.Stop();
+        _bubble?.Dismiss();
+        _brain?.StopNagging();
     }
 
     public void SetAutoConnectAssistants(bool enabled)
@@ -887,6 +922,7 @@ public partial class MainWindow : Window
         _attentionTimer.Stop();
         _windowPlatformMonitor?.Dispose();
         _focusTickTimer.Stop();
+        _quietHoursTimer.Stop();
         _focusTimer.SessionCompleted -= OnFocusSessionCompleted;
         _focusTimer.Dispose();
         _poseTransition.Reset();
@@ -958,6 +994,7 @@ public partial class MainWindow : Window
 
     private void ShowActiveNotification(bool userRequested = false, bool resetTimer = true)
     {
+        RefreshQuietHours();
         if (_activeNotification is null || IsTemporarilyPaused) return;
         if (!_settings.Visible)
         {
@@ -965,7 +1002,7 @@ public partial class MainWindow : Window
             SetVisible(true);
             if (_bubble is { IsShowing: true }) return;
         }
-        if (_settings.QuietMode && !userRequested) return;
+        if (IsQuietNow && !userRequested) return;
 
         var n = _activeNotification.Notification;
         var emote = string.Equals(n.Mood, "cry", StringComparison.OrdinalIgnoreCase)

@@ -99,6 +99,7 @@ Claude Code는 연결 후 세션을 다시 시작하세요. [Claude Code 훅 문
 - 숨기면 화면 그리기와 창 검색을 함께 멈춥니다. 다시 표시하면 백그라운드에서 최신 창 목록을 검색합니다. 숨겨도 알림 수신과 집중 타이머는 계속 동작합니다.
 - 전체 화면 중 일시 숨김은 기본으로 켜져 있습니다. 펫이 있는 화면을 덮는 활성 창에서만 작동하며, 잠금·절전 중에도 표시와 선택적 캡처를 멈춥니다. 해제 후에도 직접 숨겨둔 설정은 유지합니다.
 - **방해 금지** 중에는 자동 말풍선 없이 알림만 저장합니다.
+- **매일 예약 방해 금지**에서 로컬 시간 `HH:mm`을 입력하고 **예약 적용**을 누릅니다. 자정을 넘길 수 있고 같은 시작·종료 시간은 비활성입니다. 수동 방해 금지 설정과 미확인 알림은 유지하며, 예약이 끝나도 예전 말풍선을 재생하지 않습니다.
 - 창 사이 점프와 창 닫힘 연출은 기본으로 꺼져 있습니다. 창 닫힘 연출을 켜면 다른 앱의 창을 로컬에서 캡처하므로, 그 작업을 줄이려면 꺼두세요.
 
 ## 나만의 캐릭터 추가
@@ -156,7 +157,7 @@ powershell -NoProfile -File tests/package-regression.ps1
 공용 Windows x64 배포를 만들려면 다음을 실행합니다.
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 0.11.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 0.12.0
 ```
 
 `artifacts/releases/`에 self-contained ZIP과 SHA256을 만듭니다. 필요한 런타임 팩이 없으면 실패하며 배포 종류를 몰래 바꾸지 않습니다. [Windows 워크플로](.github/workflows/windows-release.yml)는 검사와 아티팩트 생성을 설정한 파일이며, 파일이 있다고 원격 빌드나 공개 릴리스가 성공했다는 뜻은 아닙니다.

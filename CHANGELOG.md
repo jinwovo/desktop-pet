@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0 — scheduled quiet hours
+
+- Add an opt-in daily local-time quiet schedule with midnight crossing and explicit HH:mm validation. Equal start/end times leave the schedule inactive.
+- Suppress automatic bubbles while retaining durable notifications and explicit unread review. Entering the interval closes an existing bubble; leaving never replays old alerts or changes manual quiet mode.
+- Poll only while the schedule is enabled and stop on disposal. Cover all 1,440 minute boundaries and real WPF/inbox behavior.
+
 ## 0.11.0 — configurable focus sessions
 
 - Add persisted focus (1–180 minutes) and break (1–60 minutes) controls, preserving 25/5 defaults for older settings.

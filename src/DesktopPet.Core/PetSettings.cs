@@ -23,6 +23,9 @@ public sealed class PetSettings
     public bool CalmBehavior { get; set; } = true;
     public bool AutoDismissNotifications { get; set; } = true;
     public bool QuietMode { get; set; }
+    public bool QuietHoursEnabled { get; set; }
+    public int QuietHoursStartMinute { get; set; } = 22 * 60;
+    public int QuietHoursEndMinute { get; set; } = 8 * 60;
     public int NotificationDisplaySeconds { get; set; } = 8;
     public int FocusMinutes { get; set; } = 25;
     public int BreakMinutes { get; set; } = 5;
@@ -66,6 +69,8 @@ public sealed class PetSettings
         NotificationDisplaySeconds = Math.Clamp(NotificationDisplaySeconds, 3, 30);
         FocusMinutes = Math.Clamp(FocusMinutes, 1, 180);
         BreakMinutes = Math.Clamp(BreakMinutes, 1, 60);
+        QuietHoursStartMinute = Math.Clamp(QuietHoursStartMinute, 0, 1439);
+        QuietHoursEndMinute = Math.Clamp(QuietHoursEndMinute, 0, 1439);
     }
 
     public void Save(string? filePath = null)

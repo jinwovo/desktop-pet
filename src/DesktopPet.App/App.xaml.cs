@@ -54,7 +54,7 @@ public partial class App : System.Windows.Application
         }
         if (e.Args.Contains("--version", StringComparer.Ordinal))
         {
-            Console.WriteLine(typeof(App).Assembly.GetName().Version?.ToString() ?? "0.11.0");
+            Console.WriteLine(typeof(App).Assembly.GetName().Version?.ToString() ?? "0.12.0");
             Shutdown();
             return;
         }

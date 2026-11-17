@@ -99,6 +99,7 @@ Use the minute fields and **시간 적용** to change durations. Changes preserv
 - Hiding pauses drawing and window-platform scanning. Showing the pet requests fresh platforms in the background; inbox delivery and the focus timer continue while hidden.
 - **Pause during fullscreen** (`전체화면 앱을 사용할 때 잠시 숨기기`) is enabled by default. A foreground window covering the pet's monitor temporarily pauses presentation and optional capture. Session lock/suspend also pause presentation; resuming preserves your manual hidden preference. Other monitors' fullscreen windows do not hide the pet.
 - **Do not disturb** (`방해 금지`) saves notifications without automatic bubbles.
+- **Scheduled quiet hours** (`매일 예약 방해 금지`) accepts local `HH:mm` start/end times, including midnight crossing. Apply with `예약 적용`. Equal times are inactive. The schedule preserves manual quiet mode, retains receipts and permits explicit review; its end does not replay old alerts.
 - Window hopping and the window-fall effect are off by default. The latter captures other application windows locally while enabled; leave it off to avoid that capture workload.
 
 ## Add your own character
@@ -156,7 +157,7 @@ The suites use fixture directories and do not register hooks in your real assist
 To create a public Windows x64 package:
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 0.11.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 0.12.0
 ```
 
 The output is a self-contained ZIP and a SHA256 sidecar under `artifacts/releases/`. Missing runtime packs cause a build failure; the script does not silently change deployment type. The [Windows workflow](.github/workflows/windows-release.yml) is configured to run checks and create artifacts; its presence does not imply a successful remote build or a published release.
