@@ -8,26 +8,48 @@ namespace DesktopPet.Core;
 /// </summary>
 public sealed class PlatformLayout
 {
-    private volatile IReadOnlyList<Platform> _monitorFloors;
+    private sealed record MonitorTopology(IReadOnlyList<Platform> Floors, IReadOnlyList<DesktopRect> Areas);
+    private volatile MonitorTopology _monitors;
     private volatile IReadOnlyList<Platform> _windowPlatforms = Array.Empty<Platform>();
 
     public PlatformLayout(IReadOnlyList<Platform> monitorFloors)
     {
-        _monitorFloors = monitorFloors.Count > 0 ? monitorFloors : new[] { new Platform(0, 1920, 1080) };
+        ArgumentNullException.ThrowIfNull(monitorFloors);
+        _monitors = LegacyTopology(monitorFloors);
+    }
+
+    private static MonitorTopology LegacyTopology(IReadOnlyList<Platform> floors) => new(
+        floors.Count > 0 ? floors.ToArray() : new[] { new Platform(0, 1920, 1080) }, Array.Empty<DesktopRect>());
+
+    public static PlatformLayout FromWorkAreas(IReadOnlyList<DesktopRect> workAreas)
+    {
+        var layout = new PlatformLayout(Array.Empty<Platform>());
+        layout.UpdateWorkAreas(workAreas);
+        return layout;
+    }
+
+    /// <summary>Atomically replace geometry and floors; retain the last layout on an empty OS report.</summary>
+    public void UpdateWorkAreas(IReadOnlyList<DesktopRect> workAreas)
+    {
+        ArgumentNullException.ThrowIfNull(workAreas);
+        if (workAreas.Count == 0) return;
+        var areas = workAreas.ToArray();
+        if (areas.Any(area => !area.IsValid)) throw new ArgumentException("Monitor work areas must be finite positive rectangles.", nameof(workAreas));
+        _monitors = new(areas.Select(area => new Platform(area.Left, area.Right, area.Bottom)).ToArray(), areas);
     }
 
     public void UpdateMonitors(IReadOnlyList<Platform> monitorFloors)
     {
         if (monitorFloors.Count > 0)
         {
-            _monitorFloors = monitorFloors;
+            _monitors = LegacyTopology(monitorFloors);
         }
     }
 
     /// <summary>Replaces the live set of window-top platforms. Monitor floors are untouched.</summary>
     public void UpdateWindowPlatforms(IReadOnlyList<Platform> windowPlatforms) => _windowPlatforms = windowPlatforms;
 
-    private IEnumerable<Platform> AllPlatforms => _windowPlatforms.Concat(_monitorFloors);
+    private IEnumerable<Platform> AllPlatforms => _windowPlatforms.Concat(_monitors.Floors);
 
     /// <summary>
     /// Nearby surfaces to consider for a hop. This is a geometric shortlist; the brain still
@@ -55,7 +77,12 @@ public sealed class PlatformLayout
     /// <summary>The monitor floor at x — used as the ultimate fallback and to bound X while falling.</summary>
     public Platform GetMonitorFloorAt(double x)
     {
-        foreach (var m in _monitorFloors)
+        return FloorAtX(_monitors.Floors, x);
+    }
+
+    private static Platform FloorAtX(IReadOnlyList<Platform> floors, double x)
+    {
+        foreach (var m in floors)
         {
             if (x >= m.Left && x < m.Right)
             {
@@ -63,9 +90,41 @@ public sealed class PlatformLayout
             }
         }
 
-        return _monitorFloors
+        return floors
             .OrderBy(m => DistanceToRange(x, m.Left, m.Right))
             .First();
+    }
+
+    /// <summary>
+    /// Select by desktop X/Y. For airborne feet, callers sample just above the sole so a pet
+    /// resting on a stacked monitor's bottom edge stays on that monitor. In a taskbar/gap,
+    /// prefer an X-aligned floor still below the point; only recover upward if none remains.
+    /// Legacy floor-only layouts retain their original X-only behavior.
+    /// </summary>
+    public Platform GetMonitorFloorAt(double x, double y)
+    {
+        if (!double.IsFinite(x) || !double.IsFinite(y)) throw new ArgumentOutOfRangeException(nameof(x));
+        var topology = _monitors;
+        if (topology.Areas.Count == 0) return FloorAtX(topology.Floors, x);
+        for (var i = 0; i < topology.Areas.Count; i++)
+            if (topology.Areas[i].Contains(x, y)) return topology.Floors[i];
+
+        var best = -1;
+        var distance = double.PositiveInfinity;
+        for (var i = 0; i < topology.Areas.Count; i++)
+        {
+            var area = topology.Areas[i];
+            if (x < area.Left || x >= area.Right || y >= area.Bottom) continue;
+            var candidate = area.DistanceSquared(x, y);
+            if (candidate < distance) { best = i; distance = candidate; }
+        }
+        if (best >= 0) return topology.Floors[best];
+        for (var i = 0; i < topology.Areas.Count; i++)
+        {
+            var candidate = topology.Areas[i].DistanceSquared(x, y);
+            if (best < 0 || candidate < distance) { best = i; distance = candidate; }
+        }
+        return topology.Floors[best];
     }
 
     /// <summary>

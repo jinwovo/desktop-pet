@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.0 — monitor topology and landing recovery
+
+- Represent monitor work areas with X/Y rectangles and choose the pet's floor using its actual desktop position. Fix drops on a lower stacked monitor snapping to the upper screen.
+- Keep upper-boundary soles stable and avoid phantom landings when a throw turns inside a taskbar gap. Recover onto the nearest remaining monitor after display removal.
+- Publish copied monitor geometry atomically and invalidate old platform scans/native placement after display changes. Preserve legacy floor-only consumers.
+- Add stacked/reordered/negative/offset/gap/removal regression cases. Physical mixed-DPI movement remains an explicit manual-validation item.
+
 ## 0.7.0 — fullscreen and session cooperation
 
 - Temporarily pause the pet, bubbles, platform scanning and optional window-fall capture while a foreground window covers the pet's monitor.

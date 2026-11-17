@@ -228,7 +228,8 @@ var tests = new (string Name, Action Run)[]
  .Concat(WalkRigResourceTests.Create())
  .Concat(FocusTimerTests.Create())
  .Concat(WindowPlatformMonitorTests.Create())
- .Concat(FullscreenPolicyTests.Create()).ToArray();
+ .Concat(FullscreenPolicyTests.Create())
+ .Concat(MonitorTopologyTests.Create()).ToArray();
 
 var failures = 0;
 var skipped = 0;

@@ -128,9 +128,9 @@ public partial class MainWindow : Window
         ApplyPresentation(presentation);
         _settings.CharacterName = CurrentCharacterName;
 
-        _platformLayout = new PlatformLayout(BuildMonitorFloors());
+        _platformLayout = PlatformLayout.FromWorkAreas(BuildMonitorWorkAreas());
         var (effWidth, effHeight, effGroundOffset, effSpeed) = ComputeEffectiveSize(_character);
-        var floor = _platformLayout.GetMonitorFloorAt(0);
+        var floor = _platformLayout.GetMonitorFloorAt(0, 0);
         var startX = floor.Left + (floor.Right - floor.Left - effWidth) / 2;
         var startY = floor.GroundY - effGroundOffset;
 
@@ -566,15 +566,25 @@ public partial class MainWindow : Window
         WindowFallEnabledChanged?.Invoke(enabled);
     }
 
-    private List<Platform> BuildMonitorFloors() =>
+    private List<DesktopRect> BuildMonitorWorkAreas() =>
         MonitorHelper.GetWorkAreasPx()
-            .Select(rect => new Platform(rect.Left / _dpiScale, rect.Right / _dpiScale, rect.Bottom / _dpiScale))
+            .Select(rect => new DesktopRect(rect.Left / _dpiScale, rect.Top / _dpiScale, rect.Right / _dpiScale, rect.Bottom / _dpiScale))
             .ToList();
 
     private void OnDisplaySettingsChanged(object? sender, EventArgs e)
     {
         if (!Dispatcher.HasShutdownStarted)
-            Dispatcher.BeginInvoke(() => { if (!_disposed) _platformLayout.UpdateMonitors(BuildMonitorFloors()); });
+            Dispatcher.BeginInvoke(() =>
+            {
+                if (_disposed) return;
+                _windowPlatformMonitor?.Pause();
+                _platformLayout.UpdateWorkAreas(BuildMonitorWorkAreas());
+                _platformLayout.UpdateWindowPlatforms(Array.Empty<Platform>());
+                _lastNativeX = _lastNativeY = int.MinValue;
+                _lastGaitPositionX = double.NaN;
+                RefreshAttentionState();
+                if (IsPresentationActive) _windowPlatformMonitor?.Resume();
+            });
     }
 
     private void OnSessionSwitch(object sender, Microsoft.Win32.SessionSwitchEventArgs e)

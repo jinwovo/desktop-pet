@@ -323,7 +323,7 @@ public sealed class PetBrain
 
         // Bound horizontal movement before testing a landing; otherwise a fast throw can
         // miss the floor outside its X range and remain below every platform forever.
-        var monitorFloor = _layout.GetMonitorFloorAt(X + _frameWidth / 2);
+        var monitorFloor = _layout.GetMonitorFloorAt(X + _frameWidth / 2, Y + _groundOffset - 0.5);
         var minX = monitorFloor.Left;
         var maxX = monitorFloor.Right - _frameWidth;
         if (maxX < minX) minX = maxX = (monitorFloor.Left + monitorFloor.Right - _frameWidth) / 2;
@@ -469,7 +469,7 @@ public sealed class PetBrain
             var time = flightSeconds * i / steps;
             var x = centerX + velocityX * HorizontalTravelFactor(time);
             var y = groundY - upwardSpeed * time + 0.5 * GravityPxPerSec2 * time * time;
-            var floor = _layout.GetMonitorFloorAt(x);
+            var floor = _layout.GetMonitorFloorAt(x, y - 0.5);
             if (x - _frameWidth / 2 < floor.Left - 0.5 || x + _frameWidth / 2 > floor.Right + 0.5) return false;
             if (time * GravityPxPerSec2 >= upwardSpeed)
             {

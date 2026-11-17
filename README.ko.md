@@ -152,7 +152,7 @@ powershell -NoProfile -File tests/package-regression.ps1
 공용 Windows x64 배포를 만들려면 다음을 실행합니다.
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 0.7.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 0.8.0
 ```
 
 `artifacts/releases/`에 self-contained ZIP과 SHA256을 만듭니다. 필요한 런타임 팩이 없으면 실패하며 배포 종류를 몰래 바꾸지 않습니다. [Windows 워크플로](.github/workflows/windows-release.yml)는 검사와 아티팩트 생성을 설정한 파일이며, 파일이 있다고 원격 빌드나 공개 릴리스가 성공했다는 뜻은 아닙니다.
