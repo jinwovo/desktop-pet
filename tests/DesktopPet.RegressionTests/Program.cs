@@ -232,7 +232,8 @@ var tests = new (string Name, Action Run)[]
  .Concat(MonitorTopologyTests.Create())
  .Concat(BehaviorProfileTests.Create())
  .Concat(CharacterArchiveTests.Create())
- .Concat(QuietHoursTests.Create()).ToArray();
+ .Concat(QuietHoursTests.Create())
+ .Concat(FramePacerTests.Create()).ToArray();
 
 var failures = 0;
 var skipped = 0;

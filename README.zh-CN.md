@@ -60,6 +60,7 @@ dotnet build DesktopPet.sln -c Release --no-restore
 | 全屏配合 | 全屏、锁屏和休眠时暂时隐藏，保留通知及专注计时。 |
 | 多屏几何 | 同时使用 X/Y 坐标处理上下、错位屏幕的落地和移除屏幕后的恢复。 |
 | 减少打扰 | 可隐藏宠物、开启免打扰、调整大小和速度、关闭可选效果。 |
+| 动效设置 | 可设 30/60/120 FPS 工作上限；减少动效会抑制自动跳跃、强提醒、窗口捕获和淡入淡出，保留原有特效偏好。 |
 
 文档提供英语、韩语和简体中文版本。当前程序界面主要使用**韩语**，本说明附有关键按钮的韩语名称。构建目标为 Windows x64；不提供 macOS、Linux 或原生 ARM64 安装包。
 
@@ -156,7 +157,7 @@ powershell -NoProfile -File tests/package-regression.ps1
 构建公开 Windows x64 包：
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 0.12.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 0.13.0
 ```
 
 输出位于 `artifacts/releases/`，包含 self-contained ZIP 与 SHA256 文件。缺少运行时包时构建会失败，不会静默切换为其他部署方式。[Windows 工作流](.github/workflows/windows-release.yml)配置了测试与构建产物；存在该文件不等于远程构建已通过或版本已经发布。

@@ -5,7 +5,7 @@
     Validates all declared PNGs before copying, writes a per-file hash manifest and ZIP checksum,
     and refuses existing destinations. Dot-sourcing defines functions without publishing a package.
 #>
-param([string]$Version = '0.12.0', [string]$OutputDirectory = '', [string]$SourceDirectory = '')
+param([string]$Version = '0.13.0', [string]$OutputDirectory = '', [string]$SourceDirectory = '')
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'Install-DesktopPetPayload.ps1')
 . (Join-Path $PSScriptRoot 'Get-DesktopPetFanArtCatalog.ps1')
@@ -87,7 +87,7 @@ function Get-DesktopPetFanArtPackInventory {
 function New-DesktopPetCharacterPacksPackage {
     param([Parameter(Mandatory=$true)][string]$SourceDirectory,
           [Parameter(Mandatory=$true)][string]$DestinationDirectory,
-          [string]$ReleaseVersion='0.12.0')
+          [string]$ReleaseVersion='0.13.0')
     if ($ReleaseVersion -notmatch '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z]+(?:[.-][0-9A-Za-z]+)*)?$') { throw 'Use a semantic character-pack version.' }
     $repoRoot = Split-Path -Parent $PSScriptRoot
     $source = Get-DesktopPetInstallPath $SourceDirectory

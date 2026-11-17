@@ -39,6 +39,7 @@ public partial class CharacterGalleryWindow : Window
     public CharacterGalleryWindow(MainWindow pet)
     {
         _pet = pet;
+        _pet.RenderOptionsChanged += ApplyRenderOptions;
         InitializeComponent();
         MaxHeight = Math.Max(MinHeight, SystemParameters.WorkArea.Height - 40);
         CategoryCombo.ItemsSource = new[]
@@ -51,6 +52,7 @@ public partial class CharacterGalleryWindow : Window
         Closed += (_, _) =>
         {
             _closed = true;
+            _pet.RenderOptionsChanged -= ApplyRenderOptions;
             _lifetime.Cancel();
             _loadCancellation?.Dispose();
             _lifetime.Dispose();
@@ -62,6 +64,7 @@ public partial class CharacterGalleryWindow : Window
     public Task PreviewOperation { get; private set; } = Task.CompletedTask;
     public IReadOnlyList<CharacterGalleryItem> AllCharacters => _all;
     public event Action<string>? CharacterApplied;
+    private void ApplyRenderOptions(int fps, bool reducedMotion) => _motionPreview?.SetRenderOptions(fps, reducedMotion);
 
     /// <summary>Reload the library after import without applying a character or changing filters.</summary>
     public void RefreshCharacters()
@@ -197,7 +200,7 @@ public partial class CharacterGalleryWindow : Window
             var presentation = await Task.Run(() => CharacterPresentation.Load(folder), _lifetime.Token);
             if (_closed || !ReferenceEquals(CharacterCards.SelectedItem, selected)) return;
             _motionPreview?.Close();
-            _motionPreview = new MotionPreviewWindow(presentation, _pet.CurrentWalkSpeedMultiplier) { Owner = this };
+            _motionPreview = new MotionPreviewWindow(presentation, _pet.CurrentWalkSpeedMultiplier, _pet.MaximumFps, _pet.ReducedMotion) { Owner = this };
             _motionPreview.Show();
             StatusText.Text = "미리보기는 현재 친구를 바꾸지 않아요.";
         }

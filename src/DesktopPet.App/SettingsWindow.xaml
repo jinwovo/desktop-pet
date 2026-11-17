@@ -131,6 +131,20 @@
         <!-- behaviour toggles -->
         <Border Style="{StaticResource Card}">
             <StackPanel>
+                <TextBlock Text="모션과 화면 갱신" Style="{StaticResource SectionLabel}"/>
+                <ComboBox x:Name="FrameRateCombo" SelectedValuePath="Tag" SelectionChanged="RenderOptions_Changed">
+                    <ComboBoxItem Content="30 FPS · 절약" Tag="30"/>
+                    <ComboBoxItem Content="60 FPS · 기본" Tag="60"/>
+                    <ComboBoxItem Content="120 FPS · 고주사율" Tag="120"/>
+                </ComboBox>
+                <CheckBox x:Name="ReducedMotionCheck" Content="움직임 줄이기 · 점프·강한 알림·창 연출·페이드 끄기"
+                          Checked="RenderOptions_Changed" Unchecked="RenderOptions_Changed"/>
+                <TextBlock Text="걷기와 발의 접지는 유지합니다. FPS는 최대 갱신 빈도이며 실제 성능은 화면과 PC에 따라 달라요."
+                           FontSize="11" Foreground="#777777" TextWrapping="Wrap" Margin="0,5,0,0"/>
+            </StackPanel>
+        </Border>
+        <Border Style="{StaticResource Card}">
+            <StackPanel>
                 <TextBlock Text="동작" Style="{StaticResource SectionLabel}" />
                 <CheckBox x:Name="VisibleCheck" Content="펫 보이기" Checked="Toggle_Changed" Unchecked="Toggle_Changed" />
                 <CheckBox x:Name="FullscreenCheck" Content="전체화면 앱을 사용할 때 잠시 숨기기" Checked="Fullscreen_Changed" Unchecked="Fullscreen_Changed" />

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.13.0 — motion comfort and frame pacing
+
+- Add 30/60/120 FPS work caps with phase-preserving pacing on high-refresh displays; default to 60. Physics and planted-foot motion still follow elapsed time and actual displacement.
+- Add reduced motion: suppress autonomous hops, nagging bounce, window-fall capture and pose fades while preserving the user's saved effect settings and continuous walking.
+- Share options with Settings, gallery and open motion previews; release subscriptions when windows close. Verify pacing at 60/120/144/165 Hz and actual desktop/preview wiring.
+
 ## 0.12.0 — scheduled quiet hours
 
 - Add an opt-in daily local-time quiet schedule with midnight crossing and explicit HH:mm validation. Equal start/end times leave the schedule inactive.

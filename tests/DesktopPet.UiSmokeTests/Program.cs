@@ -298,6 +298,7 @@ internal static class Program
             VerifyCharacterImport(pet, folder, args.Contains("--capture"));
             FocusTimerUiTests.Run(folder);
             QuietHoursUiTests.Run(folder);
+            RenderOptionsUiTests.Run(folder);
             FullscreenUiTests.Run(folder);
             ArchiveImportUiTests.Run(folder);
             PlatformMonitorUiTests.Run(pet);

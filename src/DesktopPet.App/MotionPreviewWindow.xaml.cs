@@ -26,15 +26,18 @@ public partial class MotionPreviewWindow : Window
     private TimeSpan? _lastRenderingTime;
     private readonly WalkAppearanceController _walkAppearance = new(new Random(7));
     private readonly PoseTransitionPresenter _poseTransition;
+    private readonly FramePacer _framePacer = new();
+    private bool _reducedMotion;
     private PetState _lastPoseState = PetState.Idle;
 
-    public MotionPreviewWindow(CharacterPresentation presentation, double speedMultiplier)
+    public MotionPreviewWindow(CharacterPresentation presentation, double speedMultiplier, int maximumFps = 60, bool reducedMotion = false)
     {
         _presentation = presentation;
         _speedMultiplier = speedMultiplier;
         _scale = 96.0 / Math.Max(presentation.Definition.FrameWidth, presentation.Definition.FrameHeight);
         InitializeComponent();
         _poseTransition = new PoseTransitionPresenter(Actor, PreviousActor, ActorFlip);
+        SetRenderOptions(maximumFps, reducedMotion);
         MotionRig.SetPresentation(presentation);
         Title = $"DesktopPet 움직임 시험 · {presentation.Definition.Name}";
         Actor.Width = presentation.Definition.FrameWidth * _scale;
@@ -61,6 +64,14 @@ public partial class MotionPreviewWindow : Window
         };
     }
 
+    public void SetRenderOptions(int maximumFps, bool reducedMotion)
+    {
+        _framePacer.MaximumFps = maximumFps;
+        _reducedMotion = reducedMotion;
+        _poseTransition.Reset();
+        if (_brain is not null) _brain.HopBetweenPlatforms = !reducedMotion;
+    }
+
     private void ResetScene()
     {
         _poseTransition.Reset();
@@ -81,6 +92,7 @@ public partial class MotionPreviewWindow : Window
             SleepEnabled = false,
             WalkSpeedPxPerSec = definition.WalkSpeedPxPerSec * _speedMultiplier,
         };
+        if (_reducedMotion) _brain.HopBetweenPlatforms = false;
         _walkElapsedMs = 0;
         _idleAppearanceElapsedMs = 0;
         _walkAppearance.Reset();
@@ -101,6 +113,7 @@ public partial class MotionPreviewWindow : Window
         {
             if (_lastRenderingTime == rendering.RenderingTime) return;
             _lastRenderingTime = rendering.RenderingTime;
+            if (!_framePacer.ShouldRender(rendering.RenderingTime.TotalMilliseconds)) return;
         }
         var now = Stopwatch.GetTimestamp();
         var dt = Math.Clamp(Stopwatch.GetElapsedTime(_lastTimestamp, now).TotalSeconds, 0, 0.1);
@@ -168,7 +181,7 @@ public partial class MotionPreviewWindow : Window
                 _liveRigActive = false;
             }
             _poseTransition.SetFrame(_presentation.Frames[framePath], ActorFlip.ScaleX, frames,
-                (definition.WalkCycleDistancePx is null || !displayWalkPose) &&
+                !_reducedMotion && (definition.WalkCycleDistancePx is null || !displayWalkPose) &&
                 (_brain.State != PetState.Walk || _lastPoseState == PetState.Walk));
         }
         _lastPoseState = _brain.State;

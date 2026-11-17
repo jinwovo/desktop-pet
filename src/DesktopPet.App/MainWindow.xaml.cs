@@ -57,6 +57,7 @@ public partial class MainWindow : Window
     // Smoothed cursor velocity during a drag, carried into the throw on release.
     private readonly DragVelocityTracker _dragVelocity = new();
     private readonly WalkAppearanceController _walkAppearance = new();
+    private readonly FramePacer _framePacer = new();
     private readonly PoseTransitionPresenter _poseTransition;
     private PetState _lastPoseState = PetState.Idle;
     private double _walkAnimationElapsedMs;
@@ -122,6 +123,7 @@ public partial class MainWindow : Window
     {
         _dpiScale = VisualTreeHelper.GetDpi(this).DpiScaleX;
         _settings = PetSettings.Load();
+        _framePacer.MaximumFps = _settings.MaximumFps;
         _focusTimer.ConfigureDurations(TimeSpan.FromMinutes(_settings.FocusMinutes), TimeSpan.FromMinutes(_settings.BreakMinutes));
         RefreshQuietHours();
 
@@ -148,7 +150,7 @@ public partial class MainWindow : Window
         _brain = new PetBrain(_platformLayout, effWidth, effGroundOffset, startX, startY, behaviorProfile: _character.BehaviorProfile)
         {
             WalkSpeedPxPerSec = effSpeed,
-            HopBetweenPlatforms = _settings.HopBetweenWindowsEnabled,
+            HopBetweenPlatforms = _settings.HopBetweenWindowsEnabled && !_settings.ReducedMotion,
             SleepEnabled = _settings.SleepEnabled,
             CalmBehavior = _settings.CalmBehavior,
         };
@@ -351,6 +353,7 @@ public partial class MainWindow : Window
         }
 
         CompositionTarget.Rendering += CompositionTarget_Rendering;
+        _framePacer.Reset();
         _renderLoopRunning = true;
     }
 
@@ -386,6 +389,23 @@ public partial class MainWindow : Window
     public bool HopEnabled => _settings.HopBetweenWindowsEnabled;
     public bool SleepEnabled => _settings.SleepEnabled;
     public bool WindowFallEnabled => _settings.WindowFallEnabled;
+    public bool CanUseWindowFall => _settings.WindowFallEnabled && !_settings.ReducedMotion;
+    public bool ReducedMotion => _settings.ReducedMotion;
+    public int MaximumFps => _settings.MaximumFps;
+    public event Action<int, bool>? RenderOptionsChanged;
+
+    public void SetRenderOptions(int maximumFps, bool reducedMotion)
+    {
+        if (_disposed) return;
+        _framePacer.MaximumFps = maximumFps; // Validate before changing preferences.
+        _settings.MaximumFps = maximumFps;
+        _settings.ReducedMotion = reducedMotion;
+        _brain.HopBetweenPlatforms = _settings.HopBetweenWindowsEnabled && !reducedMotion;
+        if (reducedMotion) { _brain.StopNagging(); _poseTransition.Reset(); }
+        WindowFallEnabledChanged?.Invoke(CanUseWindowFall);
+        RenderOptionsChanged?.Invoke(maximumFps, reducedMotion);
+        ScheduleSettingsSave();
+    }
     public bool CalmBehaviorEnabled => _settings.CalmBehavior;
     public bool AutoDismissNotifications => _settings.AutoDismissNotifications;
     public bool QuietMode => _settings.QuietMode;
@@ -596,7 +616,7 @@ public partial class MainWindow : Window
     {
         if (_settings.HopBetweenWindowsEnabled == enabled) return;
         _settings.HopBetweenWindowsEnabled = enabled;
-        _brain.HopBetweenPlatforms = enabled;
+        _brain.HopBetweenPlatforms = enabled && !_settings.ReducedMotion;
         ScheduleSettingsSave();
     }
 
@@ -617,7 +637,7 @@ public partial class MainWindow : Window
 
         _settings.WindowFallEnabled = enabled;
         ScheduleSettingsSave();
-        WindowFallEnabledChanged?.Invoke(enabled);
+        WindowFallEnabledChanged?.Invoke(CanUseWindowFall);
     }
 
     private List<DesktopRect> BuildMonitorWorkAreas() =>
@@ -699,6 +719,7 @@ public partial class MainWindow : Window
         {
             if (_lastRenderingTime == rendering.RenderingTime) return;
             _lastRenderingTime = rendering.RenderingTime;
+            if (!_framePacer.ShouldRender(rendering.RenderingTime.TotalMilliseconds)) return;
         }
         var now = Stopwatch.GetTimestamp();
         var dt = Math.Clamp(Stopwatch.GetElapsedTime(_lastTickTimestamp, now).TotalSeconds, 0, 0.1);
@@ -796,7 +817,7 @@ public partial class MainWindow : Window
                 _liveRigActive = false;
             }
             _poseTransition.SetFrame(GetFrame(framePath), flip, frames,
-                (_character.WalkCycleDistancePx is null || !displayWalkPose) &&
+                !_settings.ReducedMotion && (_character.WalkCycleDistancePx is null || !displayWalkPose) &&
                 (_brain.State != PetState.Walk || _lastPoseState == PetState.Walk));
         }
         _lastPoseState = _brain.State;
@@ -1009,7 +1030,7 @@ public partial class MainWindow : Window
             ? PetState.Cry
             : PetState.Angry;
 
-        var gentle = _settings.CalmBehavior || string.Equals(n.Mood, "gentle", StringComparison.OrdinalIgnoreCase);
+        var gentle = _settings.ReducedMotion || _settings.CalmBehavior || string.Equals(n.Mood, "gentle", StringComparison.OrdinalIgnoreCase);
         if (gentle) _brain.StartGentleAttention();
         else _brain.StartNagging(emote);
         StartRenderLoop();

@@ -21,6 +21,8 @@ public sealed class PetSettings
     /// <summary>Doze off when left alone for a while.</summary>
     public bool SleepEnabled { get; set; } = true;
     public bool CalmBehavior { get; set; } = true;
+    public bool ReducedMotion { get; set; }
+    public int MaximumFps { get; set; } = 60;
     public bool AutoDismissNotifications { get; set; } = true;
     public bool QuietMode { get; set; }
     public bool QuietHoursEnabled { get; set; }
@@ -71,6 +73,7 @@ public sealed class PetSettings
         BreakMinutes = Math.Clamp(BreakMinutes, 1, 60);
         QuietHoursStartMinute = Math.Clamp(QuietHoursStartMinute, 0, 1439);
         QuietHoursEndMinute = Math.Clamp(QuietHoursEndMinute, 0, 1439);
+        if (MaximumFps is not (30 or 60 or 120)) MaximumFps = 60;
     }
 
     public void Save(string? filePath = null)

@@ -54,7 +54,7 @@ public partial class App : System.Windows.Application
         }
         if (e.Args.Contains("--version", StringComparer.Ordinal))
         {
-            Console.WriteLine(typeof(App).Assembly.GetName().Version?.ToString() ?? "0.12.0");
+            Console.WriteLine(typeof(App).Assembly.GetName().Version?.ToString() ?? "0.13.0");
             Shutdown();
             return;
         }
@@ -72,13 +72,13 @@ public partial class App : System.Windows.Application
         if (!petWindow.IsReady) return;
 
         _dpiScale = VisualTreeHelper.GetDpi(petWindow).DpiScaleX;
-        if (petWindow.WindowFallEnabled && petWindow.IsPresentationActive)
+        if (petWindow.CanUseWindowFall && petWindow.IsPresentationActive)
         {
             _windowFallService = new WindowFallService(_dpiScale);
         }
 
         petWindow.WindowFallEnabledChanged += OnWindowFallEnabledChanged;
-        petWindow.PresentationVisibilityChanged += shown => OnWindowFallEnabledChanged(shown && petWindow.WindowFallEnabled);
+        petWindow.PresentationVisibilityChanged += shown => OnWindowFallEnabledChanged(shown && petWindow.CanUseWindowFall);
 
         var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico");
         _trayIcon = new WinForms.NotifyIcon

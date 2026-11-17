@@ -26,6 +26,7 @@ public partial class SettingsWindow : Window
     private double _previewLastElapsedMs;
     private double _previewAnimationMs;
     private readonly WalkAppearanceController _walkAppearance = new(new Random(7));
+    private readonly FramePacer _framePacer = new();
     private readonly PoseTransitionPresenter _poseTransition;
     private PetState _lastPreviewState = PetState.Idle;
     private double _previewVirtualPositionPx;
@@ -44,12 +45,15 @@ public partial class SettingsWindow : Window
         LoadFromPet();
         RenderFocusTimer();
         _pet.FocusTimerChanged += RenderFocusTimer;
+        _pet.RenderOptionsChanged += ApplyRenderOptions;
+        ApplyRenderOptions(_pet.MaximumFps, _pet.ReducedMotion);
         _previewTimer.Tick += (_, _) => { if (!NeedsLiveRendering) RenderPreview(); };
         Loaded += (_, _) => { _previewTimer.Start(); CompositionTarget.Rendering += OnPreviewRendering; };
         Closed += (_, _) =>
         {
             _closed = true;
             _pet.FocusTimerChanged -= RenderFocusTimer;
+            _pet.RenderOptionsChanged -= ApplyRenderOptions;
             _previewTimer.Stop();
             CompositionTarget.Rendering -= OnPreviewRendering;
             _poseTransition.Reset();
@@ -83,6 +87,8 @@ public partial class SettingsWindow : Window
         CalmCheck.IsChecked = _pet.CalmBehaviorEnabled;
         GentleCheck.IsChecked = _pet.AutoDismissNotifications;
         QuietCheck.IsChecked = _pet.QuietMode;
+        FrameRateCombo.SelectedValue = _pet.MaximumFps.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        ReducedMotionCheck.IsChecked = _pet.ReducedMotion;
         QuietHoursCheck.IsChecked = _pet.QuietHoursEnabled;
         QuietStartBox.Text = QuietHours.Format(_pet.QuietHoursStartMinute);
         QuietEndBox.Text = QuietHours.Format(_pet.QuietHoursEndMinute);
@@ -99,6 +105,19 @@ public partial class SettingsWindow : Window
     {
         ScaleValue.Text = $"{ScaleSlider.Value * 100:F0}%";
         SpeedValue.Text = $"{SpeedSlider.Value:0.##}x";
+    }
+
+    private void ApplyRenderOptions(int maximumFps, bool reducedMotion)
+    {
+        _framePacer.MaximumFps = maximumFps;
+        if (reducedMotion) _poseTransition.Reset();
+        _motionPreview?.SetRenderOptions(maximumFps, reducedMotion);
+    }
+
+    private void RenderOptions_Changed(object sender, RoutedEventArgs e)
+    {
+        if (!_loading && FrameRateCombo.SelectedValue is string value && int.TryParse(value, out var fps))
+            _pet.SetRenderOptions(fps, ReducedMotionCheck.IsChecked == true);
     }
 
     private void Fullscreen_Changed(object sender, RoutedEventArgs e)
@@ -165,6 +184,7 @@ public partial class SettingsWindow : Window
         {
             if (_lastPreviewRenderingTime == rendering.RenderingTime) return;
             _lastPreviewRenderingTime = rendering.RenderingTime;
+            if (!_framePacer.ShouldRender(rendering.RenderingTime.TotalMilliseconds)) return;
         }
         RenderPreview();
     }
@@ -214,7 +234,7 @@ public partial class SettingsWindow : Window
                 _liveRigActive = false;
             }
             _poseTransition.SetFrame(_previewPresentation.Frames[path], 1, frames,
-                (definition.WalkCycleDistancePx is null || !displayWalkPose) &&
+                !_pet.ReducedMotion && (definition.WalkCycleDistancePx is null || !displayWalkPose) &&
                 (state != PetState.Walk || _lastPreviewState == PetState.Walk));
         }
         _lastPreviewState = state;
@@ -404,7 +424,7 @@ public partial class SettingsWindow : Window
     {
         if (_previewPresentation is null) return;
         _motionPreview?.Close();
-        _motionPreview = new MotionPreviewWindow(_previewPresentation, _pet.CurrentWalkSpeedMultiplier) { Owner = this };
+        _motionPreview = new MotionPreviewWindow(_previewPresentation, _pet.CurrentWalkSpeedMultiplier, _pet.MaximumFps, _pet.ReducedMotion) { Owner = this };
         _motionPreview.Closed += (_, _) => _motionPreview = null;
         _motionPreview.Show();
     }
