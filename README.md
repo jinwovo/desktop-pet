@@ -54,8 +54,11 @@ NuGet access is needed for missing build or runtime packs. Runtime use does not 
 | Gentle completions | Short local bubbles; the default display duration is 8 seconds. |
 | Unread inbox | Auto-hide retains a receipt. Review saved notifications from the tray and click to acknowledge them. |
 | Focus timer | Fixed 25-minute focus and 5-minute break sessions with explicit controls. |
-| Custom characters | Import an extracted folder containing `character.json` and its PNG resources. |
+| Custom characters | Import a folder or ZIP; choose one character from collection archives without extracting them first. |
 | Character gallery | Search Korean/English aliases, filter original/fan-art/custom packs, preview motion and apply explicitly. |
+| Character personalities | Nimbus rests longer, Ember favors walks; authored packs can tune activity and sleep without altering gait. |
+| Fullscreen cooperation | Temporarily pause on fullscreen, session lock and suspend; keep notifications and focus time. |
+| Monitor geometry | Use both desktop coordinates for stacked/offset monitor landing and display-removal recovery. |
 | Quiet controls | Hide the pet, enable Do not disturb, adjust size/speed, or disable optional effects. |
 
 Documentation is available in three languages. The application currently uses primarily **Korean UI labels**; this README includes the labels needed to find its controls. The build targets Windows x64; macOS, Linux, and native ARM64 packages are not provided.
@@ -94,19 +97,20 @@ The timer does not automatically chain sessions or restore an active countdown a
 - A burst shows the latest completion and retains unread receipts in arrival order.
 - A hidden pet stays hidden when a notification arrives.
 - Hiding pauses drawing and window-platform scanning. Showing the pet requests fresh platforms in the background; inbox delivery and the focus timer continue while hidden.
+- **Pause during fullscreen** (`전체화면 앱을 사용할 때 잠시 숨기기`) is enabled by default. A foreground window covering the pet's monitor temporarily pauses presentation and optional capture. Session lock/suspend also pause presentation; resuming preserves your manual hidden preference. Other monitors' fullscreen windows do not hide the pet.
 - **Do not disturb** (`방해 금지`) saves notifications without automatic bubbles.
 - Window hopping and the window-fall effect are off by default. The latter captures other application windows locally while enabled; leave it off to avoid that capture workload.
 
 ## Add your own character
 
-1. Extract a prepared character pack.
-2. In Settings, choose **Add character** (`캐릭터 추가`).
-3. Select the individual folder containing `character.json` and its referenced PNG files.
-4. DesktopPet validates the pack, copies it into your user library, and selects it.
+1. Download a prepared character pack ZIP or prepare a folder with `character.json` and its PNGs.
+2. In Settings, choose **Add ZIP** (`ZIP 추가`) for an archive, or **Add character** (`캐릭터 추가`) for an extracted folder.
+3. For a collection ZIP, select the character to install and confirm. Only that pack is installed; repeat to add another.
+4. DesktopPet validates all referenced PNGs, installs into your user library, selects the character and refreshes an open gallery.
 
-ZIP files and standalone pictures are not imported directly. Existing names are not overwritten; rename the prepared folder to resolve a name collision. Bundled characters take precedence over manually placed same-name user folders.
+ZIPs can contain `character.json` at the root, a wrapped character folder, or several character folders. Standalone pictures are not character packs. Existing names are never overwritten; use a new folder name (or manifest `name` for a root ZIP). Cancelling a collection selection preserves your current pet. Closing Settings during an in-progress installation prevents late activation; an already started validated installation may finish in the library.
 
-Imports reject unsafe paths and links and apply file, source-size, and decoded-image budgets. Legacy sprite cycles work alongside optional six-texture `walkRig` packs (three drawn layers, two views). See [Contributing character packs](CONTRIBUTING.md#character-packs) for the format and review requirements.
+Imports reject unsafe paths, links, duplicate ZIP entries and conflicting names. ZIPs are limited to 64 MiB compressed, 256 MiB declared expanded data and 2,048 entries; each selected pack remains limited to 256 files, 64 MiB source and 64 MiB decoded image data. Legacy sprite cycles work alongside optional six-texture `walkRig` packs and per-character `behavior` profiles. See the [pack authoring guide](docs/CHARACTER_PACKS.md) and [contribution requirements](CONTRIBUTING.md#character-packs).
 
 ## Local storage and privacy
 
@@ -152,7 +156,7 @@ The suites use fixture directories and do not register hooks in your real assist
 To create a public Windows x64 package:
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 0.9.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 0.10.0
 ```
 
 The output is a self-contained ZIP and a SHA256 sidecar under `artifacts/releases/`. Missing runtime packs cause a build failure; the script does not silently change deployment type. The [Windows workflow](.github/workflows/windows-release.yml) is configured to run checks and create artifacts; its presence does not imply a successful remote build or a published release.

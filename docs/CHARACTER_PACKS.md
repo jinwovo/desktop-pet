@@ -1,6 +1,14 @@
 # Character packs
 
-DesktopPet imports an **extracted directory**, not an image or ZIP. Open Settings → **캐릭터 추가**, then select the folder containing `character.json`. The app validates and copies referenced PNGs to `%LOCALAPPDATA%\DesktopPet\Characters\`. Existing names are never overwritten; use a new folder name for an edited pack.
+DesktopPet 0.10.0 imports **character ZIPs and extracted directories**. Open Settings → **ZIP 추가** for an archive or **캐릭터 추가** for a folder containing `character.json`. The app validates and copies referenced PNGs to `%LOCALAPPDATA%\DesktopPet\Characters\`. Existing names are never overwritten; use a new folder name for an edited pack.
+
+## ZIP layout
+
+Put `character.json` and referenced PNGs at the ZIP root, in a named folder, or in several named folders for a collection. A wrapper folder is supported. A collection opens a selection dialog and installs one chosen character per operation. Folder-based packs use their folder leaf as the installed name; a root manifest uses its `name`. Forward-slash ZIP paths are preferred; older Windows PowerShell backslashes are normalized before traversal, duplicate and collision checks. UTF-8 BOM manifests from PowerShell are supported.
+
+The archive stays read-locked through selection and installation. Every entry is checked for safe Windows paths, case-insensitive duplicates, file/folder conflicts and link/special-file attributes before extraction. Only the selected manifest and declared PNGs are extracted into a temporary folder, then passed through the normal folder importer and full image decoder before publication. Other collection packs and unrelated files are not installed. No script is executed.
+
+Limits: 64 MiB archive size, 2,048 ZIP entries, 256 MiB declared expanded total, 64 candidate characters and 256 KiB per manifest. The selected pack also follows the folder limits below. Stream copies enforce actual output bounds. Cancelling collection selection changes nothing; closing Settings prevents late activation, while a validated installation already running may finish in the library. A corrupt or duplicate pack preserves installed characters.
 
 ## Minimal sprite pack
 

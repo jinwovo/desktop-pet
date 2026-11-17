@@ -83,6 +83,8 @@ jobs:
         run: |
           powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File tests/companion-walk-regression.ps1
           if ($LASTEXITCODE -ne 0) { throw 'Directional artwork regression checks failed' }
+          powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File tests/personal-characters-regression.ps1
+          if ($LASTEXITCODE -ne 0) { throw 'Personal artwork regression checks failed' }
       - name: Public character regression checks
         run: |
           powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File tests/public-characters-regression.ps1
@@ -129,6 +131,11 @@ jobs:
         run: ./scripts/package-release.ps1 -Version $env:DESKTOPPET_RELEASE_VERSION
       - name: Create optional character pack ZIP
         run: ./scripts/package-character-packs.ps1 -Version $env:DESKTOPPET_RELEASE_VERSION -OutputDirectory artifacts/releases
+      - name: Verify character ZIP import against packaged collection
+        run: |
+          $archive = Join-Path 'artifacts/releases' ("DesktopPet-" + $env:DESKTOPPET_RELEASE_VERSION + "-fan-art-packs.zip")
+          dotnet tests/DesktopPet.UiSmokeTests/bin/Release/net10.0-windows/DesktopPet.UiSmokeTests.dll --verify-archive $archive
+          if ($LASTEXITCODE -ne 0) { throw "Packaged character ZIP import failed" }
       - name: Validate extracted release and startup
         run: |
           . ./scripts/package-release.ps1

@@ -154,7 +154,17 @@ public sealed class CharacterLibrary
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         }
         catch (JsonException ex) { throw new InvalidDataException("캐릭터 설정을 읽을 수 없습니다.", ex); }
-        var frames = dto?.Frames ?? throw new InvalidDataException("캐릭터 프레임 설정을 준비해주세요.");
+        foreach (var name in GetDeclaredFrameNames(dto ?? throw new InvalidDataException("캐릭터 설정이 비어 있습니다.")))
+        {
+            if (string.IsNullOrWhiteSpace(name) || !string.Equals(Path.GetExtension(name), ".png", StringComparison.OrdinalIgnoreCase) ||
+                CharacterLoader.ResolveExisting(folder, new[] { name }).Count != 1)
+                throw new InvalidDataException("설정에서 참조한 PNG 프레임을 모두 준비해주세요.");
+        }
+    }
+
+    internal static IEnumerable<string?> GetDeclaredFrameNames(CharacterDefinitionDto dto)
+    {
+        var frames = dto.Frames ?? throw new InvalidDataException("캐릭터 프레임 설정을 준비해주세요.");
         var lists = new[] { frames.Idle, frames.Walk, frames.WalkFront, frames.WalkTurn, frames.WalkSettleSide, frames.WalkSettleTurn, frames.Sit,
             frames.LookLeft, frames.LookRight, frames.Drag, frames.Fall, frames.Cry, frames.Angry, frames.Sleep };
         IEnumerable<string?> names = lists.SelectMany(list => list ?? Enumerable.Empty<string>());
@@ -163,12 +173,7 @@ public sealed class CharacterLibrary
             names = names.Concat(new[] { rig.Side?.Body, rig.Side?.NearFoot, rig.Side?.FarFoot,
                 rig.Turn?.Body, rig.Turn?.NearFoot, rig.Turn?.FarFoot });
         }
-        foreach (var name in names)
-        {
-            if (string.IsNullOrWhiteSpace(name) || !string.Equals(Path.GetExtension(name), ".png", StringComparison.OrdinalIgnoreCase) ||
-                CharacterLoader.ResolveExisting(folder, new[] { name }).Count != 1)
-                throw new InvalidDataException("설정에서 참조한 PNG 프레임을 모두 준비해주세요.");
-        }
+        return names;
     }
 
     private void EnsureNameAvailable(string name)
@@ -236,7 +241,7 @@ public sealed class CharacterLibrary
         return files;
     }
 
-    private static void CleanupStage(string stage)
+    internal static void CleanupStage(string stage)
     {
         try
         {
@@ -271,7 +276,7 @@ public sealed class CharacterLibrary
         }
     }
 
-    private static void EnsureNoReparsePoints(string path)
+    internal static void EnsureNoReparsePoints(string path)
     {
         var current = path;
         while (!string.IsNullOrEmpty(current))
@@ -296,13 +301,13 @@ public sealed class CharacterLibrary
         return fullPath;
     }
 
-    private static void ValidateRelativePath(string path)
+    internal static void ValidateRelativePath(string path)
     {
         if (Path.IsPathRooted(path) || path.Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }).Any(segment => !IsValidPathSegment(segment)))
             throw new InvalidDataException("캐릭터 파일은 안전한 하위 경로에 있어야 합니다.");
     }
 
-    private static void ValidateName(string name)
+    internal static void ValidateName(string name)
     {
         if (!IsValidName(name)) throw new InvalidDataException("캐릭터 이름은 안전한 폴더 이름 하나여야 합니다.");
     }

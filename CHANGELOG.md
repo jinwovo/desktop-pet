@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.10.0 — ZIP character installation
+
+- Import root, wrapped and multi-character ZIP packs directly from Settings. Collections show an explicit character picker; only the chosen pack is installed.
+- Keep archives read-locked through selection and installation. Reject unsafe/duplicate paths, links, special entries, file-directory conflicts and oversized archives before extraction; enforce stream and per-pack bounds.
+- Reuse full PNG validation and atomic library publication, preserve installed names and refresh an open gallery after success. Cancellation/failure preserves the active pet; closed Settings ignores late activation.
+- Add malicious archive/core cases and actual WPF installation, collection selection, cancellation, corrupt-image, gallery and close-during-import checks. Update English, Korean and Simplified Chinese guides.
+
 ## 0.9.0 — character personalities
 
 - Add optional validated behavior weights, rest/walk duration multipliers, sleep thresholds and short descriptions to character manifests.

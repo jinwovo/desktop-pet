@@ -366,6 +366,9 @@ public partial class MainWindow : Window
     public Task<string> ImportCharacterFolderAsync(string folder) => Task.Run(() =>
         _characterLibrary.ImportFolder(folder, stagedFolder => { _ = CharacterPresentation.Load(stagedFolder, includeRasterGait: true); }));
 
+    public Task<string> ImportCharacterArchiveAsync(CharacterArchive archive, ArchiveCharacter character) => Task.Run(() =>
+        archive.Import(character, _characterLibrary, stagedFolder => { _ = CharacterPresentation.Load(stagedFolder, includeRasterGait: true); }));
+
     public string CurrentCharacterName => Path.GetFileName(_character.FolderPath);
     public double CurrentScaleMultiplier => _settings.ScaleMultiplier;
     public double CurrentWalkSpeedMultiplier => _settings.WalkSpeedMultiplier;

@@ -281,16 +281,52 @@ public partial class SettingsWindow : Window
     }
 
     private async Task ImportCharacterFolderAsync(string folder)
+        => await RunCharacterImportAsync(async () => await _pet.ImportCharacterFolderAsync(folder));
+
+    private void AddArchive_Click(object sender, RoutedEventArgs e)
+    {
+        if (_characterImportBusy) return;
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "추가할 캐릭터 ZIP 선택",
+            Filter = "캐릭터 ZIP (*.zip)|*.zip",
+            Multiselect = false,
+        };
+        if (dialog.ShowDialog(this) == true) _characterImportOperation = ImportCharacterArchiveAsync(dialog.FileName);
+    }
+
+    private async Task ImportCharacterArchiveAsync(string path)
+        => await RunCharacterImportAsync(async () =>
+        {
+            using var archive = await Task.Run(() => CharacterArchive.Open(path));
+            if (_closed) return null;
+            var selected = archive.Characters[0];
+            if (archive.Characters.Count > 1)
+            {
+                var picker = new CharacterArchiveWindow(archive.Characters) { Owner = this };
+                if (picker.ShowDialog() != true || picker.SelectedCharacter is null) return null;
+                selected = picker.SelectedCharacter;
+            }
+            if (_closed) return null;
+            return await _pet.ImportCharacterArchiveAsync(archive, selected);
+        });
+
+    private async Task RunCharacterImportAsync(Func<Task<string?>> import)
     {
         if (_characterImportBusy || _closed) return;
         _characterImportBusy = true;
-        AddCharacterButton.IsEnabled = CharacterCombo.IsEnabled = false;
+        AddArchiveButton.IsEnabled = AddCharacterButton.IsEnabled = CharacterCombo.IsEnabled = false;
         CharacterImportStatusText.Text = "캐릭터를 추가하고 있어요…";
         CharacterImportStatusText.ToolTip = null;
         try
         {
-            var name = await _pet.ImportCharacterFolderAsync(folder);
+            var name = await import();
             if (_closed) return;
+            if (name is null)
+            {
+                CharacterImportStatusText.Text = "캐릭터 추가를 취소했어요.";
+                return;
+            }
             _characterGallery?.RefreshCharacters();
             _motionPreview?.Close();
             _loading = true;
@@ -311,13 +347,13 @@ public partial class SettingsWindow : Window
             try { CharacterCombo.SelectedItem = _pet.CurrentCharacterName; }
             finally { _loading = false; }
             UpdatePreview();
-            CharacterImportStatusText.Text = "추가하지 못했어요. 캐릭터 폴더와 사용 권한을 확인해주세요.";
+            CharacterImportStatusText.Text = "추가하지 못했어요. 캐릭터 팩과 사용 권한을 확인해주세요.";
             CharacterImportStatusText.ToolTip = ex.Message;
         }
         finally
         {
             _characterImportBusy = false;
-            if (!_closed) AddCharacterButton.IsEnabled = CharacterCombo.IsEnabled = true;
+            if (!_closed) AddArchiveButton.IsEnabled = AddCharacterButton.IsEnabled = CharacterCombo.IsEnabled = true;
         }
     }
 

@@ -1,5 +1,5 @@
 ﻿# Read-only checks for the optional personal fan-art character pack.
-param([string]$CharactersRoot=(Join-Path (Split-Path -Parent $PSScriptRoot) 'Assets\Characters'))
+param([string]$CharactersRoot=(Join-Path (Split-Path -Parent $PSScriptRoot) 'character-packs\fan-art'))
 $ErrorActionPreference='Stop'
 Add-Type -AssemblyName System.Drawing
 Add-Type -ReferencedAssemblies System.Drawing -TypeDefinition ([IO.File]::ReadAllText((Join-Path (Split-Path -Parent $PSScriptRoot) 'scripts\CharacterBuilder.cs')))
@@ -49,7 +49,10 @@ foreach ($name in @('치이카와','세균맨','헬로키티')) {
     $passed++
     Write-Output "PASS ${name}: complete poses, no clipping, grounded feet, real blink, stationary front, side gait and mirrored look"
 }
-Assert-Personal ([IO.File]::Exists((Join-Path $CharactersRoot 'Chiikawa\character.json'))) 'The existing Chiikawa character was removed'
+$bundledRoot=Join-Path (Split-Path -Parent $PSScriptRoot) 'Assets\Characters'
+foreach ($name in 'Companion','Nimbus','Ember') {
+    Assert-Personal ([IO.File]::Exists((Join-Path $bundledRoot ($name+'\character.json')))) 'An original public character was removed'
+}
 $passed++
-Write-Output 'PASS Existing development characters remain available beside the optional pack'
+Write-Output 'PASS Original public characters remain available beside the optional collection'
 Write-Output "$passed/4 personal character regression groups passed"

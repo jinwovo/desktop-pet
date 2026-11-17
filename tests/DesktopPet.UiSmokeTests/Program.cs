@@ -22,6 +22,18 @@ internal static class Program
         MainWindow? pet = null;
         try
         {
+            var archiveIndex = Array.IndexOf(args, "--verify-archive");
+            if (archiveIndex >= 0)
+            {
+                Check(archiveIndex + 1 < args.Length, "Missing character ZIP path");
+                ArchiveImportUiTests.VerifyPack(args[archiveIndex + 1], folder);
+                return 0;
+            }
+            if (args.Contains("--zip-only"))
+            {
+                ArchiveImportUiTests.Run(folder);
+                return 0;
+            }
             if (args.Contains("--fullscreen-only"))
             {
                 FullscreenUiTests.Run(folder);
@@ -286,6 +298,7 @@ internal static class Program
             VerifyCharacterImport(pet, folder, args.Contains("--capture"));
             FocusTimerUiTests.Run(folder);
             FullscreenUiTests.Run(folder);
+            ArchiveImportUiTests.Run(folder);
             PlatformMonitorUiTests.Run(pet);
             CharacterGalleryRegressionTests.Run(folder, args.Contains("--capture"));
             if (args.Contains("--personal-pack")) VerifyPersonalSelection(pet);

@@ -70,10 +70,11 @@
                 </DockPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
                     <Button x:Name="AddCharacterButton" Content="캐릭터 추가" Padding="12,5" Click="AddCharacter_Click" />
+                    <Button x:Name="AddArchiveButton" Content="ZIP 추가" Padding="12,5" Margin="8,0,0,0" Click="AddArchive_Click" />
                     <Button x:Name="FolderButton" Content="보관 폴더 열기" Padding="12,5" Margin="8,0,0,0" Click="FolderButton_Click" />
                 </StackPanel>
                 <TextBlock x:Name="CharacterImportStatusText" FontSize="11" Foreground="#FF777777" TextWrapping="Wrap"
-                           Margin="0,6,0,0" Text="캐릭터 팩의 압축을 풀고 character.json이 있는 폴더를 선택하세요." />
+                           Margin="0,6,0,0" Text="character.json이 있는 폴더나 캐릭터 ZIP을 추가하세요. 여러 캐릭터가 있으면 하나를 선택할 수 있어요." />
             </StackPanel>
         </Border>
 
