@@ -269,6 +269,13 @@ public partial class MainWindow : Window
 
     public void SavePreferencesBackup(string path) => PetSettingsBackup.SaveFile(path, _settings);
 
+    public string CreateDiagnosticReport() => DiagnosticReport.Create(typeof(App).Assembly.GetName().Version!.ToString(),
+        new PetDiagnosticSnapshot(_character.FolderPath.StartsWith(_characterLibrary.CustomRoot + Path.DirectorySeparatorChar,
+            StringComparison.OrdinalIgnoreCase) ? CharacterStorageKind.Imported : CharacterStorageKind.Bundled,
+            _character.FrameWidth, _character.FrameHeight, _frameCache.Count, AvailableCharacterNames.Count,
+            PendingNotificationCount, MaximumFps, ReducedMotion, IsPetVisible, IsTemporarilyPaused, IsQuietNow,
+            _character.WalkRig is not null, UiText.Language));
+
     /// <returns>True if an unavailable backed-up character was kept as the current character.</returns>
     public bool RestorePreferencesJson(string json)
     {

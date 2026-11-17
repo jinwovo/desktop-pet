@@ -32,6 +32,7 @@ public partial class SettingsWindow : Window
     private double _previewVirtualPositionPx;
     private bool _liveRigActive;
     private CharacterGalleryWindow? _characterGallery;
+    private DiagnosticWindow? _diagnosticWindow;
     private TimeSpan? _lastPreviewRenderingTime;
     private readonly DispatcherTimer _previewTimer = new() { Interval = TimeSpan.FromMilliseconds(50) };
     private sealed record PreviewChoice(string Label, PetState State);
@@ -41,6 +42,7 @@ public partial class SettingsWindow : Window
         _pet = pet;
         InitializeComponent();
         _poseTransition = new PoseTransitionPresenter(PreviewImage, PreviousPreviewImage);
+        VersionText.Text = "DesktopPet " + typeof(App).Assembly.GetName().Version!.ToString(3);
         MaxHeight = Math.Max(500, SystemParameters.WorkArea.Height - 60);
         LoadFromPet();
         RenderFocusTimer();
@@ -61,6 +63,7 @@ public partial class SettingsWindow : Window
             PreviewRig.SetPresentation(null);
             _motionPreview?.Close();
             _characterGallery?.Close();
+            _diagnosticWindow?.Close();
         };
         UiText.Attach(this);
         UiText.LanguageChanged += RefreshLanguage;
@@ -445,6 +448,28 @@ public partial class SettingsWindow : Window
         _motionPreview = new MotionPreviewWindow(_previewPresentation, _pet.CurrentWalkSpeedMultiplier, _pet.MaximumFps, _pet.ReducedMotion) { Owner = this };
         _motionPreview.Closed += (_, _) => _motionPreview = null;
         _motionPreview.Show();
+    }
+
+    private void Diagnostics_Click(object sender, RoutedEventArgs e)
+    {
+        if (_diagnosticWindow is not null) { _diagnosticWindow.Activate(); return; }
+        try
+        {
+            _diagnosticWindow = new DiagnosticWindow(_pet.CreateDiagnosticReport()) { Owner = this };
+            _diagnosticWindow.Closed += (_, _) => _diagnosticWindow = null;
+            _diagnosticWindow.Show();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
+        {
+            AboutStatusText.Text = UiText.Get("진단 정보를 읽지 못했어요.");
+        }
+    }
+
+    private void ReleasePage_Click(object sender, RoutedEventArgs e)
+    {
+        try { Process.Start(new ProcessStartInfo("https://github.com/jinwovo/desktop-pet/releases") { UseShellExecute = true }); }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
+        { AboutStatusText.Text = UiText.Get("브라우저를 열지 못했어요."); }
     }
 
     private void BackupPreferences_Click(object sender, RoutedEventArgs e)

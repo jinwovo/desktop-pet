@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.30.0 — reviewed local diagnostics
+
+- Show app version and a manually opened official release page in Settings; never auto-download or execute updates.
+- Add a read-only diagnostic preview and local JSON export with a fixed schema of runtime/architecture and bounded presentation facts. Exclude paths, usernames, character identity, chat contents, environment variables, API keys and hook configuration.
+- Reuse a single owned diagnostic window and close it with Settings. Verify exact preview/export bytes and unchanged preferences.
+
 ## 0.20.0 — primary interface languages
 
 - Add persisted Korean/English/Simplified Chinese language selection with an offline UI catalog for primary Settings, tray controls, focus/quiet/backup status and ZIP selection.

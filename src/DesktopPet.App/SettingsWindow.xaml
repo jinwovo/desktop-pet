@@ -184,6 +184,17 @@
         <!-- actions -->
         <Border Style="{StaticResource Card}">
             <StackPanel>
+                <TextBlock x:Name="VersionText" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                <WrapPanel>
+                    <Button x:Name="DiagnosticsButton" Content="진단 보고서" Padding="10,5" Click="Diagnostics_Click"/>
+                    <Button x:Name="ReleasePageButton" Content="릴리스 페이지" Padding="10,5" Margin="8,0,0,0" Click="ReleasePage_Click"/>
+                </WrapPanel>
+                <TextBlock x:Name="AboutStatusText" Text="업데이트는 공식 릴리스에서 직접 받습니다. 자동 다운로드나 실행은 하지 않아요."
+                           FontSize="11" Foreground="#777777" TextWrapping="Wrap" Margin="0,6,0,0"/>
+            </StackPanel>
+        </Border>
+        <Border Style="{StaticResource Card}">
+            <StackPanel>
                 <TextBlock Text="설정 백업과 복원" Style="{StaticResource SectionLabel}"/>
                 <WrapPanel>
                     <Button x:Name="BackupPreferencesButton" Content="설정 백업" Padding="10,5" Click="BackupPreferences_Click"/>

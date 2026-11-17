@@ -57,6 +57,16 @@ public static class UiText
     }
     private static readonly Dictionary<string, (string English, string Chinese)> Translations = new(StringComparer.Ordinal)
     {
+        ["진단 보고서"] = ("Diagnostic report", "诊断报告"),
+        ["DesktopPet 진단 보고서"] = ("DesktopPet diagnostic report", "DesktopPet 诊断报告"),
+        ["릴리스 페이지"] = ("Release page", "版本发布"),
+        ["업데이트는 공식 릴리스에서 직접 받습니다. 자동 다운로드나 실행은 하지 않아요."] = ("Get updates from official releases. No automatic download or execution.", "从官方版本页面获取更新，不会自动下载或执行。"),
+        ["저장 전에 내용을 확인하세요. 경로·대화·키·훅 설정을 수집하거나 업로드하지 않습니다."] = ("Review before saving. No paths, chats, keys or hook settings are collected or uploaded.", "保存前请检查内容，不收集或上传路径、对话、密钥或钩子设置。"),
+        ["JSON 저장"] = ("Save JSON", "保存 JSON"),
+        ["저장했어요."] = ("Saved.", "已保存。"),
+        ["저장하지 못했어요."] = ("Could not save.", "无法保存。"),
+        ["진단 정보를 읽지 못했어요."] = ("Could not read diagnostics.", "无法读取诊断信息。"),
+        ["브라우저를 열지 못했어요."] = ("Could not open the browser.", "无法打开浏览器。"),
         ["앱 종료"] = ("Exit", "退出"),
         ["DesktopPet 설정"] = ("DesktopPet Settings", "DesktopPet 设置"),
         ["캐릭터"] = ("Character", "角色"),
