@@ -170,6 +170,17 @@
         </Border>
 
         <!-- actions -->
+        <Border Style="{StaticResource Card}">
+            <StackPanel>
+                <TextBlock Text="설정 백업과 복원" Style="{StaticResource SectionLabel}"/>
+                <WrapPanel>
+                    <Button x:Name="BackupPreferencesButton" Content="설정 백업" Padding="10,5" Click="BackupPreferences_Click"/>
+                    <Button x:Name="RestorePreferencesButton" Content="설정 복원" Padding="10,5" Margin="8,0,0,0" Click="RestorePreferences_Click"/>
+                </WrapPanel>
+                <TextBlock x:Name="PreferencesTransferStatus" Text="화면·동작·시간 설정만 옮깁니다. AI 연결·훅 허용·개인 경로는 포함하지 않아요."
+                           FontSize="11" Foreground="#777777" TextWrapping="Wrap" Margin="0,6,0,0"/>
+            </StackPanel>
+        </Border>
         <DockPanel>
             <Button Content="움직임 시험" DockPanel.Dock="Left" Margin="8,0,0,0"
                     Padding="10,5" Click="MotionPreviewButton_Click" />

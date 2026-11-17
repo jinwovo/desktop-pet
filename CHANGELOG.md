@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.14.0 — portable settings backup
+
+- Export/import bounded, versioned JSON preferences through Settings. Transfer display, behavior, quiet hours and focus options; exclude assistant auto-registration/setup state, trust, inbox and local paths.
+- Reject unknown/duplicate/mistyped fields before applying, normalize numeric bounds, preserve omitted preferences and validate replacement character artwork first. Missing characters keep the current pet.
+- Update live controls and effects while retaining an active focus countdown. Save backup files atomically and preserve old bytes on failed replacement.
+
 ## 0.13.0 — motion comfort and frame pacing
 
 - Add 30/60/120 FPS work caps with phase-preserving pacing on high-refresh displays; default to 60. Physics and planted-foot motion still follow elapsed time and actual displacement.

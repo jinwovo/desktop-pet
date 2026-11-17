@@ -299,6 +299,7 @@ internal static class Program
             FocusTimerUiTests.Run(folder);
             QuietHoursUiTests.Run(folder);
             RenderOptionsUiTests.Run(folder);
+            PreferencesBackupUiTests.Run(folder);
             FullscreenUiTests.Run(folder);
             ArchiveImportUiTests.Run(folder);
             PlatformMonitorUiTests.Run(pet);

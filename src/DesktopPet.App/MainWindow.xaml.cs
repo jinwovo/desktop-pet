@@ -266,6 +266,38 @@ public partial class MainWindow : Window
         ScheduleSettingsSave();
     }
 
+    public void SavePreferencesBackup(string path) => PetSettingsBackup.SaveFile(path, _settings);
+
+    /// <returns>True if an unavailable backed-up character was kept as the current character.</returns>
+    public bool RestorePreferencesJson(string json)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        var candidate = PetSettingsBackup.ReadJson(json, _settings);
+        var missing = !AvailableCharacterNames.Contains(candidate.CharacterName, StringComparer.OrdinalIgnoreCase);
+        if (missing) candidate.CharacterName = CurrentCharacterName;
+        var presentation = candidate.CharacterName.Equals(CurrentCharacterName, StringComparison.OrdinalIgnoreCase)
+            ? null : CharacterPresentation.Load(ResolveCharacterFolder(candidate.CharacterName));
+        // All untrusted JSON and replacement artwork are validated before changing live state.
+        _settings = candidate;
+        if (presentation is not null) ApplyPresentation(presentation);
+        _settings.CharacterName = CurrentCharacterName;
+        ApplyCurrentCharacterSizing();
+        _brain.HopBetweenPlatforms = candidate.HopBetweenWindowsEnabled && !candidate.ReducedMotion;
+        _brain.SleepEnabled = candidate.SleepEnabled;
+        _brain.CalmBehavior = candidate.CalmBehavior;
+        _framePacer.MaximumFps = candidate.MaximumFps;
+        if (candidate.ReducedMotion) { _brain.StopNagging(); _poseTransition.Reset(); }
+        _focusTimer.ConfigureDurations(TimeSpan.FromMinutes(candidate.FocusMinutes), TimeSpan.FromMinutes(candidate.BreakMinutes));
+        RefreshQuietHours();
+        if (IsQuietNow) DismissForQuietMode();
+        RenderOptionsChanged?.Invoke(candidate.MaximumFps, candidate.ReducedMotion);
+        RefreshAttentionState();
+        WindowFallEnabledChanged?.Invoke(CanUseWindowFall);
+        SynchronizeFocusTimer();
+        ScheduleSettingsSave();
+        return missing;
+    }
+
     public void SetVisible(bool visible)
     {
         if (_settings.Visible == visible) return;

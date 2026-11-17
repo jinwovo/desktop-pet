@@ -429,6 +429,47 @@ public partial class SettingsWindow : Window
         _motionPreview.Show();
     }
 
+    private void BackupPreferences_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.SaveFileDialog { Title = "설정 백업", Filter = "DesktopPet 설정 (*.json)|*.json",
+            FileName = "DesktopPet-preferences.json", DefaultExt = ".json", AddExtension = true, OverwritePrompt = true };
+        if (dialog.ShowDialog(this) == true) BackupPreferencesToFile(dialog.FileName);
+    }
+
+    private void BackupPreferencesToFile(string path)
+    {
+        try
+        {
+            _pet.SavePreferencesBackup(path);
+            PreferencesTransferStatus.Text = "설정을 백업했어요. AI 연결 정보는 포함하지 않았습니다.";
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or System.Text.Json.JsonException)
+        {
+            PreferencesTransferStatus.Text = "백업하지 못했어요. 저장 위치와 권한을 확인해주세요.";
+        }
+    }
+
+    private void RestorePreferences_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog { Title = "설정 복원", Filter = "DesktopPet 설정 (*.json)|*.json", Multiselect = false };
+        if (dialog.ShowDialog(this) == true) RestorePreferencesFromFile(dialog.FileName);
+    }
+
+    private void RestorePreferencesFromFile(string path)
+    {
+        try
+        {
+            var missing = _pet.RestorePreferencesJson(PetSettingsBackup.ReadFile(path));
+            LoadFromPet();
+            RenderFocusTimer();
+            PreferencesTransferStatus.Text = missing ? "설정을 복원했어요. 설치되지 않은 캐릭터 대신 현재 친구를 유지합니다." : "설정을 복원했어요. AI 연결과 진행 중인 집중 시간은 유지합니다.";
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
+        {
+            PreferencesTransferStatus.Text = "복원하지 못했어요. 백업 형식과 캐릭터 파일을 확인해주세요.";
+        }
+    }
+
     private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
 
     private void Gallery_Click(object sender, RoutedEventArgs e)
