@@ -57,6 +57,10 @@ public static class UiText
     }
     private static readonly Dictionary<string, (string English, string Chinese)> Translations = new(StringComparer.Ordinal)
     {
+        ["설치 취소"] = ("Cancel installation", "取消安装"),
+        ["압축 해제"] = ("Extracting", "解压"), ["파일 복사"] = ("Copying", "复制"), ["PNG 검사"] = ("Validating PNGs", "验证 PNG"), ["준비 중"] = ("Preparing", "准备中"),
+        ["설치는 이미 완료됐어요. 현재 친구는 바꾸지 않았습니다."] = ("Installation already finished. Your current pet was kept.", "安装已完成，当前宠物保持不变。"),
+        ["취소 요청 중… 임시 파일을 정리합니다."] = ("Cancelling… Cleaning temporary files.", "正在取消并清理临时文件…"),
         ["펫 위치 복구"] = ("Recover pet position", "恢复宠物位置"),
         ["선택한 화면으로 데려오기"] = ("Bring to selected monitor", "移到所选屏幕"),
         ["펫 데려오기"] = ("Bring pet here", "将宠物带到这里"),

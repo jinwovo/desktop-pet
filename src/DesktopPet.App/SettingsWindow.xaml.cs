@@ -20,6 +20,8 @@ public partial class SettingsWindow : Window
     private bool _closed;
     private bool _characterImportBusy;
     private Task _characterImportOperation = Task.CompletedTask;
+    private CancellationTokenSource? _characterImportCancellation;
+    private IProgress<CharacterImportProgress>? _characterImportProgress;
     private CharacterPresentation? _previewPresentation;
     private MotionPreviewWindow? _motionPreview;
     private readonly Stopwatch _previewClock = Stopwatch.StartNew();
@@ -55,6 +57,7 @@ public partial class SettingsWindow : Window
         Closed += (_, _) =>
         {
             _closed = true;
+            _characterImportCancellation?.Cancel();
             _pet.FocusTimerChanged -= RenderFocusTimer;
             _pet.RenderOptionsChanged -= ApplyRenderOptions;
             UiText.LanguageChanged -= RefreshLanguage;
@@ -350,7 +353,8 @@ public partial class SettingsWindow : Window
     }
 
     private async Task ImportCharacterFolderAsync(string folder)
-        => await RunCharacterImportAsync(async () => await _pet.ImportCharacterFolderAsync(folder));
+        => await RunCharacterImportAsync(async () => await _pet.ImportCharacterFolderAsync(folder,
+            _characterImportCancellation!.Token, _characterImportProgress));
 
     private void AddArchive_Click(object sender, RoutedEventArgs e)
     {
@@ -367,7 +371,8 @@ public partial class SettingsWindow : Window
     private async Task ImportCharacterArchiveAsync(string path)
         => await RunCharacterImportAsync(async () =>
         {
-            using var archive = await Task.Run(() => CharacterArchive.Open(path));
+            var token = _characterImportCancellation!.Token;
+            using var archive = await Task.Run(() => CharacterArchive.Open(path, token), token);
             if (_closed) return null;
             var selected = archive.Characters[0];
             if (archive.Characters.Count > 1)
@@ -377,13 +382,30 @@ public partial class SettingsWindow : Window
                 selected = picker.SelectedCharacter;
             }
             if (_closed) return null;
-            return await _pet.ImportCharacterArchiveAsync(archive, selected);
+            return await _pet.ImportCharacterArchiveAsync(archive, selected, token, _characterImportProgress);
         });
 
     private async Task RunCharacterImportAsync(Func<Task<string?>> import)
     {
         if (_characterImportBusy || _closed) return;
         _characterImportBusy = true;
+        using var cancellation = new CancellationTokenSource();
+        _characterImportCancellation = cancellation;
+        _characterImportProgress = new Progress<CharacterImportProgress>(value =>
+        {
+            if (_closed || !ReferenceEquals(_characterImportCancellation, cancellation) || cancellation.IsCancellationRequested) return;
+            CharacterImportProgressBar.IsIndeterminate = value.Phase is CharacterImportPhase.Preparing or CharacterImportPhase.Validating;
+            CharacterImportProgressBar.Value = value.TotalFiles > 0 ? Math.Clamp(value.CompletedFiles * 100d / value.TotalFiles, 0, 100) : 0;
+            var phase = value.Phase switch
+            {
+                CharacterImportPhase.Extracting => UiText.Get("압축 해제"), CharacterImportPhase.Copying => UiText.Get("파일 복사"),
+                CharacterImportPhase.Validating => UiText.Get("PNG 검사"), _ => UiText.Get("준비 중")
+            };
+            CharacterImportStatusText.Text = $"{phase} · {value.CompletedFiles}/{value.TotalFiles}";
+        });
+        CharacterImportProgressBar.Visibility = CancelCharacterImportButton.Visibility = Visibility.Visible;
+        CharacterImportProgressBar.IsIndeterminate = true;
+        CancelCharacterImportButton.IsEnabled = true;
         AddArchiveButton.IsEnabled = AddCharacterButton.IsEnabled = CharacterCombo.IsEnabled = false;
         CharacterImportStatusText.Text = UiText.Get("캐릭터를 추가하고 있어요…");
         CharacterImportStatusText.ToolTip = null;
@@ -402,12 +424,17 @@ public partial class SettingsWindow : Window
             try
             {
                 CharacterCombo.ItemsSource = _pet.AvailableCharacterNames;
-                _pet.SwitchCharacter(name);
-                CharacterCombo.SelectedItem = name;
+                if (!cancellation.IsCancellationRequested) _pet.SwitchCharacter(name);
+                CharacterCombo.SelectedItem = _pet.CurrentCharacterName;
             }
             finally { _loading = false; }
             UpdatePreview();
-            CharacterImportStatusText.Text = UiText.Get("새 캐릭터를 추가했어요.");
+            CharacterImportStatusText.Text = cancellation.IsCancellationRequested
+                ? UiText.Get("설치는 이미 완료됐어요. 현재 친구는 바꾸지 않았습니다.") : UiText.Get("새 캐릭터를 추가했어요.");
+        }
+        catch (OperationCanceledException)
+        {
+            if (!_closed) CharacterImportStatusText.Text = UiText.Get("캐릭터 추가를 취소했어요.");
         }
         catch (Exception ex)
         {
@@ -422,8 +449,21 @@ public partial class SettingsWindow : Window
         finally
         {
             _characterImportBusy = false;
-            if (!_closed) AddArchiveButton.IsEnabled = AddCharacterButton.IsEnabled = CharacterCombo.IsEnabled = true;
+            _characterImportCancellation = null;
+            _characterImportProgress = null;
+            if (!_closed)
+            {
+                AddArchiveButton.IsEnabled = AddCharacterButton.IsEnabled = CharacterCombo.IsEnabled = true;
+                CharacterImportProgressBar.Visibility = CancelCharacterImportButton.Visibility = Visibility.Collapsed;
+            }
         }
+    }
+
+    private void CancelCharacterImport_Click(object sender, RoutedEventArgs e)
+    {
+        _characterImportCancellation?.Cancel();
+        CancelCharacterImportButton.IsEnabled = false;
+        CharacterImportStatusText.Text = UiText.Get("취소 요청 중… 임시 파일을 정리합니다.");
     }
 
     private void FolderButton_Click(object sender, RoutedEventArgs e)

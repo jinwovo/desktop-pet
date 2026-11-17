@@ -417,11 +417,15 @@ public partial class MainWindow : Window
     public string ResolveCharacterFolder(string name) => _characterLibrary.Resolve(name);
 
     /// <summary>Validate/decode the complete prepared pack off the UI thread before publishing it.</summary>
-    public Task<string> ImportCharacterFolderAsync(string folder) => Task.Run(() =>
-        _characterLibrary.ImportFolder(folder, stagedFolder => { _ = CharacterPresentation.Load(stagedFolder, includeRasterGait: true); }));
+    public Task<string> ImportCharacterFolderAsync(string folder, CancellationToken cancellationToken = default,
+        IProgress<CharacterImportProgress>? progress = null) => Task.Run(() =>
+        _characterLibrary.ImportFolder(folder, stagedFolder => { _ = CharacterPresentation.Load(stagedFolder, includeRasterGait: true, cancellationToken); },
+            cancellationToken, progress), cancellationToken);
 
-    public Task<string> ImportCharacterArchiveAsync(CharacterArchive archive, ArchiveCharacter character) => Task.Run(() =>
-        archive.Import(character, _characterLibrary, stagedFolder => { _ = CharacterPresentation.Load(stagedFolder, includeRasterGait: true); }));
+    public Task<string> ImportCharacterArchiveAsync(CharacterArchive archive, ArchiveCharacter character, CancellationToken cancellationToken = default,
+        IProgress<CharacterImportProgress>? progress = null) => Task.Run(() =>
+        archive.Import(character, _characterLibrary, stagedFolder => { _ = CharacterPresentation.Load(stagedFolder, includeRasterGait: true, cancellationToken); },
+            cancellationToken, progress), cancellationToken);
 
     public string CurrentCharacterName => Path.GetFileName(_character.FolderPath);
     public double CurrentScaleMultiplier => _settings.ScaleMultiplier;

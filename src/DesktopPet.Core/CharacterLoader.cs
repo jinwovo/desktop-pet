@@ -26,11 +26,12 @@ public static class CharacterLoader
             .ToList();
     }
 
-    public static CharacterDefinition Load(string characterFolder)
+    public static CharacterDefinition Load(string characterFolder, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         try
         {
-            return LoadCore(Path.GetFullPath(characterFolder));
+            return LoadCore(Path.GetFullPath(characterFolder), cancellationToken);
         }
         catch (InvalidDataException) { throw; }
         catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
@@ -39,11 +40,22 @@ public static class CharacterLoader
         }
     }
 
-    private static CharacterDefinition LoadCore(string characterFolder)
+    internal static string ReadManifest(string path, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        if (stream.Length > CharacterLibrary.MaxManifestBytes) throw new InvalidDataException("캐릭터 설정은 256 KiB 이하여야 합니다.");
+        using var reader = new StreamReader(stream, detectEncodingFromByteOrderMarks: true);
+        var json = reader.ReadToEnd();
+        cancellationToken.ThrowIfCancellationRequested();
+        return json;
+    }
+
+    private static CharacterDefinition LoadCore(string characterFolder, CancellationToken cancellationToken)
     {
         var jsonPath = Path.Combine(characterFolder, "character.json");
         EnsureNoReparsePoints(characterFolder, jsonPath);
-        var dto = JsonSerializer.Deserialize<CharacterDefinitionDto>(File.ReadAllText(jsonPath), JsonOptions)
+        var dto = JsonSerializer.Deserialize<CharacterDefinitionDto>(ReadManifest(jsonPath, cancellationToken), JsonOptions)
             ?? throw new InvalidDataException($"'{jsonPath}'의 캐릭터 내용은 null일 수 없습니다.");
         ValidateMetadata(dto, jsonPath);
 

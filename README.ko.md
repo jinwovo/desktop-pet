@@ -113,7 +113,7 @@ Claude Code는 연결 후 세션을 다시 시작하세요. [Claude Code 훅 문
 3. 여러 팩이 든 ZIP이면 설치할 캐릭터 하나를 골라 확인합니다. 다른 팩도 원하면 같은 ZIP을 다시 선택합니다.
 4. PNG 전체 검사를 통과하면 사용자 보관 폴더에 설치·적용하고 열려 있는 갤러리도 갱신합니다.
 
-ZIP의 최상위나 하위 폴더에 `character.json`이 있어야 합니다. 그림 한 장만으로는 캐릭터 팩이 되지 않습니다. 같은 이름은 덮어쓰지 않으므로 폴더 이름을 바꾸세요. 최상위 ZIP은 설정의 `name`을 사용합니다. 선택을 취소하면 현재 펫을 유지합니다. 설치 도중 설정 창을 닫으면 완료 후 자동 적용하지 않지만, 이미 시작한 검증·설치는 보관 폴더에서 마무리될 수 있습니다.
+ZIP의 최상위나 하위 폴더에 `character.json`이 있어야 합니다. 그림 한 장만으로는 캐릭터 팩이 되지 않습니다. 같은 이름은 덮어쓰지 않으므로 폴더 이름을 바꾸세요. 최상위 ZIP은 설정의 `name`을 사용합니다. 진행률과 **설치 취소** 버튼을 제공합니다. 취소하거나 설정 창을 닫으면 아직 확정되지 않은 작업과 임시 파일을 정리합니다. 이미 설치가 확정됐다면 팩은 보관하되 현재 펫을 바꾸지 않습니다.
 
 위험한 경로·링크·중복 ZIP 경로를 차단합니다. ZIP은 압축 64 MiB·전체 선언 해제 크기 256 MiB·2,048개 항목 이하, 선택한 팩은 256개 파일·원본 64 MiB·디코딩 이미지 64 MiB 이하입니다. 기존 프레임 스킨, 선택적 6부품 `walkRig`, 캐릭터별 `behavior` 성향을 지원합니다. [팩 제작 안내](docs/CHARACTER_PACKS.md)와 [기여 기준](CONTRIBUTING.md#character-packs)을 참고하세요.
 
@@ -161,7 +161,7 @@ powershell -NoProfile -File tests/package-regression.ps1
 공용 Windows x64 배포를 만들려면 다음을 실행합니다.
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 0.50.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 0.90.0
 ```
 
 `artifacts/releases/`에 self-contained ZIP과 SHA256을 만듭니다. 필요한 런타임 팩이 없으면 실패하며 배포 종류를 몰래 바꾸지 않습니다. [Windows 워크플로](.github/workflows/windows-release.yml)는 검사와 아티팩트 생성을 설정한 파일이며, 파일이 있다고 원격 빌드나 공개 릴리스가 성공했다는 뜻은 아닙니다.

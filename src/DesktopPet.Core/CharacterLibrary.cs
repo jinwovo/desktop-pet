@@ -13,6 +13,7 @@ public sealed class CharacterLibrary
     public const int MaxFileCount = 256;
     public const long MaxTotalBytes = 64L * 1024 * 1024;
     public const long MaxDecodedBytes = 64L * 1024 * 1024;
+    public const int MaxManifestBytes = 256 * 1024;
     private const string StagePrefix = ".desktop-pet-import-";
     private const int MaxDirectoryCount = 256;
 
@@ -54,8 +55,10 @@ public sealed class CharacterLibrary
     /// Imports only character.json and its referenced PNG frames. The optional validator runs
     /// against the staged copy, allowing a UI to decode every frame before the folder is published.
     /// </summary>
-    public string ImportFolder(string source, Action<string>? validate = null)
+    public string ImportFolder(string source, Action<string>? validate = null, CancellationToken cancellationToken = default,
+        IProgress<CharacterImportProgress>? progress = null)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var sourceRoot = NormalizeRoot(source, nameof(source));
         if (IsWithin(sourceRoot, CustomRoot) || IsWithin(CustomRoot, sourceRoot) ||
             string.Equals(sourceRoot, BundledRoot, StringComparison.OrdinalIgnoreCase))
@@ -64,9 +67,9 @@ public sealed class CharacterLibrary
         ValidateName(name);
         EnsureNoReparsePoints(sourceRoot);
         if (!Directory.Exists(sourceRoot)) throw new DirectoryNotFoundException("가져올 캐릭터 폴더를 찾을 수 없습니다.");
-        ValidateSourceTree(sourceRoot);
-        var definition = CharacterLoader.Load(sourceRoot);
-        ValidateDeclaredFrames(sourceRoot);
+        ValidateSourceTree(sourceRoot, cancellationToken);
+        var definition = CharacterLoader.Load(sourceRoot, cancellationToken);
+        ValidateDeclaredFrames(sourceRoot, cancellationToken);
         var frames = definition.AllFramePaths().ToArray();
         ValidateDecodedBudget(definition, frames.Length);
         var files = new[] { Path.Combine(sourceRoot, "character.json") }.Concat(frames).ToArray();
@@ -94,8 +97,13 @@ public sealed class CharacterLibrary
             Directory.CreateDirectory(stage);
             EnsureNoReparsePoints(stage);
             long copiedBytes = 0;
+            var totalBytes = files.Sum(path => new FileInfo(path).Length);
+            var copiedFiles = 0;
+            var buffer = new byte[81920];
+            progress?.Report(new(CharacterImportPhase.Copying, 0, files.Length, 0, totalBytes));
             foreach (var path in files)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 EnsureNoReparsePoints(path);
                 var relative = Path.GetRelativePath(sourceRoot, path);
                 ValidateRelativePath(relative);
@@ -106,16 +114,26 @@ public sealed class CharacterLibrary
                 if (input.Length > MaxTotalBytes - copiedBytes)
                     throw new InvalidDataException("캐릭터 파일의 합계는 64 MiB 이하여야 합니다.");
                 using var output = new FileStream(destination, FileMode.CreateNew, FileAccess.Write, FileShare.None);
-                input.CopyTo(output);
-                copiedBytes += input.Length;
+                int read;
+                while ((read = input.Read(buffer, 0, buffer.Length)) != 0)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (read > MaxTotalBytes - copiedBytes) throw new InvalidDataException("캐릭터 원본 크기가 제한을 초과합니다.");
+                    output.Write(buffer, 0, read);
+                    copiedBytes += read;
+                }
+                progress?.Report(new(CharacterImportPhase.Copying, ++copiedFiles, files.Length, copiedBytes, totalBytes));
             }
 
             // Validate the copied manifest, not an earlier view of the caller's mutable source.
-            ValidatePreparedStage(stage);
+            cancellationToken.ThrowIfCancellationRequested();
+            progress?.Report(new(CharacterImportPhase.Validating, copiedFiles, files.Length, copiedBytes, totalBytes));
+            ValidatePreparedStage(stage, cancellationToken);
             validate?.Invoke(stage);
-            ValidatePreparedStage(stage);
+            ValidatePreparedStage(stage, cancellationToken);
             EnsureNoReparsePoints(CustomRoot);
             EnsureNameAvailable(name);
+            cancellationToken.ThrowIfCancellationRequested();
             Directory.Move(stage, Path.Combine(CustomRoot, name));
             stage = null;
             return name;
@@ -134,23 +152,23 @@ public sealed class CharacterLibrary
             throw new InvalidDataException("캐릭터 프레임을 펼친 메모리 크기는 64 MiB 이하여야 합니다.");
     }
 
-    private static void ValidatePreparedStage(string stage)
+    private static void ValidatePreparedStage(string stage, CancellationToken cancellationToken)
     {
-        var actual = ValidateSourceTree(stage);
-        var definition = CharacterLoader.Load(stage);
-        ValidateDeclaredFrames(stage);
+        var actual = ValidateSourceTree(stage, cancellationToken);
+        var definition = CharacterLoader.Load(stage, cancellationToken);
+        ValidateDeclaredFrames(stage, cancellationToken);
         ValidateDecodedBudget(definition, definition.AllFramePaths().Count());
         var expected = new HashSet<string>(definition.AllFramePaths().Append(Path.Combine(stage, "character.json")), StringComparer.OrdinalIgnoreCase);
         if (!expected.SetEquals(actual))
             throw new InvalidDataException("준비된 캐릭터에는 설정과 참조된 PNG 파일만 포함할 수 있습니다.");
     }
 
-    private static void ValidateDeclaredFrames(string folder)
+    private static void ValidateDeclaredFrames(string folder, CancellationToken cancellationToken)
     {
         CharacterDefinitionDto? dto;
         try
         {
-            dto = JsonSerializer.Deserialize<CharacterDefinitionDto>(File.ReadAllText(Path.Combine(folder, "character.json")),
+            dto = JsonSerializer.Deserialize<CharacterDefinitionDto>(CharacterLoader.ReadManifest(Path.Combine(folder, "character.json"), cancellationToken),
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         }
         catch (JsonException ex) { throw new InvalidDataException("캐릭터 설정을 읽을 수 없습니다.", ex); }
@@ -204,7 +222,7 @@ public sealed class CharacterLibrary
         }
     }
 
-    private static IReadOnlyList<string> ValidateSourceTree(string root)
+    private static IReadOnlyList<string> ValidateSourceTree(string root, CancellationToken cancellationToken)
     {
         EnsureNoReparsePoints(root);
         var directories = new Queue<string>();
@@ -215,8 +233,10 @@ public sealed class CharacterLibrary
         var files = new List<string>();
         while (directories.Count > 0)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             foreach (var entry in Directory.EnumerateFileSystemEntries(directories.Dequeue()))
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var attributes = File.GetAttributes(entry);
                 if ((attributes & FileAttributes.ReparsePoint) != 0)
                     throw new InvalidDataException("링크가 포함된 캐릭터 폴더는 가져올 수 없습니다.");

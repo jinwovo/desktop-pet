@@ -29,23 +29,24 @@ public sealed class CharacterArchive : IDisposable
     public const long MaxArchiveBytes = 64L * 1024 * 1024;
     public const long MaxExpandedBytes = 256L * 1024 * 1024;
     public const int MaxEntryCount = 2048;
-    public const int MaxManifestBytes = 256 * 1024;
+    public const int MaxManifestBytes = CharacterLibrary.MaxManifestBytes;
     private readonly ZipArchive _archive;
     private readonly Dictionary<string, ZipArchiveEntry> _files = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<ArchiveCharacter, PreparedCharacter> _prepared = new();
     private bool _disposed;
-    private sealed record PreparedCharacter(byte[] Manifest, IReadOnlyDictionary<string, ZipArchiveEntry> Frames);
+    private sealed record PreparedCharacter(byte[] Manifest, IReadOnlyDictionary<string, ZipArchiveEntry> Frames, long TotalBytes);
 
-    private CharacterArchive(ZipArchive archive)
+    private CharacterArchive(ZipArchive archive, CancellationToken cancellationToken)
     {
         _archive = archive;
-        ValidateEntries();
+        ValidateEntries(cancellationToken);
         var candidates = new List<ArchiveCharacter>();
         foreach (var pair in _files.Where(pair =>
                      Path.GetFileName(pair.Key).Equals("character.json", StringComparison.OrdinalIgnoreCase)))
         {
             if (candidates.Count >= 64) throw new InvalidDataException("ZIP에는 캐릭터를 64개까지 넣을 수 있습니다.");
-            var manifest = ReadBounded(pair.Value, MaxManifestBytes);
+            cancellationToken.ThrowIfCancellationRequested();
+            var manifest = ReadBounded(pair.Value, MaxManifestBytes, cancellationToken);
             CharacterDefinitionDto dto;
             try
             {
@@ -68,6 +69,7 @@ public sealed class CharacterArchive : IDisposable
             long bytes = manifest.Length;
             foreach (var reference in CharacterLibrary.GetDeclaredFrameNames(dto))
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 if (string.IsNullOrWhiteSpace(reference)) throw new InvalidDataException("PNG 참조가 비어 있습니다.");
                 // Windows PowerShell/.NET Framework archives may also use backslashes.
                 var relative = reference.Replace('\\', '/');
@@ -82,7 +84,7 @@ public sealed class CharacterArchive : IDisposable
             }
             var candidate = new ArchiveCharacter(prefix, name, displayName);
             candidates.Add(candidate);
-            _prepared.Add(candidate, new PreparedCharacter(manifest, frames));
+            _prepared.Add(candidate, new PreparedCharacter(manifest, frames, bytes));
         }
         if (candidates.Count == 0) throw new InvalidDataException("ZIP에서 character.json을 찾지 못했습니다.");
         Characters = Array.AsReadOnly(candidates.OrderBy(c => c.Name, StringComparer.OrdinalIgnoreCase).ToArray());
@@ -90,8 +92,9 @@ public sealed class CharacterArchive : IDisposable
 
     public IReadOnlyList<ArchiveCharacter> Characters { get; }
 
-    public static CharacterArchive Open(string path)
+    public static CharacterArchive Open(string path, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         CharacterLibrary.EnsureNoReparsePoints(Path.GetFullPath(path));
         var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
         ZipArchive? archive = null;
@@ -99,7 +102,7 @@ public sealed class CharacterArchive : IDisposable
         {
             if (stream.Length > MaxArchiveBytes) throw new InvalidDataException("ZIP 파일은 64 MiB 이하여야 합니다.");
             archive = new ZipArchive(stream, ZipArchiveMode.Read, leaveOpen: false);
-            return new CharacterArchive(archive);
+            return new CharacterArchive(archive, cancellationToken);
         }
         catch
         {
@@ -109,9 +112,11 @@ public sealed class CharacterArchive : IDisposable
         }
     }
 
-    public string Import(ArchiveCharacter character, CharacterLibrary library, Action<string>? validate = null)
+    public string Import(ArchiveCharacter character, CharacterLibrary library, Action<string>? validate = null,
+        CancellationToken cancellationToken = default, IProgress<CharacterImportProgress>? progress = null)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
+        cancellationToken.ThrowIfCancellationRequested();
         ArgumentNullException.ThrowIfNull(library);
         if (!_prepared.TryGetValue(character, out var prepared))
             throw new ArgumentException("다른 ZIP에서 선택한 캐릭터입니다.", nameof(character));
@@ -125,29 +130,37 @@ public sealed class CharacterArchive : IDisposable
             CharacterLibrary.EnsureNoReparsePoints(folder);
             File.WriteAllBytes(Path.Combine(folder, "character.json"), prepared.Manifest);
             long remaining = CharacterLibrary.MaxTotalBytes - prepared.Manifest.Length;
+            var completed = 1;
+            long copiedBytes = prepared.Manifest.Length;
+            progress?.Report(new(CharacterImportPhase.Extracting, completed, prepared.Frames.Count + 1, copiedBytes, prepared.TotalBytes));
             foreach (var pair in prepared.Frames)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var destination = Path.Combine(folder, pair.Key.Replace('/', Path.DirectorySeparatorChar));
                 Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
                 CharacterLibrary.EnsureNoReparsePoints(destination);
                 using var input = pair.Value.Open();
                 using var output = new FileStream(destination, FileMode.CreateNew, FileAccess.Write, FileShare.None);
-                var copied = CopyBounded(input, output, Math.Min(pair.Value.Length, remaining));
+                var copied = CopyBounded(input, output, Math.Min(pair.Value.Length, remaining), cancellationToken);
                 if (copied != pair.Value.Length) throw new InvalidDataException("ZIP 파일 길이가 일치하지 않습니다.");
                 remaining -= copied;
+                copiedBytes += copied;
+                progress?.Report(new(CharacterImportPhase.Extracting, ++completed, prepared.Frames.Count + 1, copiedBytes, prepared.TotalBytes));
             }
-            return library.ImportFolder(folder, validate);
+            cancellationToken.ThrowIfCancellationRequested();
+            return library.ImportFolder(folder, validate, cancellationToken, progress);
         }
         finally { CharacterLibrary.CleanupStage(tempRoot); }
     }
 
-    private void ValidateEntries()
+    private void ValidateEntries(CancellationToken cancellationToken)
     {
         if (_archive.Entries.Count > MaxEntryCount) throw new InvalidDataException("ZIP 항목이 2048개를 초과합니다.");
         var paths = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
         long expanded = 0;
         foreach (var entry in _archive.Entries)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var normalized = entry.FullName.Replace('\\', '/');
             var directory = normalized.EndsWith('/');
             var path = directory ? normalized[..^1] : normalized;
@@ -164,6 +177,7 @@ public sealed class CharacterArchive : IDisposable
         }
         foreach (var path in paths.Keys)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var end = path.LastIndexOf('/');
             while (end >= 0)
             {
@@ -180,23 +194,24 @@ public sealed class CharacterArchive : IDisposable
         CharacterLibrary.ValidateRelativePath(path);
     }
 
-    private static byte[] ReadBounded(ZipArchiveEntry entry, int limit)
+    private static byte[] ReadBounded(ZipArchiveEntry entry, int limit, CancellationToken cancellationToken)
     {
         if (entry.Length > limit) throw new InvalidDataException("캐릭터 설정 파일이 너무 큽니다.");
         using var input = entry.Open();
         using var output = new MemoryStream();
-        var copied = CopyBounded(input, output, Math.Min(entry.Length, limit));
+        var copied = CopyBounded(input, output, Math.Min(entry.Length, limit), cancellationToken);
         if (copied != entry.Length) throw new InvalidDataException("ZIP 설정 파일 길이가 일치하지 않습니다.");
         return output.ToArray();
     }
 
-    private static long CopyBounded(Stream input, Stream output, long limit)
+    private static long CopyBounded(Stream input, Stream output, long limit, CancellationToken cancellationToken)
     {
         var buffer = new byte[81920];
         long copied = 0;
         int read;
         while ((read = input.Read(buffer, 0, buffer.Length)) != 0)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (read > limit - copied) throw new InvalidDataException("ZIP 압축 해제 크기가 제한을 초과합니다.");
             output.Write(buffer, 0, read);
             copied += read;

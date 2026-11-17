@@ -112,7 +112,7 @@ dotnet build DesktopPet.sln -c Release --no-restore
 3. 合集 ZIP 会显示选择窗口，确认后只安装所选角色。需要其他角色时可再次选择该 ZIP。
 4. 全部引用 PNG 验证通过后，程序安装并应用角色，同时刷新已打开的画廊。
 
-ZIP 支持根目录、嵌套角色文件夹或多个角色文件夹。单张图片不能直接作为角色包。同名角色不会被覆盖；请修改角色文件夹名称，根目录 ZIP 则使用清单中的 `name`。取消选择保留当前角色。安装中关闭设置会阻止完成后的自动应用，已开始的验证和安装仍可能在角色库中完成。
+ZIP 支持根目录、嵌套角色文件夹或多个角色文件夹。单张图片不能直接作为角色包。同名角色不会被覆盖；请修改角色文件夹名称，根目录 ZIP 使用清单中的 `name`。安装显示进度和**取消安装**按钮；取消或关闭设置会停止未提交的工作并清理临时文件。如果安装已提交，角色包会保留在库中，当前宠物保持不变。
 
 拒绝危险路径、链接及重复 ZIP 路径。ZIP 限制为压缩大小 64 MiB、声明的解压总量 256 MiB、2,048 个条目；单个角色仍限制为 256 个文件、64 MiB 源文件和 64 MiB 解码图像。支持传统逐帧皮肤、可选六贴图 `walkRig` 和 `behavior` 性格配置。参见[角色包格式](docs/CHARACTER_PACKS.md)及[贡献要求](CONTRIBUTING.md#character-packs)。
 
@@ -160,7 +160,7 @@ powershell -NoProfile -File tests/package-regression.ps1
 构建公开 Windows x64 包：
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 0.50.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 0.90.0
 ```
 
 输出位于 `artifacts/releases/`，包含 self-contained ZIP 与 SHA256 文件。缺少运行时包时构建会失败，不会静默切换为其他部署方式。[Windows 工作流](.github/workflows/windows-release.yml)配置了测试与构建产物；存在该文件不等于远程构建已通过或版本已经发布。

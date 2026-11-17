@@ -87,6 +87,9 @@
                 </StackPanel>
                 <TextBlock x:Name="CharacterImportStatusText" FontSize="11" Foreground="#FF777777" TextWrapping="Wrap"
                            Margin="0,6,0,0" Text="character.json이 있는 폴더나 캐릭터 ZIP을 추가하세요. 여러 캐릭터가 있으면 하나를 선택할 수 있어요." />
+                <ProgressBar x:Name="CharacterImportProgressBar" Visibility="Collapsed" Height="6" Margin="0,7,0,0" Maximum="100"/>
+                <Button x:Name="CancelCharacterImportButton" Visibility="Collapsed" Content="설치 취소" HorizontalAlignment="Left"
+                        Padding="8,4" Margin="0,6,0,0" Click="CancelCharacterImport_Click"/>
             </StackPanel>
         </Border>
 

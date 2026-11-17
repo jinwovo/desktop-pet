@@ -236,7 +236,8 @@ var tests = new (string Name, Action Run)[]
  .Concat(FramePacerTests.Create())
  .Concat(PetSettingsBackupTests.Create())
  .Concat(DiagnosticReportTests.Create())
- .Concat(PetRecoveryTests.Create()).ToArray();
+ .Concat(PetRecoveryTests.Create())
+ .Concat(CharacterImportCancellationTests.Create()).ToArray();
 
 var failures = 0;
 var skipped = 0;

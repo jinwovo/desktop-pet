@@ -113,7 +113,7 @@ Use the minute fields and **시간 적용** to change durations. Changes preserv
 3. For a collection ZIP, select the character to install and confirm. Only that pack is installed; repeat to add another.
 4. DesktopPet validates all referenced PNGs, installs into your user library, selects the character and refreshes an open gallery.
 
-ZIPs can contain `character.json` at the root, a wrapped character folder, or several character folders. Standalone pictures are not character packs. Existing names are never overwritten; use a new folder name (or manifest `name` for a root ZIP). Cancelling a collection selection preserves your current pet. Closing Settings during an in-progress installation prevents late activation; an already started validated installation may finish in the library.
+ZIPs can contain `character.json` at the root, a wrapped character folder, or several character folders. Standalone pictures are not character packs. Existing names are never overwritten; use a new folder name (or manifest `name` for a root ZIP). Settings shows progress and a **Cancel installation** button. Cancellation or closing Settings stops unpublished work and cleans staging; if installation already committed, the pack stays installed and your current pet is retained. Cancelling collection selection changes nothing.
 
 Imports reject unsafe paths, links, duplicate ZIP entries and conflicting names. ZIPs are limited to 64 MiB compressed, 256 MiB declared expanded data and 2,048 entries; each selected pack remains limited to 256 files, 64 MiB source and 64 MiB decoded image data. Legacy sprite cycles work alongside optional six-texture `walkRig` packs and per-character `behavior` profiles. See the [pack authoring guide](docs/CHARACTER_PACKS.md) and [contribution requirements](CONTRIBUTING.md#character-packs).
 
@@ -161,7 +161,7 @@ The suites use fixture directories and do not register hooks in your real assist
 To create a public Windows x64 package:
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 0.50.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 0.90.0
 ```
 
 The output is a self-contained ZIP and a SHA256 sidecar under `artifacts/releases/`. Missing runtime packs cause a build failure; the script does not silently change deployment type. The [Windows workflow](.github/workflows/windows-release.yml) is configured to run checks and create artifacts; its presence does not imply a successful remote build or a published release.

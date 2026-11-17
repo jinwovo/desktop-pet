@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.90.0 — cancellable character installation
+
+- Report extraction/copy/PNG validation progress and add an installation Cancel button. Propagate cancellation through archive inspection, bounded stream copying, folder staging and image decoding; closing Settings also requests cancellation.
+- Check cancellation immediately before atomic publication and clean unpublished stages. If publication already completed, keep the installed pack but respect Cancel by retaining the current pet. Ignore stale progress after completion/closure.
+- Bound folder/startup manifests to the same 256 KiB limit as archives and retain source/copy/decode budgets. Add cancellation, retry/mutex, manifest and real UI token/progress regressions.
+
 ## 0.50.0 — monitor position recovery
 
 - Add a monitor picker and explicit recovery button in Settings; the tray can bring the pet to the monitor nearest the pointer.

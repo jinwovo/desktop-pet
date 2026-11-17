@@ -46,9 +46,9 @@ public sealed class CharacterPresentation
         }
     }
 
-    public static CharacterPresentation Load(string folder, bool includeRasterGait = false)
+    public static CharacterPresentation Load(string folder, bool includeRasterGait = false, CancellationToken cancellationToken = default)
     {
-        var definition = CharacterLoader.Load(folder);
+        var definition = CharacterLoader.Load(folder, cancellationToken);
         var allPaths = definition.AllFramePaths().ToArray();
         var decodedBytes = checked((long)definition.FrameWidth * definition.FrameHeight * 4 * allPaths.Length);
         if (decodedBytes > CharacterLibrary.MaxDecodedBytes)
@@ -57,6 +57,7 @@ public sealed class CharacterPresentation
         // fallback is not needed by a live rig. A falsely small manifest cannot hide a huge image.
         foreach (var path in allPaths)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (!string.Equals(Path.GetExtension(path), ".png", StringComparison.OrdinalIgnoreCase)) continue;
             try
             {
@@ -71,6 +72,7 @@ public sealed class CharacterPresentation
         var frames = new Dictionary<string, BitmapImage>(StringComparer.OrdinalIgnoreCase);
         foreach (var path in definition.GetPresentationFramePaths(includeRasterGait))
         {
+            cancellationToken.ThrowIfCancellationRequested();
             try
             {
                 using var stream = File.OpenRead(path);

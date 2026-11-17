@@ -303,6 +303,7 @@ internal static class Program
             LocalizationUiTests.Run(folder);
             DiagnosticsUiTests.Run(folder);
             PetRecoveryUiTests.Run(folder);
+            ImportCancellationUiTests.Run(folder);
             FullscreenUiTests.Run(folder);
             ArchiveImportUiTests.Run(folder);
             PlatformMonitorUiTests.Run(pet);
