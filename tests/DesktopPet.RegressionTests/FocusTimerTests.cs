@@ -5,6 +5,46 @@ public static class FocusTimerTests
 {
     public static IEnumerable<(string Name, Action Run)> Create()
     {
+        yield return ("Duration configuration preserves active countdown and original completion metadata", () =>
+        {
+            var clock = new Clock();
+            using var timer = Timer(clock);
+            var completions = new List<FocusSessionCompletion>();
+            timer.SessionCompleted += completions.Add;
+            timer.Start();
+            clock.Advance(TimeSpan.FromSeconds(3)); timer.Tick();
+            timer.ConfigureDurations(TimeSpan.FromMinutes(7), TimeSpan.FromMinutes(2));
+            Check(timer.Snapshot.Remaining == TimeSpan.FromSeconds(7), "Configuration reset a running session");
+            timer.Pause();
+            timer.ConfigureDurations(TimeSpan.FromMinutes(8), TimeSpan.FromMinutes(3));
+            Check(timer.Snapshot.Remaining == TimeSpan.FromSeconds(7) && timer.Snapshot.Status == FocusTimerStatus.Paused, "Paused configuration changed the clock");
+            timer.Resume(); clock.Advance(TimeSpan.FromSeconds(7)); timer.Tick();
+            Check(completions.Single().Duration == TimeSpan.FromSeconds(10), "Completion reported a future duration instead of the completed session");
+            timer.Start(FocusSessionKind.Break);
+            Check(timer.Snapshot.Remaining == TimeSpan.FromMinutes(3), "Next break ignored updated settings");
+            timer.Stop(); timer.Start();
+            Check(timer.Snapshot.Remaining == TimeSpan.FromMinutes(8), "Next focus ignored updated settings");
+        });
+        yield return ("Duration configuration validates both values atomically and restart explicitly adopts changes", () =>
+        {
+            using var timer = new FocusTimer();
+            Expect<ArgumentOutOfRangeException>(() => timer.ConfigureDurations(TimeSpan.FromMinutes(9), TimeSpan.Zero));
+            Check(timer.Snapshot.Remaining == TimeSpan.FromMinutes(25), "Invalid configuration partly changed the timer");
+            timer.Start(); timer.ConfigureDurations(TimeSpan.FromMinutes(9), TimeSpan.FromMinutes(2)); timer.Restart();
+            Check(timer.Snapshot.Remaining == TimeSpan.FromMinutes(9), "Explicit restart did not adopt configured duration");
+            timer.Dispose();
+            Expect<ObjectDisposedException>(() => timer.ConfigureDurations(TimeSpan.FromMinutes(9), TimeSpan.FromMinutes(2)));
+        });
+        yield return ("Saved duration preferences preserve old defaults and normalize unsafe minute values", () => InFolder(folder =>
+        {
+            var path = Path.Combine(folder, "settings.json");
+            File.WriteAllText(path, "{}");
+            var defaults = PetSettings.Load(path);
+            Check(defaults.FocusMinutes == 25 && defaults.BreakMinutes == 5, "Old settings lost default durations");
+            defaults.FocusMinutes = int.MaxValue; defaults.BreakMinutes = -1; defaults.Save(path);
+            var loaded = PetSettings.Load(path);
+            Check(loaded.FocusMinutes == 180 && loaded.BreakMinutes == 1, "Unsafe duration settings were not bounded");
+        }));
         yield return ("Focus timer starts idle with a 25-minute focus and manual 5-minute break", () =>
         {
             var clock = new Clock();

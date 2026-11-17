@@ -13,8 +13,9 @@ public readonly record struct FocusSessionCompletion(FocusSessionKind Session, T
 public sealed class FocusTimer : IDisposable
 {
     private readonly TimeProvider _clock;
-    private readonly TimeSpan _focusDuration;
-    private readonly TimeSpan _breakDuration;
+    private TimeSpan _focusDuration;
+    private TimeSpan _breakDuration;
+    private TimeSpan _sessionDuration;
     private FocusSessionKind _session;
     private FocusTimerStatus _status;
     private TimeSpan _remaining;
@@ -29,17 +30,29 @@ public sealed class FocusTimer : IDisposable
         _breakDuration = ValidateDuration(breakDuration ?? TimeSpan.FromMinutes(5), nameof(breakDuration));
         if (_clock.TimestampFrequency <= 0) throw new ArgumentException("타이머 시계의 주파수가 올바르지 않습니다.", nameof(clock));
         _remaining = _focusDuration;
+        _sessionDuration = _focusDuration;
     }
 
     public FocusTimerSnapshot Snapshot => new(_session, _status, _remaining, _completedFocusSessions);
     public event Action<FocusSessionCompletion>? SessionCompleted;
+
+    /// <summary>Changes future sessions. A running/paused session keeps its original duration.</summary>
+    public void ConfigureDurations(TimeSpan focusDuration, TimeSpan breakDuration)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        var focus = ValidateDuration(focusDuration, nameof(focusDuration));
+        var rest = ValidateDuration(breakDuration, nameof(breakDuration));
+        _focusDuration = focus;
+        _breakDuration = rest;
+        if (_status == FocusTimerStatus.Stopped) _remaining = _sessionDuration = focus;
+    }
 
     public void Start(FocusSessionKind session = FocusSessionKind.Focus)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         if (!Enum.IsDefined(session)) throw new ArgumentOutOfRangeException(nameof(session));
         _session = session;
-        _remaining = Duration(session);
+        _remaining = _sessionDuration = Duration(session);
         _checkpoint = _clock.GetTimestamp();
         _status = FocusTimerStatus.Running;
     }
@@ -89,7 +102,7 @@ public sealed class FocusTimer : IDisposable
         _remaining = TimeSpan.Zero;
         _status = FocusTimerStatus.Completed;
         if (_session == FocusSessionKind.Focus) _completedFocusSessions++;
-        SessionCompleted?.Invoke(new FocusSessionCompletion(_session, Duration(_session), _completedFocusSessions));
+        SessionCompleted?.Invoke(new FocusSessionCompletion(_session, _sessionDuration, _completedFocusSessions));
     }
 
     public void Dispose()

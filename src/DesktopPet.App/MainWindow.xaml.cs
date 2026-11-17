@@ -117,6 +117,7 @@ public partial class MainWindow : Window
     {
         _dpiScale = VisualTreeHelper.GetDpi(this).DpiScaleX;
         _settings = PetSettings.Load();
+        _focusTimer.ConfigureDurations(TimeSpan.FromMinutes(_settings.FocusMinutes), TimeSpan.FromMinutes(_settings.BreakMinutes));
 
         var names = _characterLibrary.GetNames();
         if (names.Count == 0)
@@ -386,6 +387,20 @@ public partial class MainWindow : Window
     public bool AssistantSetupSeen => _settings.AssistantSetupSeen;
     public int PendingNotificationCount => _unreadNotifications.Count;
     public FocusTimerSnapshot FocusSnapshot => _focusTimer.Snapshot;
+    public int FocusMinutes => _settings.FocusMinutes;
+    public int BreakMinutes => _settings.BreakMinutes;
+
+    public void SetFocusDurations(int focusMinutes, int breakMinutes)
+    {
+        if (_disposed) return;
+        if (focusMinutes is < 1 or > 180 || breakMinutes is < 1 or > 60)
+            throw new ArgumentOutOfRangeException(nameof(focusMinutes), "집중 1~180분, 휴식 1~60분으로 설정해주세요.");
+        _focusTimer.ConfigureDurations(TimeSpan.FromMinutes(focusMinutes), TimeSpan.FromMinutes(breakMinutes));
+        _settings.FocusMinutes = focusMinutes;
+        _settings.BreakMinutes = breakMinutes;
+        SynchronizeFocusTimer();
+        ScheduleSettingsSave();
+    }
     public string FocusTimerCaption
     {
         get

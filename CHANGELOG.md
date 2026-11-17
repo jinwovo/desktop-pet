@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.0 — configurable focus sessions
+
+- Add persisted focus (1–180 minutes) and break (1–60 minutes) controls, preserving 25/5 defaults for older settings.
+- Apply new durations to future starts and explicit restarts. Running/paused sessions retain their countdown and report the duration they actually completed.
+- Validate both duration values before changing either; cover settings normalization and actual WPF controls.
+
 ## 0.10.0 — ZIP character installation
 
 - Import root, wrapped and multi-character ZIP packs directly from Settings. Collections show an explicit character picker; only the chosen pack is installed.

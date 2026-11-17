@@ -53,7 +53,7 @@ dotnet build DesktopPet.sln -c Release --no-restore
 | 脚部接地行走 | 身体与双脚按实际距离和显示大小连续移动，停止时先放下抬起的脚。 |
 | 轻柔完成提醒 | 默认显示 8 秒的简短气泡。 |
 | 未读通知 | 自动隐藏不等于删除；可从托盘重新查看并点击确认。 |
-| 专注计时器 | 手动控制固定的 25 分钟专注与 5 分钟休息。 |
+| 专注计时器 | 默认 25/5 分钟；可设专注 1–180 分钟、休息 1–60 分钟。 |
 | 导入角色 | 支持文件夹和 ZIP；合集 ZIP 可以直接选择一个角色安装。 |
 | 角色画廊 | 按韩语、英语名称或别名搜索，按类别筛选，分别预览和应用角色。 |
 | 角色性格 | Nimbus 更喜欢休息，Ember 更喜欢走动；角色包可设置活动、休息和睡眠倾向。 |
@@ -89,7 +89,7 @@ dotnet build DesktopPet.sln -c Release --no-restore
 3. **重新开始**（`다시 시작`）重置当前阶段；**停止**（`종료`）结束计时，不发送完成提醒。
 4. 专注结束后，手动点击**开始休息**（`휴식 시작`）进行 5 分钟休息。休息结束后再手动开始下一次专注。
 
-不会自动连续循环，也不会在关闭程序后恢复正在进行的计时。计时完成使用同一个本地通知收件箱，遵守隐藏与免打扰设置。托盘菜单也提供控制入口。
+在分钟输入框修改后点击 **시간 적용**。运行或暂停中的剩余时间保持不变，下次启动或主动重新开始时采用新时长。不会自动连续循环，也不会在关闭程序后恢复正在进行的计时。计时完成使用同一个本地通知收件箱，遵守隐藏与免打扰设置。托盘菜单也提供控制入口。
 
 ## 通知与免打扰
 
@@ -155,7 +155,7 @@ powershell -NoProfile -File tests/package-regression.ps1
 构建公开 Windows x64 包：
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 0.10.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 0.11.0
 ```
 
 输出位于 `artifacts/releases/`，包含 self-contained ZIP 与 SHA256 文件。缺少运行时包时构建会失败，不会静默切换为其他部署方式。[Windows 工作流](.github/workflows/windows-release.yml)配置了测试与构建产物；存在该文件不等于远程构建已通过或版本已经发布。

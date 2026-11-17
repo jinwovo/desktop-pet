@@ -109,8 +109,16 @@
             <StackPanel>
                 <TextBlock Text="집중 타이머" Style="{StaticResource SectionLabel}" />
                 <TextBlock x:Name="FocusStatusText" FontSize="17" FontWeight="SemiBold" Foreground="#314A3C" />
-                <TextBlock Text="25분 집중 · 5분 휴식. 다음 세션은 직접 시작해요."
+                <TextBlock Text="시간 변경은 다음 시작·다시 시작부터 적용해요. 다음 세션은 직접 시작해요."
                            Margin="0,5,0,10" FontSize="11" Foreground="#777777" TextWrapping="Wrap" />
+                <WrapPanel Margin="0,0,0,10">
+                    <TextBlock Text="집중(분)" VerticalAlignment="Center"/>
+                    <TextBox x:Name="FocusMinutesBox" Width="42" Margin="6,0,12,0" VerticalContentAlignment="Center"/>
+                    <TextBlock Text="휴식(분)" VerticalAlignment="Center"/>
+                    <TextBox x:Name="BreakMinutesBox" Width="42" Margin="6,0,6,0" VerticalContentAlignment="Center"/>
+                    <Button x:Name="FocusDurationApplyButton" Content="시간 적용" Padding="8,4" Click="FocusDurationApply_Click"/>
+                </WrapPanel>
+                <TextBlock x:Name="FocusDurationStatus" FontSize="11" Foreground="#777777" TextWrapping="Wrap" Margin="0,0,0,6"/>
                 <WrapPanel>
                     <Button x:Name="FocusStartButton" Content="집중 시작" Padding="10,5" Click="FocusStart_Click" />
                     <Button x:Name="FocusPauseButton" Content="일시정지" Padding="10,5" Margin="6,0,0,0" Click="FocusPause_Click" />

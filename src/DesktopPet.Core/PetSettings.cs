@@ -24,6 +24,8 @@ public sealed class PetSettings
     public bool AutoDismissNotifications { get; set; } = true;
     public bool QuietMode { get; set; }
     public int NotificationDisplaySeconds { get; set; } = 8;
+    public int FocusMinutes { get; set; } = 25;
+    public int BreakMinutes { get; set; } = 5;
     public bool AutoConnectAssistants { get; set; } = true;
     public bool AssistantSetupSeen { get; set; }
 
@@ -62,6 +64,8 @@ public sealed class PetSettings
         ScaleMultiplier = double.IsFinite(ScaleMultiplier) ? Math.Clamp(ScaleMultiplier, 0.5, 2.5) : 1.0;
         WalkSpeedMultiplier = double.IsFinite(WalkSpeedMultiplier) ? Math.Clamp(WalkSpeedMultiplier, 0.25, 3.0) : 1.0;
         NotificationDisplaySeconds = Math.Clamp(NotificationDisplaySeconds, 3, 30);
+        FocusMinutes = Math.Clamp(FocusMinutes, 1, 180);
+        BreakMinutes = Math.Clamp(BreakMinutes, 1, 60);
     }
 
     public void Save(string? filePath = null)

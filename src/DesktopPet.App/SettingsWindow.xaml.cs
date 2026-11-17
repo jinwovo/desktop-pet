@@ -83,6 +83,8 @@ public partial class SettingsWindow : Window
         CalmCheck.IsChecked = _pet.CalmBehaviorEnabled;
         GentleCheck.IsChecked = _pet.AutoDismissNotifications;
         QuietCheck.IsChecked = _pet.QuietMode;
+        FocusMinutesBox.Text = _pet.FocusMinutes.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        BreakMinutesBox.Text = _pet.BreakMinutes.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
         _loading = false;
 
@@ -423,6 +425,17 @@ public partial class SettingsWindow : Window
     }
 
     private void FocusStart_Click(object sender, RoutedEventArgs e) => _pet.StartFocusTimer();
+    private void FocusDurationApply_Click(object sender, RoutedEventArgs e)
+    {
+        if (!int.TryParse(FocusMinutesBox.Text, out var focus) || !int.TryParse(BreakMinutesBox.Text, out var rest) ||
+            focus is < 1 or > 180 || rest is < 1 or > 60)
+        {
+            FocusDurationStatus.Text = "집중 1~180분, 휴식 1~60분을 입력해주세요.";
+            return;
+        }
+        _pet.SetFocusDurations(focus, rest);
+        FocusDurationStatus.Text = "다음 시작·다시 시작부터 적용해요. 진행 중인 시간은 유지합니다.";
+    }
     private void FocusPause_Click(object sender, RoutedEventArgs e) => _pet.PauseOrResumeFocusTimer();
     private void FocusRestart_Click(object sender, RoutedEventArgs e) => _pet.RestartFocusTimer();
     private void FocusStop_Click(object sender, RoutedEventArgs e) => _pet.StopFocusTimer();

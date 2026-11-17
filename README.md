@@ -53,7 +53,7 @@ NuGet access is needed for missing build or runtime packs. Runtime use does not 
 | Grounded walking | Continuous body/foot transforms follow measured distance and sprite scale; raised feet settle before the resting pose. |
 | Gentle completions | Short local bubbles; the default display duration is 8 seconds. |
 | Unread inbox | Auto-hide retains a receipt. Review saved notifications from the tray and click to acknowledge them. |
-| Focus timer | Fixed 25-minute focus and 5-minute break sessions with explicit controls. |
+| Focus timer | Default 25/5 sessions; configure focus 1–180 minutes and break 1–60 minutes. |
 | Custom characters | Import a folder or ZIP; choose one character from collection archives without extracting them first. |
 | Character gallery | Search Korean/English aliases, filter original/fan-art/custom packs, preview motion and apply explicitly. |
 | Character personalities | Nimbus rests longer, Ember favors walks; authored packs can tune activity and sleep without altering gait. |
@@ -89,7 +89,7 @@ In Settings, open **Focus timer** (`집중 타이머`):
 3. **Restart** (`다시 시작`) starts the current session over. **Stop** (`종료`) ends it without a completion alert.
 4. When focus finishes, start the 5-minute break explicitly. When the break finishes, start a new focus session when ready.
 
-The timer does not automatically chain sessions or restore an active countdown after the app closes. Its completion uses the same local notification inbox, hidden-pet rules, and Do not disturb setting. Tray controls are also available.
+Use the minute fields and **시간 적용** to change durations. Changes preserve an active/paused countdown and apply on the next start or explicit restart. The timer does not automatically chain sessions or restore an active countdown after the app closes. Its completion uses the same local notification inbox, hidden-pet rules, and Do not disturb setting. Tray controls are also available.
 
 ## Notification controls
 
@@ -156,7 +156,7 @@ The suites use fixture directories and do not register hooks in your real assist
 To create a public Windows x64 package:
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 0.10.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 0.11.0
 ```
 
 The output is a self-contained ZIP and a SHA256 sidecar under `artifacts/releases/`. Missing runtime packs cause a build failure; the script does not silently change deployment type. The [Windows workflow](.github/workflows/windows-release.yml) is configured to run checks and create artifacts; its presence does not imply a successful remote build or a published release.

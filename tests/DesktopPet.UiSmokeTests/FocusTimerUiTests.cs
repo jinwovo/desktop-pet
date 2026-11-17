@@ -81,6 +81,24 @@ internal static class FocusTimerUiTests
             Advance(100);
             Check(timer.Snapshot.Status == FocusTimerStatus.Stopped && !dispatcher.IsEnabled && Directory.GetFiles(folder, "*.json").Length == 0,
                 "Stopping a timer emitted a completion or retained its dispatcher");
+            var save = (DispatcherTimer)Get(pet, "_settingsSaveTimer")!;
+            save.Interval = TimeSpan.FromDays(1);
+            ((TextBox)settings.FindName("FocusMinutesBox")).Text = "7";
+            ((TextBox)settings.FindName("BreakMinutesBox")).Text = "2";
+            Click("FocusDurationApplyButton");
+            Check(pet.FocusMinutes == 7 && pet.BreakMinutes == 2 && timer.Snapshot.Remaining == TimeSpan.FromMinutes(7), "Settings duration controls did not configure stopped timer");
+            Click("FocusStartButton");
+            ((TextBox)settings.FindName("FocusMinutesBox")).Text = "9";
+            Click("FocusDurationApplyButton");
+            Check(timer.Snapshot.Remaining == TimeSpan.FromMinutes(7), "Changing settings reset active focus");
+            ((TextBox)settings.FindName("BreakMinutesBox")).Text = "invalid";
+            Click("FocusDurationApplyButton");
+            Check(pet.BreakMinutes == 2 && ((TextBlock)settings.FindName("FocusDurationStatus")).Text.Contains("입력"), "Invalid duration was silently accepted");
+            Click("FocusRestartButton");
+            Check(timer.Snapshot.Remaining == TimeSpan.FromMinutes(9), "Restart failed to adopt new focus duration");
+            Click("FocusStopButton");
+            save.Stop();
+            Console.WriteLine("PASS Duration controls validate minutes, preserve active time and apply changes on explicit restart");
             settings.Close();
             Set(pet, "_settingsDirty", false);
             pet.DisposeResources();
