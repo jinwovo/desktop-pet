@@ -1,6 +1,6 @@
 # Public release preparation
 
-Target repository: [jinwovo/desktop-pet](https://github.com/jinwovo/desktop-pet). Version 0.10.0 adds direct ZIP character installation after the 0.7.0 fullscreen/session cooperation, 0.8.0 monitor geometry and 0.9.0 character personalities milestones. Local validation covers the original-only release and all nine personal-build characters. Check [Windows distribution runs](https://github.com/jinwovo/desktop-pet/actions/workflows/windows-release.yml) for the status and exact commit of remote verification. Release publication is a separate publisher-controlled operation.
+Target repository: [jinwovo/desktop-pet](https://github.com/jinwovo/desktop-pet). The 1.0 release follows functional 0.11/0.12/0.13/0.14/0.20/0.30/0.50/0.90 milestones and the 0.99 installation-check candidate. See the [1.0 release review](RELEASE_1_0.md) for scope and gates. Local validation covers the original-only release and all nine personal-build characters. Check [Windows distribution runs](https://github.com/jinwovo/desktop-pet/actions/workflows/windows-release.yml) for the status and exact commit of remote verification.
 
 ## What is ready
 
@@ -16,7 +16,7 @@ Target repository: [jinwovo/desktop-pet](https://github.com/jinwovo/desktop-pet)
 - A local25/5 focus timer and test-notification button. Notifications use the existing durable inbox and honor hidden/quiet mode.
 - English, Korean and Simplified Chinese READMEs, a recorded GIF, character gallery, authoring guide, issue/PR templates, contribution/security guidance and MIT license.
 - Continuous body/foot rendering and fractional native-position correction. Whole-body angle changes are still immediate transitions.
-- Windows verification/package workflow and a **Draft GitHub release** workflow triggered manually or by a pushed `v*` tag. The latter creates a reviewable draft after the verification workflow succeeds; it does not publish the draft automatically.
+- Windows verification/package workflow and a **Verified GitHub release** workflow. Other version tags create drafts after verification. At the owner's explicit distribution request, only the `v1.0.0` push publishes the newly verified 1.0.0 draft as Latest after checking its source and four assets. Existing releases are never replaced.
 
 ## Export a clean public source tree
 
@@ -35,24 +35,24 @@ Review the exported folder before copying it into an authenticated clone of the 
 The default package is self-contained and requires access to missing NuGet runtime/build packs:
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 0.90.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 0.99.0
 ```
 
 An explicitly labelled alternative requires the user's .NET10 Desktop Runtime x64:
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 0.90.0 -FrameworkDependent
+powershell -NoProfile -File scripts/package-release.ps1 -Version 0.99.0 -FrameworkDependent
 ```
 
 The output directory is `artifacts/releases/`. Keep the entire ZIP layout. Compare its `.zip.sha256`, extract it and validate the manifest before reviewing the app on a test Windows profile. Do not use your real assistant configuration as a regression fixture.
 
-For GitHub, push the reviewed source through your normal authenticated workflow. Run **Windows distribution** to collect artifacts, or run **Draft GitHub release** with version `0.10.0` (or push a `v0.10.0` tag) to create a draft after checks. The draft includes the runtime-included app and separate optional character pack ZIPs, each with a checksum. It validates that its requested version matches the source and never replaces or publishes an existing release automatically. Review the draft assets and notes before publishing. See [GitHub's workflow trigger documentation](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow).
+For GitHub, push reviewed source through the authenticated workflow. **Windows distribution** collects artifacts. **Verified GitHub release** requires an existing matching remote tag and creates a new draft after all checks, with app/optional ZIPs and checksums. A `v1.0.0` push additionally runs the explicitly authorized stable publication step; other tags and manual runs remain drafts. Source version and four expected assets must match, and existing releases/tags are never replaced. See [workflow triggers](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow) and [publishing a draft with GitHub CLI](https://cli.github.com/manual/gh_release_edit).
 
 Review the gallery by searching Korean and English aliases, selecting a static card preview, opening **움직임 미리보기**, and applying with **이 친구와 함께하기**. Confirm that search and both preview steps leave the active desktop pet unchanged. For optional packs, verify six import folders plus the catalog, notices, provenance and per-file SHA256 inventory in the separate archive.
 
 ## Validation baseline and current scope
 
-Version 0.10.0 local Release builds pass with zero warnings/errors. Core checks pass 173 cases, with 7 symbolic-link privilege skips out of 180. The nine-character WPF suite passes, including actual PNG foot contact, live-rig transforms, settling, fullscreen/session visibility, gallery refresh and ZIP installation/selection/failure/closure. All six optional characters activate with 19 decoded textures each; the real six-pack ZIP also passes full decoding, import and presentation reload. Packaging fixtures pass 14 groups, installation 9, assistant hooks 13, notification commands 3, source export 6 and optional packaging 6. Offline NVIDIA helper tests pass 19 cases. Fifteen public documents resolve 98 local links. Runtime-included personal and public output are verified separately; cached local publishing may report NU1900 when vulnerability metadata cannot be fetched. This does not substitute for a clean-PC installation test.
+The 0.99 candidate Release build passes with zero warnings/errors. Core checks pass 195 cases, with 7 symbolic-link privilege skips out of 202. The nine-character WPF suite includes actual PNG contact/rig settling, fullscreen/session behavior, ZIP/cancellation, custom focus duration, quiet scheduling, language, settings transfer, diagnostics, recovery and read-only installation checks. The actual public executable passes four isolated installation-check/payload lifecycle groups, with real assistant disconnection deliberately stubbed. Runtime-included personal/public output is checked separately. Existing package, installer, hook, optional-pack, source/docs and offline NVIDIA-helper fixtures remain in the final CI gates. Cached local publishing can report NU1900 when vulnerability metadata is unavailable. This does not substitute for a physical clean-PC or mixed-DPI test.
 
 The 0.6.0 historical baseline passed original-only and nine-character WPF suites and 130 core cases, with 7 link-privilege skips. Its actual runtime-included ZIP was extracted and checked with empty external runtime roots. The three new raster assets used 4x supersampling and measured less than 0.18 source pixels of contact drift, within the existing 1.25-pixel bound.
 

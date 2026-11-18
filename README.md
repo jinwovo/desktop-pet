@@ -119,6 +119,8 @@ Imports reject unsafe paths, links, duplicate ZIP entries and conflicting names.
 
 ## Local storage and privacy
 
+For a read-only resource check, run `DesktopPet.App.exe --check-install`. It returns JSON and exit 0 when the bundled characters and hook bridge are present/valid, or exit 2 on invalid resources. It does not open the pet, register hooks or load user preferences. This checks resources; verify the download checksum separately.
+
 DesktopPet's notifications and focus timer run locally. The app does not upload chat content or provide cloud synchronization.
 
 | Data | Location |
@@ -161,7 +163,7 @@ The suites use fixture directories and do not register hooks in your real assist
 To create a public Windows x64 package:
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 0.90.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 0.99.0
 ```
 
 The output is a self-contained ZIP and a SHA256 sidecar under `artifacts/releases/`. Missing runtime packs cause a build failure; the script does not silently change deployment type. The [Windows workflow](.github/workflows/windows-release.yml) is configured to run checks and create artifacts; its presence does not imply a successful remote build or a published release.

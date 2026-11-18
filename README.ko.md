@@ -119,6 +119,8 @@ ZIP의 최상위나 하위 폴더에 `character.json`이 있어야 합니다. �
 
 ## 로컬 저장과 개인정보
 
+읽기 전용 점검은 `DesktopPet.App.exe --check-install`로 실행합니다. 캐릭터·훅 브리지 리소스가 유효하면 JSON과 종료 코드 0, 잘못된 리소스는 종료 코드 2를 반환합니다. 펫 표시·훅 등록·사용자 설정 로드는 하지 않습니다. 다운로드 무결성은 별도로 SHA256을 비교하세요.
+
 알림과 집중 타이머는 로컬에서 동작합니다. 앱은 대화 내용을 업로드하거나 클라우드 동기화를 제공하지 않습니다.
 
 | 데이터 | 위치 |
@@ -161,7 +163,7 @@ powershell -NoProfile -File tests/package-regression.ps1
 공용 Windows x64 배포를 만들려면 다음을 실행합니다.
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 0.90.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 0.99.0
 ```
 
 `artifacts/releases/`에 self-contained ZIP과 SHA256을 만듭니다. 필요한 런타임 팩이 없으면 실패하며 배포 종류를 몰래 바꾸지 않습니다. [Windows 워크플로](.github/workflows/windows-release.yml)는 검사와 아티팩트 생성을 설정한 파일이며, 파일이 있다고 원격 빌드나 공개 릴리스가 성공했다는 뜻은 아닙니다.

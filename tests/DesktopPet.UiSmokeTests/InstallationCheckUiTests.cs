@@ -1,0 +1,36 @@
+using System.IO;
+using System.Text.Json;
+using DesktopPet.App;
+
+internal static class InstallationCheckUiTests
+{
+    public static void Run(string root)
+    {
+        var installation = Path.Combine(root, "private-installation-canary");
+        var png = Path.Combine(MainWindow.CharactersRoot, "Companion", "idle.png");
+        foreach (var name in new[] { "Companion", "Nimbus", "Ember" })
+        {
+            var character = Path.Combine(installation, "Assets", "Characters", name);
+            Directory.CreateDirectory(character);
+            File.Copy(png, Path.Combine(character, "idle.png"));
+            File.WriteAllText(Path.Combine(character, "character.json"), "{\"name\":\"" + name + "\",\"anchor\":{\"x\":64,\"y\":122},\"frames\":{\"idle\":[\"idle.png\"]}}");
+        }
+        Directory.CreateDirectory(Path.Combine(installation, "Hooks"));
+        var hook = Path.Combine(installation, "Hooks", "assistant-stop-hook.ps1");
+        File.WriteAllText(hook, "fixture hook; never executed");
+        var before = Directory.GetFiles(root, "*", SearchOption.AllDirectories).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var good = InstallationCheck.Inspect(installation);
+        Check(good.ResourcesValid && good.CharacterCount == 3 && good.ValidatedCharacters == 3 && good.HasOriginalCollection && good.HasHookBridge,
+            "Valid installation failed the read-only check");
+        Check(before.SetEquals(Directory.GetFiles(root, "*", SearchOption.AllDirectories)) && !good.ToJson().Contains(installation), "Installation check wrote files or exposed local paths");
+        File.WriteAllText(Path.Combine(installation, "Assets", "Characters", "Nimbus", "idle.png"), "corrupt PNG");
+        var broken = InstallationCheck.Inspect(installation);
+        Check(!broken.ResourcesValid && broken.ValidatedCharacters == 2 && broken.Errors.Contains("InvalidCharacterResources") && !broken.ToJson().Contains("private-installation-canary"),
+            "Corrupt installation was accepted or exposed its path");
+        File.Delete(hook);
+        var missing = InstallationCheck.Inspect(installation);
+        Check(!missing.HasHookBridge && missing.Errors.Contains("MissingOrLinkedHookBridge"), "Missing hook bridge passed installation check");
+        Console.WriteLine("PASS Read-only installation check validates all original resources, detects corrupt PNGs/missing bridge and emits sanitized JSON without creating profile data");
+    }
+    private static void Check(bool condition, string message) { if (!condition) throw new Exception(message); }
+}

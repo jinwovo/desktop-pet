@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.99.0 — release candidate installation checks
+
+- Add `--check-install`: read-only JSON resource validation before normal startup, with exit 0 for valid installation or 2 for invalid resources. Decode every bundled character and check the original collection/hook bridge without opening settings, assistant profiles, inbox or pet windows.
+- Sanitize check results to fixed error codes and counts; include no local paths or raw exception text.
+- Exercise actual extracted executables with isolated profile roots and actual payload install/reinstall/remove fixtures before the stable release. Keep existing synthetic rollback, hook and package suites.
+
 ## 0.90.0 — cancellable character installation
 
 - Report extraction/copy/PNG validation progress and add an installation Cancel button. Propagate cancellation through archive inspection, bounded stream copying, folder staging and image decoding; closing Settings also requests cancellation.

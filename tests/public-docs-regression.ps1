@@ -7,6 +7,7 @@ $documents = @('README.md','README.ko.md','README.zh-CN.md','CONTRIBUTING.md','S
 $documents += 'character-packs\fan-art\POPULAR_ASSETS.md'
 $documents += 'docs\REFERENCE_REVIEW.ko.md'
 $documents += 'docs\NVIDIA_WORK.md'
+$documents += 'docs\RELEASE_1_0.md'
 $checked = 0
 foreach ($relative in $documents) {
     $path = Join-Path $repoRoot $relative

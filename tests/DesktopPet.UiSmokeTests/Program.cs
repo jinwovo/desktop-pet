@@ -304,6 +304,7 @@ internal static class Program
             DiagnosticsUiTests.Run(folder);
             PetRecoveryUiTests.Run(folder);
             ImportCancellationUiTests.Run(folder);
+            InstallationCheckUiTests.Run(folder);
             FullscreenUiTests.Run(folder);
             ArchiveImportUiTests.Run(folder);
             PlatformMonitorUiTests.Run(pet);

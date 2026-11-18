@@ -1,4 +1,4 @@
-name: Draft GitHub release
+name: Verified GitHub release
 
 on:
   push:
@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Version matching the checked-out source (for example 0.90.0)
+        description: Version matching the checked-out source (for example 0.99.0)
         required: true
-        default: "0.90.0"
+        default: "0.99.0"
         type: string
 
 permissions:
@@ -31,7 +31,7 @@ jobs:
         with:
           name: DesktopPet-public-windows
           path: release-files
-      - name: Validate version and create a reviewable draft
+      - name: Validate assets and create release draft
         env:
           RELEASE_VERSION: ${{ inputs.version || github.ref_name }}
           GH_TOKEN: ${{ github.token }}
@@ -54,14 +54,34 @@ jobs:
           $notes = @"
           Windows 10/11 x64 portable release. Extract the entire ZIP and run DesktopPet.App.exe.
 
-          Includes Companion, Nimbus and Ember, a searchable character gallery, local AI completion hooks, a focus timer and quiet notification controls.
+          Includes Companion, Nimbus and Ember, a searchable ZIP-import gallery, local AI completion hooks, configurable focus sessions and quiet hours.
+          Korean/English/Simplified Chinese primary settings, reduced motion and frame caps, portable preferences, private diagnostic preview and monitor recovery are included.
           The optional pack adds Chiikawa, Baikinman, Hello Kitty, Pompompurin, Cinnamoroll and Kuromi.
           This package includes the .NET runtime. See README.md, README.ko.md and README.zh-CN.md for setup.
           Optional third-party fan-art packs are separate downloads; see their included NOTICE. The project MIT license does not grant third-party character rights.
           Codex hooks still require your trust review; DesktopPet does not approve hooks on your behalf.
+          Read-only installation check: DesktopPet.App.exe --check-install
+          Development API credentials are not bundled or required. Physical mixed-DPI and clean-PC validation remain manual follow-up items.
 
           SHA256: $expected
           "@
           [IO.File]::WriteAllText((Join-Path $env:RUNNER_TEMP 'desktop-pet-release-notes.md'), $notes)
-          gh release create ("v" + $env:RELEASE_VERSION) @releaseFiles --draft --title ("DesktopPet " + $env:RELEASE_VERSION) --target $env:GITHUB_SHA --notes-file (Join-Path $env:RUNNER_TEMP 'desktop-pet-release-notes.md')
+          gh release create ("v" + $env:RELEASE_VERSION) @releaseFiles --draft --verify-tag --title ("DesktopPet " + $env:RELEASE_VERSION) --target $env:GITHUB_SHA --notes-file (Join-Path $env:RUNNER_TEMP 'desktop-pet-release-notes.md')
           if ($LASTEXITCODE -ne 0) { throw 'Draft release creation failed; existing releases are never replaced automatically' }
+      - name: Publish approved stable 1.0.0 after all checks
+        if: github.event_name == 'push' && github.ref == 'refs/tags/v1.0.0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          [xml]$project = Get-Content src/DesktopPet.App/DesktopPet.App.csproj
+          if ($project.Project.PropertyGroup.Version -ne '1.0.0') { throw 'Stable publication requires verified 1.0.0 source' }
+          $release = gh api "repos/$env:GITHUB_REPOSITORY/releases/tags/v1.0.0" | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or -not $release.draft -or $release.tag_name -ne 'v1.0.0') { throw 'Expected a newly created 1.0.0 draft' }
+          $expected = @('DesktopPet-1.0.0-win-x64.zip','DesktopPet-1.0.0-win-x64.zip.sha256','DesktopPet-1.0.0-fan-art-packs.zip','DesktopPet-1.0.0-fan-art-packs.zip.sha256')
+          if (@($release.assets).Count -ne 4 -or @($release.assets | Where-Object { $_.name -notin $expected -or $_.size -le 0 }).Count -gt 0) { throw 'Stable release assets are incomplete' }
+          gh release edit v1.0.0 --draft=false --latest --verify-tag
+          if ($LASTEXITCODE -ne 0) { throw 'Stable publication failed; no existing release was replaced' }
+          $published = gh api "repos/$env:GITHUB_REPOSITORY/releases/tags/v1.0.0" | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or $published.draft -or $published.prerelease) { throw 'Stable publication could not be verified' }
+          Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value ("Published verified DesktopPet 1.0.0: " + $published.html_url)

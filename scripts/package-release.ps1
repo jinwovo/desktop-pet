@@ -5,11 +5,11 @@
     A release contains the original Companion, Nimbus and Ember characters. Personal development character
     assets are excluded. A failed self-contained restore never silently becomes framework-dependent.
 .EXAMPLE
-    .\scripts\package-release.ps1 -Version 0.90.0
-    .\scripts\package-release.ps1 -Version 0.90.0 -FrameworkDependent
+    .\scripts\package-release.ps1 -Version 0.99.0
+    .\scripts\package-release.ps1 -Version 0.99.0 -FrameworkDependent
 #>
 param(
-    [string]$Version = '0.90.0',
+    [string]$Version = '0.99.0',
     [string]$OutputDirectory,
     [switch]$FrameworkDependent
 )

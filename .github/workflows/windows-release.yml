@@ -145,6 +145,8 @@ jobs:
           Test-DesktopPetReleasePayload -Directory $smokeRoot -ExpectedVersion $env:DESKTOPPET_RELEASE_VERSION -ExpectedDeployment "self-contained-single-file"
           $process = Start-Process -FilePath (Join-Path $smokeRoot "DesktopPet.App.exe") -ArgumentList "--version" -WindowStyle Hidden -Wait -PassThru
           if ($process.ExitCode -ne 0) { throw "Packaged startup failed" }
+          powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File tests/installation-check-regression.ps1 -ApplicationPath (Join-Path $smokeRoot 'DesktopPet.App.exe')
+          if ($LASTEXITCODE -ne 0) { throw 'Actual release installation checks failed' }
       - uses: actions/upload-artifact@v4
         with:
           name: DesktopPet-public-windows

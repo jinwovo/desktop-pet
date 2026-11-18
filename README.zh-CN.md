@@ -118,6 +118,8 @@ ZIP 支持根目录、嵌套角色文件夹或多个角色文件夹。单张图�
 
 ## 本地存储与隐私
 
+使用 `DesktopPet.App.exe --check-install` 可只读检查资源。角色及钩子桥接资源有效时返回 JSON 和退出码 0，无效时返回 2；不会显示宠物、注册钩子或加载用户偏好。下载文件的完整性仍需另行比较 SHA256。
+
 通知与专注计时器在本机运行。程序不上传聊天内容，也不提供云端同步。
 
 | 数据 | 位置 |
@@ -160,7 +162,7 @@ powershell -NoProfile -File tests/package-regression.ps1
 构建公开 Windows x64 包：
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 0.90.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 0.99.0
 ```
 
 输出位于 `artifacts/releases/`，包含 self-contained ZIP 与 SHA256 文件。缺少运行时包时构建会失败，不会静默切换为其他部署方式。[Windows 工作流](.github/workflows/windows-release.yml)配置了测试与构建产物；存在该文件不等于远程构建已通过或版本已经发布。

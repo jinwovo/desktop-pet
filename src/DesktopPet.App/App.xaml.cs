@@ -22,6 +22,13 @@ public partial class App : System.Windows.Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        if (e.Args.Contains("--check-install", StringComparer.Ordinal))
+        {
+            var result = InstallationCheck.Inspect(AppContext.BaseDirectory);
+            Console.WriteLine(result.ToJson());
+            Shutdown(result.ResourcesValid ? 0 : 2);
+            return;
+        }
         if (e.Args.Contains("--disconnect-assistants", StringComparer.Ordinal))
         {
             try
@@ -54,7 +61,7 @@ public partial class App : System.Windows.Application
         }
         if (e.Args.Contains("--version", StringComparer.Ordinal))
         {
-            Console.WriteLine(typeof(App).Assembly.GetName().Version?.ToString() ?? "0.90.0");
+            Console.WriteLine(typeof(App).Assembly.GetName().Version?.ToString() ?? "0.99.0");
             Shutdown();
             return;
         }
