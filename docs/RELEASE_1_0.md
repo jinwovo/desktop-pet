@@ -26,6 +26,8 @@ The [verified release workflow](../.github/workflows/draft-release.yml) first ru
 
 At the project owner's explicit request to distribute 1.0.0, only a pushed **`v1.0.0`** tag enables the stable publication step. It validates the matching source version and all four draft assets, publishes the draft as Latest, and verifies its public state. Other tags remain drafts. Manual workflow runs require an existing matching remote tag.
 
+If publication fails after draft creation, the [one-time recovery workflow](../.github/workflows/publish-1.0.0.yml) preserves the immutable application tag and all assets. It checks the exact 1.0.0 commit's successful Windows jobs, locates the draft through the authenticated releases list, downloads and verifies both ZIP/checksum pairs, then publishes that existing release by ID. Repeating it never recreates or overwrites a release or tag.
+
 ## Limits and follow-up
 
 Automated fixtures are not a physical clean-PC or mixed-DPI monitor test. Those remain manual follow-up. No hardware-independent FPS, signing certificate, automatic update service, macOS/Linux or native ARM64 package is claimed. Runtime use needs no NVIDIA API key. Diagnostic reports do not include usernames, computer names, file paths, character identity, chat bodies, hook configuration or credentials.

@@ -71,6 +71,8 @@ jobs:
         run: |
           powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File tests/package-regression.ps1
           if ($LASTEXITCODE -ne 0) { throw 'Release package regression checks failed' }
+          powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File tests/stable-publication-regression.ps1
+          if ($LASTEXITCODE -ne 0) { throw 'Stable publication guard checks failed' }
       - name: Installer regression checks
         run: |
           powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File tests/install-regression.ps1

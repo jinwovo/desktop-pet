@@ -76,7 +76,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           [xml]$project = Get-Content src/DesktopPet.App/DesktopPet.App.csproj
           if ($project.Project.PropertyGroup.Version -ne '1.0.0') { throw 'Stable publication requires verified 1.0.0 source' }
-          $release = gh api "repos/$env:GITHUB_REPOSITORY/releases/tags/v1.0.0" | ConvertFrom-Json
+          $release = gh api "repos/$env:GITHUB_REPOSITORY/releases?per_page=100" | ConvertFrom-Json | Where-Object tag_name -eq 'v1.0.0'
           if ($LASTEXITCODE -ne 0 -or -not $release.draft -or $release.tag_name -ne 'v1.0.0') { throw 'Expected a newly created 1.0.0 draft' }
           $expected = @('DesktopPet-1.0.0-win-x64.zip','DesktopPet-1.0.0-win-x64.zip.sha256','DesktopPet-1.0.0-fan-art-packs.zip','DesktopPet-1.0.0-fan-art-packs.zip.sha256')
           if (@($release.assets).Count -ne 4 -or @($release.assets | Where-Object { $_.name -notin $expected -or $_.size -le 0 }).Count -gt 0) { throw 'Stable release assets are incomplete' }

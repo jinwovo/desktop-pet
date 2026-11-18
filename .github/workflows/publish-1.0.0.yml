@@ -1,0 +1,24 @@
+name: Publish verified 1.0.0 draft
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish-1.0.0.yml'
+      - 'scripts/publish-existing-1.0.0.ps1'
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+jobs:
+  publish-existing:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Verify exact tag, completed checks and existing assets before publication
+        shell: powershell
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./scripts/publish-existing-1.0.0.ps1
