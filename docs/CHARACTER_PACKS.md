@@ -52,7 +52,7 @@ The nine bundled/personal presets are recorded in [Assets/CharacterBehaviors.jso
 
 ## Optional continuous walking rig
 
-From 1.0.1 the renderer clips each existing body texture into overlapping head/torso regions and moves those regions with small rigid rotations. Authors still provide the same six PNGs; no new manifest fields or extra raster frames are required. Both feet retain distance-based contact and rotate only while airborne. Side/quarter-view changes use premultiplied pixel interpolation, with three reusable scratch bitmaps allocated per active rig. At 128×128, source copies, changed-pixel indexes and scratch pixel storage add roughly 1 MiB before WPF object overhead. Buffers update only when the quantized view blend changes; steady endpoint views use the original frozen textures. Reduced motion disables this blending and secondary articulation. Legacy packs without a rig keep their existing frame animation.
+From 1.0.1 the renderer clips each existing body texture into overlapping head/torso regions and moves those regions with small rigid rotations. Authors still provide the same six PNGs; no new manifest fields or extra raster frames are required. Both feet retain distance-based contact and rotate only while airborne. Side/quarter-view changes use premultiplied pixel interpolation, with three reusable scratch bitmaps allocated per active rig. At 128×128, source copies, changed-pixel indexes and scratch pixel storage add roughly 1.5 MiB before WPF object overhead in 1.0.2. Buffers update only when the quantized view blend changes; steady endpoint views use the original frozen textures. Reduced motion disables this blending and secondary articulation. Legacy packs without a rig keep their existing frame animation.
 
 The bundled public characters are complete examples. In addition to their fallback gait arrays they declare:
 
@@ -94,3 +94,7 @@ powershell -NoProfile -File tests/public-characters-regression.ps1
 ```
 
 Original atlases and design records are in [Public asset provenance](PUBLIC_ASSET_PROVENANCE.md). Public contributions must include suitable provenance and distribution permission; see [CONTRIBUTING.md](../CONTRIBUTING.md#character-packs).
+
+From 1.0.2, upper-body facing transitions additionally reuse four derived body images (two reflected views and a frontal pivot in both orientations) over 120 ms. Feet reflect immediately with the reversed distance phase to preserve contact. Side/quarter blends finish in 100 ms; neither transition leaves an exponential tail. The curated rigs lift feet by 3 pixels, while their unchanged raster fallback/audit bank retains its authored 4-pixel lift. Custom pack speeds and lift values remain author-controlled.
+
+The frontal pivot comes from the first cached idle frame, cropped below the lowest occupied row of the rig body layers to exclude feet. It is used only during a facing reversal; ordinary walking never glances front. A pivot does not change the distance-based feet or the rest blend weight. Mid-turn pixel tests verify a single face and no pixels below the rig body cutoff.

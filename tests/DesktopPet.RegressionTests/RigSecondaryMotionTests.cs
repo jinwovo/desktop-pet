@@ -35,6 +35,28 @@ public static class RigSecondaryMotionTests
                 Check(blend.Update(WalkView.Side, 0, true) == 0, "Reduced motion still blended");
             }
         });
+        yield return ("View and facing changes finish within a fixed budget without retarget jumps or easing tails", () =>
+        {
+            foreach (var hz in new[] { 30, 60, 120, 144 })
+            {
+                var view = new RigViewBlend(); var facing = new RigFacingBlend();
+                view.Update(WalkView.Side, 0); facing.Update(true, 0);
+                var elapsed = 0d;
+                while (elapsed < 0.06 - 1e-12)
+                {
+                    var dt = Math.Min(1d / hz, 0.06 - elapsed); elapsed += dt;
+                    view.Update(WalkView.Turn, dt); facing.Update(false, dt);
+                }
+                Check(Math.Abs(view.TurnWeight - 0.648) < 1e-10 && Math.Abs(facing.RightWeight - 0.5) < 1e-10,
+                    "Refresh rate changed transition timing");
+                var previous = facing.RightWeight;
+                Check(facing.Update(true, 0) == previous && facing.Update(true, double.NaN) == previous,
+                    "A rapid retarget or invalid delta jumped the body");
+                Check(facing.Update(true, 0.12) == 1 && view.Update(WalkView.Turn, 0.04) == 1,
+                    "A transition retained a slow easing tail");
+                Check(facing.Update(false, 0, true) == 0, "Reduced motion retained a facing blend");
+            }
+        });
         yield return ("Settling presents its exact final blend before the rest-frame handoff at every refresh rate", () =>
         {
             foreach (var hz in new[] { 4, 30, 60, 120, 144 })

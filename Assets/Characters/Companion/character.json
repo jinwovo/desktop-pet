@@ -19,7 +19,7 @@
                    "y":  122,
                    "x":  64
                },
-    "walkSpeedPxPerSec":  45,
+    "walkSpeedPxPerSec":  54,
     "frameIntervalMs":  100,
     "frames":  {
                    "idle":  [
@@ -321,7 +321,7 @@
                                  "body":  "rig_side_body.png",
                                  "farFoot":  "rig_side_far.png"
                              },
-                    "footLiftPx":  4
+                    "footLiftPx":  3
                 },
     "groundedWalk":  {
                          "settleLevels":  2,

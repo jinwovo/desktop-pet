@@ -24,12 +24,14 @@ internal static class GroundedRigVisualRegressionTests
             VerifyActualContacts(presentation);
             VerifyContinuousSettling(presentation);
             VerifyLayeredTransitions(presentation);
+            VerifyReversal(presentation);
             benchmark ??= presentation;
             verified++;
         }
         Check(verified > 0 && benchmark is not null, "No live rig was available for actual drawing tests");
         Console.WriteLine($"PASS Actual live-rig drawing transforms keep planted feet fixed through sub-frame phases, scaling and native pixel placement for {verified} characters");
         Console.WriteLine($"PASS Actual live-rig settling lowers raised feet continuously without moving either contact anchor for {verified} characters");
+        Console.WriteLine($"PASS Actual upper-body reversals blend without a one-frame mirror jump while contact feet stay fixed for {verified} characters");
         VerifyPixelPlacement();
         VerifyRetainedDrawingUpdates(benchmark!, capture);
         VerifyCachedUpdates(benchmark!);
@@ -157,7 +159,7 @@ internal static class GroundedRigVisualRegressionTests
         Check(cached.Length == after.Length && cached.Zip(after).All(pair => ReferenceEquals(pair.First, pair.Second)), "Pose updates replaced retained drawing nodes");
         Check(visual.TextureCount == 6 && visual.PoseUpdateCount == updates + 2000, "Pose updates recreated textures or lost update accounting");
         Check(allocated < updates * 2048L, "Cached pose updates allocated more than 2 KiB per update");
-        Console.WriteLine($"PASS Layered live rig retains five drawing nodes, six source rig textures and three reusable blend buffers: {updates} warmed pose updates allocated {allocated:N0} bytes ({allocated / (double)updates:0.##} B/update), loop {milliseconds:0.##}ms; render-thread/GPU cost not measured");
+        Console.WriteLine($"PASS Layered live rig retains five drawing nodes, six source rig textures, four derived body images and three reusable blend buffers: {updates} warmed pose updates allocated {allocated:N0} bytes ({allocated / (double)updates:0.##} B/update), loop {milliseconds:0.##}ms; render-thread/GPU cost not measured");
         visual.SetPresentation(null);
         Check(!visual.HasRig && visual.TextureCount == 0 && !visual.UpdatePose(WalkView.Side, 0, 0, true), "Clearing a presentation retained an active rig");
         foreach (var drawing in cached.OfType<ImageDrawing>())
@@ -208,6 +210,60 @@ internal static class GroundedRigVisualRegressionTests
         Near(visual.HeadMatrix.M12, 0, 1e-12, "Reduced motion retained secondary head rotation");
         Near(visual.NearFootMatrix.M12, 0, 1e-12, "Reduced motion retained toe roll");
         Check(visual.TurnWeight == 0 && visual.RestWeight == 0 && !actualRest.AsSpan().SequenceEqual(Pixels(Render(visual))), "Reduced motion did not suppress blends");
+        visual.SetPresentation(null); target.SetPresentation(null);
+    }
+
+    private static void VerifyReversal(CharacterPresentation presentation)
+    {
+        var visual = Visual(presentation, 2);
+        const double phase = 0.2;
+        var reversed = GroundedGait.ReversePhase(phase);
+        visual.UpdatePose(WalkView.Side, phase, 0, true, 0);
+        var before = Pixels(Render(visual));
+        var anchor = new Point(presentation.Definition.FrameWidth / 2d, presentation.Definition.AnchorY);
+        var contact = visual.DisplayMatrix.Transform(visual.NearFootMatrix.Transform(anchor));
+        var target = Visual(presentation, 2);
+        target.UpdatePose(WalkView.Side, reversed, 0, false, 0);
+        var targetPixels = Pixels(Render(target));
+        var upperBytes = (int)(visual.Height * 0.65) * (int)visual.Width * 4;
+        long Difference(byte[] a, byte[] b) { long sum = 0; for (var i = 0; i < upperBytes; i++) sum += Math.Abs(a[i] - b[i]); return sum; }
+        var instant = Difference(before, targetPixels);
+        Check(instant > 0, "Reversal fixture is fully symmetrical");
+        visual.UpdatePose(WalkView.Side, reversed, 0, false, 0);
+        Check(Difference(before, Pixels(Render(visual))) < instant * 0.3,
+            "Changing direction still mirrored the upper body in a single frame: " + presentation.Definition.Name);
+        var after = visual.DisplayMatrix.Transform(visual.NearFootMatrix.Transform(anchor));
+        Near(after.X, contact.X, 1e-8, "Upper-body blending dragged a planted foot during reversal");
+        Near(after.Y, contact.Y, 1e-8, "Upper-body blending lifted a planted foot during reversal");
+        visual.UpdatePose(WalkView.Side, reversed, 0, false, 1d / 60);
+        Check(visual.FacingRightWeight is > 0 and < 1 && Difference(before, Pixels(Render(visual))) < instant * 0.7,
+            "The first timed reversal frame still snapped to its target");
+        visual.UpdatePose(WalkView.Side, reversed, 0, false, 0.06 - 1d / 60);
+        Near(visual.FacingRightWeight, 0.5, 1e-12, "Facing midpoint missed its pivot");
+        var root = (DrawingGroup)typeof(GroundedRigVisual).GetField("_drawing", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(visual)!;
+        var pivotSource = (BitmapSource)Drawings(root).OfType<ImageDrawing>().ElementAt(2).ImageSource;
+        var pivot = Pixels(pivotSource);
+        var idle = presentation.Frames[presentation.Definition.GetFrames(PetState.Idle)[0]];
+        var front = Pixels(new FormatConvertedBitmap(idle, PixelFormats.Pbgra32, null, 0));
+        var w = pivotSource.PixelWidth;
+        for (var y = 0; y < pivotSource.PixelHeight * 0.55; y++)
+        for (var x = 0; x < w; x++)
+        for (var c = 0; c < 4; c++)
+            Check(pivot[(y * w + x) * 4 + c] == front[(y * w + w - x - 1) * 4 + c],
+                "Mid-turn superimposed two faces instead of using a single frontal pivot");
+        var lastBodyRow = -1;
+        foreach (var path in new[] { presentation.Definition.WalkRig!.Side.BodyPath, presentation.Definition.WalkRig.Turn.BodyPath })
+        {
+            var bytes = Pixels(new FormatConvertedBitmap(presentation.Frames[path], PixelFormats.Pbgra32, null, 0));
+            for (var i = 3; i < bytes.Length; i += 4) if (bytes[i] > 0) lastBodyRow = Math.Max(lastBodyRow, i / 4 / w);
+        }
+        for (var i = (lastBodyRow + 1) * w * 4 + 3; i < pivot.Length; i += 4)
+            Check(pivot[i] == 0, "The upper-body pivot introduced a duplicate pair of feet");
+        visual.UpdatePose(WalkView.Side, reversed, 0, false, 0.12);
+        Check(visual.FacingRightWeight == 0 && Pixels(Render(visual)).AsSpan().SequenceEqual(targetPixels),
+            "Facing interpolation left a slow-motion tail or stale mirrored texture");
+        visual.UpdatePose(WalkView.Side, phase, 0, true, 0, reducedMotion: true);
+        Check(visual.FacingRightWeight == 1, "Reduced motion did not opt out of reversal blending");
         visual.SetPresentation(null); target.SetPresentation(null);
     }
 
@@ -269,20 +325,30 @@ internal static class GroundedRigVisualRegressionTests
         // Actual WPF frames at 50 Hz; translation and gait use the same travelled distance.
         var visual = Visual(presentation, 2);
         var encoder = new GifBitmapEncoder();
-        var phase = 0d;
+        var appearance = new WalkAppearanceController();
         var x = 12d;
-        const int walkingFrames = 90;
-        for (var i = 0; i < 125; i++)
+        const int walkingFrames = 110;
+        for (var i = 0; i < 145; i++)
         {
             var walking = i < walkingFrames;
-            if (walking) { x += 1.6; phase += 0.8 / presentation.Definition.WalkCycleDistancePx!.Value; }
-            var settle = walking ? 0 : Math.Min(1, (i - walkingFrames + 1) / 9d);
-            visual.UpdatePose(i < 35 ? WalkView.Side : WalkView.Turn, phase, settle, true, 0.02);
+            var right = i < 60;
+            var speed = presentation.Definition.WalkSpeedPxPerSec;
+            var distance = walking ? (right ? 1 : -1) * speed * 0.02 : 0;
+            x += distance * 2;
+            appearance.Update(walking ? PetState.Walk : PetState.Idle, right, walking ? (right ? speed : -speed) : 0,
+                speed, 0.02, distanceDeltaPx: distance, walkCycleDistancePx: presentation.Definition.WalkCycleDistancePx);
+            visual.UpdatePose(appearance.View, appearance.GaitPhase, walking ? 0 : appearance.SettleProgress, appearance.FacingRight, 0.02);
+            if (i is 59 or 62 or 66)
+            {
+                var png = new PngBitmapEncoder(); png.Frames.Add(BitmapFrame.Create(Render(visual)));
+                using var preview = File.Create(Path.Combine(AppContext.BaseDirectory, $"reversal-frame-{i}.png"));
+                png.Save(preview);
+            }
             var frame = new DrawingVisual();
             using (var context = frame.RenderOpen())
             {
                 context.DrawRectangle(Brushes.WhiteSmoke, null, new Rect(0, 0, 440, 292));
-                context.DrawText(new FormattedText("Actual WPF: layered walk / turn / stop", System.Globalization.CultureInfo.InvariantCulture,
+                context.DrawText(new FormattedText("Actual WPF: walk / reverse / stop", System.Globalization.CultureInfo.InvariantCulture,
                     FlowDirection.LeftToRight, new Typeface("Segoe UI"), 14, Brushes.DarkSlateGray, 1), new Point(12, 8));
                 context.DrawImage(Render(visual), new Rect(x, 30, visual.Width, visual.Height));
             }

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.2 — brisker gait and bounded turns
+
+- Ease upper-body facing changes over 120 ms through a cached, footless frontal pivot instead of mirroring the whole character in one frame or superimposing opposite faces. Keep immediate distance-based foot reflection and ground contact; normal walking remains side/quarter-view. Derive pivot/reflected body images once and reuse the existing premultiplied blend buffer.
+- Finish side/quarter-view interpolation in 100 ms rather than carrying an exponential tail. Retarget from the current pose, preserve refresh-rate independence and honor reduced motion.
+- Raise the nine curated characters' base walking speeds by about 20% and lower live-rig foot lift from 4 to 3 sprite pixels. Keep user speed multipliers, custom packs and fallback PNG cycles intact; update source generators to match the curated tuning.
+- Check actual upper-body reversal pixels and contact anchors for every curated character, fixed transition deadlines and rapid retargets. Include a real WPF walk/reverse/stop capture; desktop smoothness still depends on the display and host workload.
+
 ## 1.0.1 — layered walking transitions
 
 - Separate the cached body artwork into clipped head and torso layers alongside two independent feet. Apply small rigid rotations and head lag; keep planted feet unrotated and remove secondary motion during settling.

@@ -160,7 +160,7 @@ try {
         name = 'Companion'; scale = 1.0; frontFacingRest = $true
         frameSizePx = @{ width = 128; height = 128 }
         anchor = @{ x = 64; y = 122 }
-        walkSpeedPxPerSec = 45
+        walkSpeedPxPerSec = 54
         frameIntervalMs = 100
         frames = [ordered]@{
             idle = @('idle.png', 'blink.png', 'idle.png', 'blink.png')

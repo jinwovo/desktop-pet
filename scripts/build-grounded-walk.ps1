@@ -101,7 +101,7 @@ foreach ($profile in $profiles) {
         $metadata.frames|Add-Member -NotePropertyName walkSettleTurn -NotePropertyValue $settleTurn -Force
         $metadata|Add-Member -NotePropertyName walkCycleDistancePx -NotePropertyValue $profile.Distance -Force
         $metadata|Add-Member -NotePropertyName walkRig -NotePropertyValue @{
-            version=1;footLiftPx=4
+            version=1;footLiftPx=3
             side=@{body='rig_side_body.png';nearFoot='rig_side_near.png';farFoot='rig_side_far.png'}
             turn=@{body='rig_turn_body.png';nearFoot='rig_turn_near.png';farFoot='rig_turn_far.png'}
         } -Force

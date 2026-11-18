@@ -107,7 +107,7 @@ foreach ($profile in $profiles) {
         $manifest=[ordered]@{
             name=$profile.Name; scale=1.0; frontFacingRest=$true
             frameSizePx=@{width=128;height=128}; anchor=@{x=64;y=122}
-            walkSpeedPxPerSec=42; frameIntervalMs=110
+            walkSpeedPxPerSec=50; frameIntervalMs=110
             frames=[ordered]@{
                 idle=@('idle.png','blink.png','idle.png','blink.png')
                 walk=$walk; walkTurn=$turn; walkFront=@('idle.png')*8

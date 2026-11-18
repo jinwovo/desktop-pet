@@ -74,9 +74,9 @@ public static class PopularFrameRenderer
 '@
 Add-Type -ReferencedAssemblies System.Drawing -TypeDefinition ([IO.File]::ReadAllText((Join-Path $PSScriptRoot 'GroundedWalkBuilder.cs'))+$popularRenderer)
 $profiles = @(
-    @{ Id='Pompompurin'; Name='폼폼푸린'; File='popular-pompompurin-v1.png'; Distance=25.0; Speed=40; EyeLeft=49.0; EyeRight=79.0; EyeY=57.0 },
-    @{ Id='Cinnamoroll'; Name='시나모롤'; File='popular-cinnamoroll-v1.png'; Distance=24.0; Speed=42; EyeLeft=47.0; EyeRight=83.0; EyeY=67.0 },
-    @{ Id='Kuromi'; Name='쿠로미'; File='popular-kuromi-v1.png'; Distance=23.0; Speed=44; EyeLeft=50.0; EyeRight=78.0; EyeY=74.0 }
+    @{ Id='Pompompurin'; Name='폼폼푸린'; File='popular-pompompurin-v1.png'; Distance=25.0; Speed=48; EyeLeft=49.0; EyeRight=79.0; EyeY=57.0 },
+    @{ Id='Cinnamoroll'; Name='시나모롤'; File='popular-cinnamoroll-v1.png'; Distance=24.0; Speed=50; EyeLeft=47.0; EyeRight=83.0; EyeY=67.0 },
+    @{ Id='Kuromi'; Name='쿠로미'; File='popular-kuromi-v1.png'; Distance=23.0; Speed=53; EyeLeft=50.0; EyeRight=78.0; EyeY=74.0 }
 ) | Where-Object { $Character -eq 'All' -or $_.Id -eq $Character }
 function Get-PopularRowEdges($Sheet) {
     # These masters were authored as equal 3x3 cells. Explicit thirds keep small
@@ -168,7 +168,7 @@ foreach ($profile in $profiles) {
             frameDurationsMs=@{idle=@(4200,120,3300,110)}
             eyePositionsPx=@{left=@{x=$profile.EyeLeft;y=$profile.EyeY};right=@{x=$profile.EyeRight;y=$profile.EyeY}}
             walkCycleDistancePx=$profile.Distance
-            walkRig=@{version=1;footLiftPx=4;side=@{body='rig_side_body.png';nearFoot='rig_side_near.png';farFoot='rig_side_far.png'};turn=@{body='rig_turn_body.png';nearFoot='rig_turn_near.png';farFoot='rig_turn_far.png'}}
+            walkRig=@{version=1;footLiftPx=3;side=@{body='rig_side_body.png';nearFoot='rig_side_near.png';farFoot='rig_side_far.png'};turn=@{body='rig_turn_body.png';nearFoot='rig_turn_near.png';farFoot='rig_turn_far.png'}}
             groundedWalk=@{version=1;frameCount=32;stanceFraction=0.6;footLiftPx=4;settleLevels=2;bodyHeightPx=90;hipY=112;contactY=122;contacts=$audit}
         }
         Set-DesktopPetCharacterBehavior -Definition $metadata -Name $profile.Name

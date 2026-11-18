@@ -25,19 +25,42 @@ public static class RigSecondaryMotion
     }
 }
 
-/// <summary>Exponential view blending supports rapid retargets without swapping raster banks.</summary>
+/// <summary>Short, bounded transitions finish exactly instead of leaving an exponential tail.</summary>
 public sealed class RigViewBlend
 {
-    private bool _initialized;
-    public double TurnWeight { get; private set; }
-    public void Reset() { _initialized = false; TurnWeight = 0; }
+    private readonly BoundedPoseBlend _blend = new(0.1);
+    public double TurnWeight => _blend.Value;
+    public void Reset() => _blend.Reset();
     public double Update(WalkView view, double elapsedSeconds, bool reducedMotion = false)
+        => _blend.Update(view == WalkView.Turn ? 1 : 0, elapsedSeconds, reducedMotion);
+}
+
+/// <summary>Only the upper-body artwork eases across a reversal; contact feet reverse immediately.</summary>
+public sealed class RigFacingBlend
+{
+    private readonly BoundedPoseBlend _blend = new(0.12);
+    public double RightWeight => _blend.Value;
+    public void Reset() => _blend.Reset();
+    public double Update(bool facingRight, double elapsedSeconds, bool reducedMotion = false)
+        => _blend.Update(facingRight ? 1 : 0, elapsedSeconds, reducedMotion);
+}
+
+internal sealed class BoundedPoseBlend(double duration)
+{
+    private bool _initialized;
+    private double _target, _from, _elapsed;
+    public double Value { get; private set; }
+    public void Reset() { _initialized = false; Value = 0; }
+    public double Update(double target, double elapsedSeconds, bool immediate)
     {
-        var target = view == WalkView.Turn ? 1d : 0d;
-        if (!_initialized || reducedMotion) { _initialized = true; return TurnWeight = target; }
+        if (!_initialized || immediate)
+        {
+            _initialized = true; _target = _from = Value = target; _elapsed = duration; return Value;
+        }
+        if (_target != target) { _target = target; _from = Value; _elapsed = 0; }
         var dt = double.IsFinite(elapsedSeconds) ? Math.Clamp(elapsedSeconds, 0, 0.25) : 0;
-        TurnWeight += (target - TurnWeight) * (1 - Math.Exp(-dt / 0.055));
-        if (Math.Abs(TurnWeight - target) < 0.00001) TurnWeight = target;
-        return TurnWeight;
+        _elapsed = Math.Min(duration, _elapsed + dt);
+        var t = _elapsed / duration;
+        return Value = _from + (_target - _from) * t * t * (3 - 2 * t);
     }
 }

@@ -14,6 +14,7 @@ public sealed class GroundedRigVisual : FrameworkElement
     private readonly ViewLayers _layers;
     private RigTextureBlend? _bodyBlend, _nearBlend, _farBlend;
     private readonly RigViewBlend _viewBlend = new();
+    private readonly RigFacingBlend _facingBlend = new();
     private CharacterPresentation? _presentation;
     private WalkRigDefinition? _rig;
     private bool _facingRight = true, _unmirroredRest = true;
@@ -61,13 +62,14 @@ public sealed class GroundedRigVisual : FrameworkElement
     public Matrix HeadMatrix => _headTransform.Matrix;
     public Matrix DisplayMatrix => _displayTransform.Matrix;
     public double TurnWeight => _viewBlend.TurnWeight;
+    public double FacingRightWeight => _facingBlend.RightWeight;
     public double RestWeight { get; private set; }
 
     public void SetPresentation(CharacterPresentation? presentation)
     {
         if (ReferenceEquals(_presentation, presentation)) return;
         _presentation = presentation; _rig = presentation?.Definition.WalkRig;
-        PoseUpdateCount = 0; Pose = default; _viewBlend.Reset(); RestWeight = 0;
+        PoseUpdateCount = 0; Pose = default; _viewBlend.Reset(); _facingBlend.Reset(); RestWeight = 0;
         _layers.Clear(); _restDrawing.ImageSource = null;
         _bodyBlend = _nearBlend = _farBlend = null;
         if (_rig is not null && presentation is not null)
@@ -76,7 +78,8 @@ public sealed class GroundedRigVisual : FrameworkElement
             var rect = new Rect(0, 0, definition.FrameWidth, definition.FrameHeight);
             var split = SplitY(definition);
             _layers.Load(rect, split);
-            _bodyBlend = new(presentation.Frames[_rig.Side.BodyPath], presentation.Frames[_rig.Turn.BodyPath]);
+            _bodyBlend = new(presentation.Frames[_rig.Side.BodyPath], presentation.Frames[_rig.Turn.BodyPath],
+                presentation.Frames[definition.GetFrames(PetState.Idle)[0]]);
             _nearBlend = new(presentation.Frames[_rig.Side.NearFootPath], presentation.Frames[_rig.Turn.NearFootPath]);
             _farBlend = new(presentation.Frames[_rig.Side.FarFootPath], presentation.Frames[_rig.Turn.FarFootPath]);
             _restDrawing.Rect = rect;
@@ -99,7 +102,9 @@ public sealed class GroundedRigVisual : FrameworkElement
     {
         if (_rig is null || _presentation?.Definition.WalkCycleDistancePx is not { } distance) return false;
         var turn = _viewBlend.Update(view, elapsedSeconds, reducedMotion);
-        var bodySource = _bodyBlend!.At(turn); var nearSource = _nearBlend!.At(turn); var farSource = _farBlend!.At(turn);
+        var right = _facingBlend.Update(facingRight, elapsedSeconds, reducedMotion);
+        var bodySource = _bodyBlend!.At(turn, facingRight ? 1 - right : right, pivotMirrored: !facingRight);
+        var nearSource = _nearBlend!.At(turn); var farSource = _farBlend!.At(turn);
         if (!ReferenceEquals(_layers.Head.ImageSource, bodySource)) _layers.Head.ImageSource = _layers.Torso.ImageSource = bodySource;
         if (!ReferenceEquals(_layers.Near.ImageSource, nearSource)) _layers.Near.ImageSource = nearSource;
         if (!ReferenceEquals(_layers.Far.ImageSource, farSource)) _layers.Far.ImageSource = farSource;
