@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.1 — layered walking transitions
+
+- Separate the cached body artwork into clipped head and torso layers alongside two independent feet. Apply small rigid rotations and head lag; keep planted feet unrotated and remove secondary motion during settling.
+- Interpolate side/quarter-view pixels in premultiplied alpha using three reusable buffers, avoiding instant texture swaps and the opacity dip of two translucent view layers. Blend the final settling pose into the next resting frame in the desktop, Settings and motion preview.
+- Preserve existing pack PNGs/manifests, distance-based contact, runtime frame caps and reduced-motion preferences. No additional PNG frames or development API calls are needed at runtime.
+- Add refresh-rate independence, rapid-retarget and actual WPF pixel/contact/rest-convergence checks for all nine curated characters. Capture an actual WPF motion GIF; renderer-loop measurements exclude render-thread/GPU cost and are not desktop FPS guarantees.
+
 ## 1.0.0 — public Windows release
 
 - Ship the verified 0.11–0.99 functional milestones as the first stable runtime-included Windows x64 release, with three original companions and a separate six-character optional fan-art collection.

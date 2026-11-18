@@ -52,6 +52,8 @@ The nine bundled/personal presets are recorded in [Assets/CharacterBehaviors.jso
 
 ## Optional continuous walking rig
 
+From 1.0.1 the renderer clips each existing body texture into overlapping head/torso regions and moves those regions with small rigid rotations. Authors still provide the same six PNGs; no new manifest fields or extra raster frames are required. Both feet retain distance-based contact and rotate only while airborne. Side/quarter-view changes use premultiplied pixel interpolation, with three reusable scratch bitmaps allocated per active rig. At 128×128, source copies, changed-pixel indexes and scratch pixel storage add roughly 1 MiB before WPF object overhead. Buffers update only when the quantized view blend changes; steady endpoint views use the original frozen textures. Reduced motion disables this blending and secondary articulation. Legacy packs without a rig keep their existing frame animation.
+
 The bundled public characters are complete examples. In addition to their fallback gait arrays they declare:
 
 ```json

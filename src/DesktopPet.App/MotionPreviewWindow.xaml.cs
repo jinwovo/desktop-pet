@@ -168,8 +168,13 @@ public partial class MotionPreviewWindow : Window
                 MotionRig.Visibility = Visibility.Visible;
                 _liveRigActive = true;
             }
+            if (_walkAppearance.IsSettling)
+            {
+                var rest = definition.GetFrames(_brain.State);
+                MotionRig.SetRestFrame(_presentation.Frames[definition.GetFramePath(_brain.State, rest, _brain.StateElapsedMs)], definition.UsesFrontalRestFrames(_brain.State));
+            }
             MotionRig.UpdatePose(_walkAppearance.View, _walkAppearance.GaitPhase,
-                _walkAppearance.IsSettling ? _walkAppearance.SettleProgress : 0, _walkAppearance.FacingRight);
+                _walkAppearance.IsSettling ? _walkAppearance.SettleProgress : 0, _walkAppearance.FacingRight, dt, _reducedMotion);
         }
         else
         {

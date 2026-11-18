@@ -23,6 +23,7 @@ internal static class GroundedRigVisualRegressionTests
             Check(presentation.Frames.Values.All(image => image.IsFrozen), name + ": live textures are mutable thread-owned bitmaps");
             VerifyActualContacts(presentation);
             VerifyContinuousSettling(presentation);
+            VerifyLayeredTransitions(presentation);
             benchmark ??= presentation;
             verified++;
         }
@@ -142,10 +143,9 @@ internal static class GroundedRigVisualRegressionTests
     {
         var visual = Visual(presentation);
         for (var i = 0; i < 2000; i++) visual.UpdatePose(i % 2 == 0 ? WalkView.Side : WalkView.Turn, i * 0.001, 0, true);
-        var fields = typeof(GroundedRigVisual).GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
-            .Where(field => field.FieldType == typeof(ImageDrawing) || field.FieldType == typeof(MatrixTransform)).ToArray();
-        var cached = fields.Select(field => field.GetValue(visual)).ToArray();
-        Check(fields.Count(field => field.FieldType == typeof(ImageDrawing)) == 3, "Live visual does not own exactly three reusable image drawings");
+        var root = (DrawingGroup)typeof(GroundedRigVisual).GetField("_drawing", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(visual)!;
+        var cached = Drawings(root).ToArray();
+        Check(cached.Count(drawing => drawing is ImageDrawing) == 5, "Live visual omitted head/torso/feet parts or the resting layer");
         var before = GC.GetAllocatedBytesForCurrentThread();
         var started = Stopwatch.GetTimestamp();
         const int updates = 10000;
@@ -153,14 +153,62 @@ internal static class GroundedRigVisualRegressionTests
             visual.UpdatePose(i / 200 % 2 == 0 ? WalkView.Side : WalkView.Turn, i * 0.00113, 0, i / 1000 % 2 == 0);
         var milliseconds = Stopwatch.GetElapsedTime(started).TotalMilliseconds;
         var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
-        for (var i = 0; i < fields.Length; i++) Check(ReferenceEquals(cached[i], fields[i].GetValue(visual)), "Pose updates replaced a cached drawing or transform object");
+        var after = Drawings(root).ToArray();
+        Check(cached.Length == after.Length && cached.Zip(after).All(pair => ReferenceEquals(pair.First, pair.Second)), "Pose updates replaced retained drawing nodes");
         Check(visual.TextureCount == 6 && visual.PoseUpdateCount == updates + 2000, "Pose updates recreated textures or lost update accounting");
         Check(allocated < updates * 2048L, "Cached pose updates allocated more than 2 KiB per update");
-        Console.WriteLine($"PASS Cached live rig keeps three drawing nodes and six frozen textures: {updates} warmed pose updates allocated {allocated:N0} bytes ({allocated / (double)updates:0.##} B/update), loop {milliseconds:0.##}ms; render-thread/GPU cost not measured");
+        Console.WriteLine($"PASS Layered live rig retains five drawing nodes, six source rig textures and three reusable blend buffers: {updates} warmed pose updates allocated {allocated:N0} bytes ({allocated / (double)updates:0.##} B/update), loop {milliseconds:0.##}ms; render-thread/GPU cost not measured");
         visual.SetPresentation(null);
         Check(!visual.HasRig && visual.TextureCount == 0 && !visual.UpdatePose(WalkView.Side, 0, 0, true), "Clearing a presentation retained an active rig");
-        foreach (var field in fields.Where(field => field.FieldType == typeof(ImageDrawing)))
-            Check(((ImageDrawing)field.GetValue(visual)!).ImageSource is null, "Clearing a presentation retained a decoded foot/body texture");
+        foreach (var drawing in cached.OfType<ImageDrawing>())
+            Check(drawing.ImageSource is null, "Clearing a presentation retained a decoded foot/body/rest texture");
+    }
+
+    private static IEnumerable<Drawing> Drawings(Drawing drawing)
+    {
+        yield return drawing;
+        if (drawing is DrawingGroup group)
+            foreach (var child in group.Children)
+            foreach (var item in Drawings(child)) yield return item;
+    }
+
+    private static void VerifyLayeredTransitions(CharacterPresentation presentation)
+    {
+        var visual = Visual(presentation, 2);
+        visual.UpdatePose(WalkView.Side, 0.8, 0, true, 0);
+        var side = Pixels(Render(visual));
+        var target = Visual(presentation, 2); target.UpdatePose(WalkView.Turn, 0.8, 0, true, 0);
+        var turn = Pixels(Render(target));
+        static long Difference(byte[] a, byte[] b) { long total = 0; for (var i = 0; i < a.Length; i++) total += Math.Abs(a[i] - b[i]); return total; }
+        var fullJump = Difference(side, turn);
+        Check(fullJump > 0, "Fixture has identical side and quarter artwork");
+        visual.UpdatePose(WalkView.Turn, 0.8, 0, true, 1d / 60);
+        var first = Pixels(Render(visual));
+        Check(visual.TurnWeight is > 0 and < 1 && Difference(side, first) < fullJump * 0.7 && visual.RestWeight == 0,
+            $"View changed in one frame or frontal rest leaked into walking: {presentation.Definition.Name}, weight {visual.TurnWeight}, delta {Difference(side, first)}/{fullJump}");
+        Near(visual.HeadMatrix.Determinant, 1, 1e-12, "Head articulation stretched artwork");
+        Near(visual.BodyMatrix.Determinant, 1, 1e-12, "Torso articulation stretched artwork");
+        Check(visual.HeadMatrix != visual.BodyMatrix, "Head and torso are still one rigid transform");
+        var weight = 0d;
+        for (var i = 0; i <= 100; i++)
+        {
+            visual.UpdatePose(WalkView.Turn, 0.8, i / 100d, true);
+            Check(visual.RestWeight >= weight && double.IsFinite(visual.RestWeight), "Rest transition moved backwards or became invalid");
+            weight = visual.RestWeight;
+        }
+        Near(weight, 1, 1e-12, "The live pose never converged to its exact resting artwork");
+        var actualRest = Pixels(Render(visual));
+        var restImage = presentation.Frames[presentation.Definition.GetFrames(PetState.Idle)[0]];
+        var expected = new DrawingVisual();
+        using (var context = expected.RenderOpen()) context.DrawImage(restImage, new Rect(0, 0, visual.Width, visual.Height));
+        var expectedBitmap = new RenderTargetBitmap((int)visual.Width, (int)visual.Height, 96, 96, PixelFormats.Pbgra32);
+        expectedBitmap.Render(expected);
+        Check(actualRest.AsSpan().SequenceEqual(Pixels(expectedBitmap)), "Settling did not end on the exact next rest image");
+        visual.UpdatePose(WalkView.Side, 0.8, 0, true, 1d / 60, reducedMotion: true);
+        Near(visual.HeadMatrix.M12, 0, 1e-12, "Reduced motion retained secondary head rotation");
+        Near(visual.NearFootMatrix.M12, 0, 1e-12, "Reduced motion retained toe roll");
+        Check(visual.TurnWeight == 0 && visual.RestWeight == 0 && !actualRest.AsSpan().SequenceEqual(Pixels(Render(visual))), "Reduced motion did not suppress blends");
+        visual.SetPresentation(null); target.SetPresentation(null);
     }
 
     private static void VerifyRetainedDrawingUpdates(CharacterPresentation presentation, bool capture)
@@ -210,9 +258,44 @@ internal static class GroundedRigVisualRegressionTests
             using var stream = File.Create(path);
             encoder.Save(stream);
             Console.WriteLine("CAPTURE Actual WPF retained drawing: " + path);
+            CaptureMotion(presentation);
         }
         visual.SetPresentation(null);
         Console.WriteLine("PASS RenderTargetBitmap changes after a retained live-rig pose update and continuous foot settling without rebuilding or explicitly invalidating the visual");
+    }
+
+    private static void CaptureMotion(CharacterPresentation presentation)
+    {
+        // Actual WPF frames at 50 Hz; translation and gait use the same travelled distance.
+        var visual = Visual(presentation, 2);
+        var encoder = new GifBitmapEncoder();
+        var phase = 0d;
+        var x = 12d;
+        const int walkingFrames = 90;
+        for (var i = 0; i < 125; i++)
+        {
+            var walking = i < walkingFrames;
+            if (walking) { x += 1.6; phase += 0.8 / presentation.Definition.WalkCycleDistancePx!.Value; }
+            var settle = walking ? 0 : Math.Min(1, (i - walkingFrames + 1) / 9d);
+            visual.UpdatePose(i < 35 ? WalkView.Side : WalkView.Turn, phase, settle, true, 0.02);
+            var frame = new DrawingVisual();
+            using (var context = frame.RenderOpen())
+            {
+                context.DrawRectangle(Brushes.WhiteSmoke, null, new Rect(0, 0, 440, 292));
+                context.DrawText(new FormattedText("Actual WPF: layered walk / turn / stop", System.Globalization.CultureInfo.InvariantCulture,
+                    FlowDirection.LeftToRight, new Typeface("Segoe UI"), 14, Brushes.DarkSlateGray, 1), new Point(12, 8));
+                context.DrawImage(Render(visual), new Rect(x, 30, visual.Width, visual.Height));
+            }
+            var bitmap = new RenderTargetBitmap(440, 292, 96, 96, PixelFormats.Pbgra32);
+            bitmap.Render(frame);
+            var metadata = new BitmapMetadata("gif");
+            metadata.SetQuery("/grctlext/Delay", (ushort)2);
+            encoder.Frames.Add(BitmapFrame.Create(bitmap, null, metadata, null));
+        }
+        var path = Path.Combine(AppContext.BaseDirectory, "layered-rig-motion.gif");
+        using var stream = File.Create(path); encoder.Save(stream);
+        visual.SetPresentation(null);
+        Console.WriteLine("CAPTURE Actual WPF motion at 50 Hz: " + path);
     }
 
     private static RenderTargetBitmap Render(GroundedRigVisual visual)

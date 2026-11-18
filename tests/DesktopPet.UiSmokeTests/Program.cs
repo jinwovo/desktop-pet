@@ -22,6 +22,11 @@ internal static class Program
         MainWindow? pet = null;
         try
         {
+            if (args.Contains("--rig-only"))
+            {
+                GroundedRigVisualRegressionTests.Run(MainWindow.CharactersRoot, capture: args.Contains("--capture"));
+                return 0;
+            }
             var archiveIndex = Array.IndexOf(args, "--verify-archive");
             if (archiveIndex >= 0)
             {

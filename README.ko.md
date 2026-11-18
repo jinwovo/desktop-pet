@@ -16,6 +16,8 @@ AI 작업과 집중 시간에 조용히 함께하는 Windows 데스크톱 캐릭
 
 DesktopPet은 로컬 Claude Code·Codex의 응답 완료를 알려주고, 25분 집중·5분 휴식 타이머와 캐릭터 가져오기를 제공하는 바탕화면 펫입니다. 걷는 동안 캐시한 몸·발 그림을 연속으로 움직이고 실제 이동 거리에 보폭을 맞춥니다.
 
+1.0.1에서는 머리·몸통·양발을 독립적으로 움직이고 옆모습↔사선 그림 사이를 보간합니다. 기존 6개 텍스처 팩을 그대로 사용하며, 멈출 때는 휴식 그림으로 부드럽게 이어집니다. 움직임 줄이기 설정을 켜면 추가 관절 움직임과 페이드를 끕니다.
+
 공용 캐릭터는 **Companion·Nimbus·Ember**입니다. 제작 방식과 원화 기록은 [공용 자산 제작 기록](docs/PUBLIC_ASSET_PROVENANCE.md)에 정리했습니다. 기존 프레임 방식의 사용자 스킨도 사용할 수 있습니다.
 
 저장소에는 선택형 **치이카와·세균맨·헬로키티·폼폼푸린·시나모롤·쿠로미 팬아트 6종**도 [character-packs/fan-art](character-packs/fan-art/README.md)에 포함합니다. 오리지널 캐릭터와 구분하며 기존 캐릭터의 권리까지 MIT로 허가하는 것은 아닙니다. 기본 Windows ZIP에는 오리지널3종이 들어 있습니다. 선택형 팩은 설정의 캐릭터 추가로 가져오거나 `-p:PersonalBuild=true`로 빌드해 총9종을 사용할 수 있습니다.
@@ -163,7 +165,7 @@ powershell -NoProfile -File tests/package-regression.ps1
 공용 Windows x64 배포를 만들려면 다음을 실행합니다.
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 1.0.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 1.0.1
 ```
 
 `artifacts/releases/`에 self-contained ZIP과 SHA256을 만듭니다. 필요한 런타임 팩이 없으면 실패하며 배포 종류를 몰래 바꾸지 않습니다. [Windows 워크플로](.github/workflows/windows-release.yml)는 검사와 아티팩트 생성을 설정한 파일이며, 파일이 있다고 원격 빌드나 공개 릴리스가 성공했다는 뜻은 아닙니다.

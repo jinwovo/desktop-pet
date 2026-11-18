@@ -90,11 +90,13 @@ public sealed class WalkAppearanceController
                 return;
             }
             _walking = false;
-            if (IsSettling && resting)
+            if (IsSettling && resting && SettleProgress < 1)
             {
                 _settleElapsedMs += elapsedMs;
                 SettleProgress = Math.Clamp(_settleElapsedMs / SettleDurationMs, 0, 1);
-                if (SettleProgress < 1) return;
+                // Present the exact final rest blend once before handing back to raster animation.
+                // Otherwise a refresh interval can skip progress=1 and leave a small visible cut.
+                return;
             }
             IsSettling = false;
             SettleProgress = 1;

@@ -900,8 +900,13 @@ public partial class MainWindow : Window
                 PetRig.Visibility = Visibility.Visible;
                 _liveRigActive = true;
             }
+            if (_walkAppearance.IsSettling)
+            {
+                var rest = _character.GetFrames(_brain.State);
+                PetRig.SetRestFrame(GetFrame(_character.GetFramePath(_brain.State, rest, _brain.StateElapsedMs)), _character.UsesFrontalRestFrames(_brain.State));
+            }
             PetRig.UpdatePose(_walkAppearance.View, _walkAppearance.GaitPhase,
-                _walkAppearance.IsSettling ? _walkAppearance.SettleProgress : 0, _walkAppearance.FacingRight);
+                _walkAppearance.IsSettling ? _walkAppearance.SettleProgress : 0, _walkAppearance.FacingRight, dt, _settings.ReducedMotion);
         }
         else
         {

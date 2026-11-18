@@ -16,6 +16,8 @@
 
 DesktopPet 可以提醒本地 Claude Code、Codex 的回复完成，提供 25 分钟专注 / 5 分钟休息计时器，并支持导入角色包。行走时使用缓存的身体与双脚图层连续运动，根据实际移动距离调整步态，减少脚踩地时的滑动。
 
+1.0.1 将头部、躯干和双脚分层运动，并在侧面与斜侧面之间插值。现有六贴图角色包无需修改，停止时平滑过渡到休息图像。启用减少动态效果会关闭新增的关节运动与淡入淡出。
+
 公开角色包括 **Companion、Nimbus 和 Ember**。制作方式与素材来源见[公开素材记录](docs/PUBLIC_ASSET_PROVENANCE.md)。已有的逐帧角色包也可继续使用。
 
 仓库也在 [character-packs/fan-art](character-packs/fan-art/README.md) 中提供可选的 **Chiikawa、Baikinman、Hello Kitty、Pompompurin（布丁狗）、Cinnamoroll（大耳狗）和 Kuromi（酷洛米）六款同人角色包**。它们与原创角色分开标注，项目 MIT 许可不授予第三方角色权利。默认 Windows ZIP 包含三款原创角色；可在设置中导入可选包，或使用 `-p:PersonalBuild=true` 构建全部九款角色。
@@ -162,7 +164,7 @@ powershell -NoProfile -File tests/package-regression.ps1
 构建公开 Windows x64 包：
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 1.0.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 1.0.1
 ```
 
 输出位于 `artifacts/releases/`，包含 self-contained ZIP 与 SHA256 文件。缺少运行时包时构建会失败，不会静默切换为其他部署方式。[Windows 工作流](.github/workflows/windows-release.yml)配置了测试与构建产物；存在该文件不等于远程构建已通过或版本已经发布。

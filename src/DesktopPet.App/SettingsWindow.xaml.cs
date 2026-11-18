@@ -268,8 +268,13 @@ public partial class SettingsWindow : Window
                 PreviewRig.Visibility = Visibility.Visible;
                 _liveRigActive = true;
             }
+            if (_walkAppearance.IsSettling)
+            {
+                var rest = definition.GetFrames(state);
+                PreviewRig.SetRestFrame(_previewPresentation.Frames[definition.GetFramePath(state, rest, _previewAnimationMs)], definition.UsesFrontalRestFrames(state));
+            }
             PreviewRig.UpdatePose(_walkAppearance.View, _walkAppearance.GaitPhase,
-                _walkAppearance.IsSettling ? _walkAppearance.SettleProgress : 0, _walkAppearance.FacingRight);
+                _walkAppearance.IsSettling ? _walkAppearance.SettleProgress : 0, _walkAppearance.FacingRight, elapsedMs / 1000, _pet.ReducedMotion);
         }
         else
         {
