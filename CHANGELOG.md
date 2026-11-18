@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.0 — public Windows release
+
+- Ship the verified 0.11–0.99 functional milestones as the first stable runtime-included Windows x64 release, with three original companions and a separate six-character optional fan-art collection.
+- Include configurable focus sessions, quiet hours, primary KO/EN/zh-CN UI, reduced motion/frame caps, portable settings, reviewed local diagnostics, monitor recovery and cancellable ZIP/folder installation.
+- Retain grounded walking, durable local assistant notifications and explicit hook trust. Runtime use requires no development API credential.
+- Gate publication on core/UI/asset/hook/package/docs checks, actual collection ZIP import, isolated executable checks and actual payload lifecycle fixtures. Publish only the approved `v1.0.0` tag; retain existing releases and immutable history.
+- Keep physical clean-PC/mixed-DPI validation, signing and additional advanced-dialog translation as explicit follow-up work.
+
 ## 0.99.0 — release candidate installation checks
 
 - Add `--check-install`: read-only JSON resource validation before normal startup, with exit 0 for valid installation or 2 for invalid resources. Decode every bundled character and check the original collection/hook bridge without opening settings, assistant profiles, inbox or pet windows.

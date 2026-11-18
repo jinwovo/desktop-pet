@@ -5,11 +5,11 @@
     A release contains the original Companion, Nimbus and Ember characters. Personal development character
     assets are excluded. A failed self-contained restore never silently becomes framework-dependent.
 .EXAMPLE
-    .\scripts\package-release.ps1 -Version 0.99.0
-    .\scripts\package-release.ps1 -Version 0.99.0 -FrameworkDependent
+    .\scripts\package-release.ps1 -Version 1.0.0
+    .\scripts\package-release.ps1 -Version 1.0.0 -FrameworkDependent
 #>
 param(
-    [string]$Version = '0.99.0',
+    [string]$Version = '1.0.0',
     [string]$OutputDirectory,
     [switch]$FrameworkDependent
 )
@@ -196,7 +196,9 @@ DesktopPet $ReleaseVersion ($label)
 English
 Extract the entire ZIP and run DesktopPet.App.exe. Keep Assets and Hooks together.
 This package type is $deployment. Framework-dependent builds require .NET 10 Desktop Runtime x64.
-Double-click the tray icon for Settings, a 25/5 focus timer, and a test notification.
+Double-click the tray icon for KO/EN/zh-CN Settings, configurable focus sessions and a test notification.
+Use Settings for ZIP characters, quiet hours, reduced motion, backup, diagnostics and monitor recovery.
+Read-only resource check: DesktopPet.App.exe --check-install (exit 0 valid, exit 2 invalid).
 Claude Code: restart the session. Codex: review and approve the new hook yourself.
 Hidden and Do not disturb modes keep unread receipts without automatic bubbles.
 Public characters: Companion, Nimbus, Ember. Project license: see LICENSE.
@@ -205,7 +207,8 @@ Full guide: https://github.com/jinwovo/desktop-pet/blob/main/README.md
 简体中文
 解压整个 ZIP 后运行 DesktopPet.App.exe。请保留 Assets 和 Hooks 文件夹。
 framework-dependent 版本需要另行安装 .NET 10 Desktop Runtime x64。
-双击托盘图标可打开设置，使用 25/5 专注计时器和测试通知。
+双击托盘图标打开三语设置，可调整专注时长、预约免打扰、导入 ZIP 角色并恢复位置。
+只读资源检查: DesktopPet.App.exe --check-install（有效返回 0，无效返回 2）。
 Claude Code 需要重启会话；Codex 的新钩子需要用户自行审核并信任。
 隐藏和免打扰模式保留未读通知。项目许可证见 LICENSE。
 完整指南: https://github.com/jinwovo/desktop-pet/blob/main/README.zh-CN.md
@@ -216,6 +219,8 @@ $runtimeText
 
 시작: ZIP 전체를 쓰기 가능한 폴더에 풀고 DesktopPet.App.exe를 실행하세요.
 설정: 트레이 아이콘을 두 번 클릭합니다. 처음 실행하면 도우미 연결을 선택할 수 있습니다.
+설정에서 언어·집중 시간·예약 방해 금지·ZIP 캐릭터·모션·백업·진단·위치 복구를 조절합니다.
+읽기 전용 점검: DesktopPet.App.exe --check-install (정상 0, 잘못된 리소스 2).
 지원: Stop 훅을 제공하는 로컬 Claude Code와 Codex만 지원합니다. 웹 대화나 훅이 없는 앱은 연결되지 않습니다.
 Claude Code는 세션을 다시 시작하고, Codex는 /hooks 또는 Settings → Hooks에서 새 훅을 한 번 검토·허용해주세요.
 DesktopPet은 Codex의 신뢰 승인을 자동 생성하지 않습니다. 완료 알림은 응답 턴 종료를 뜻하며 전체 작업의 성공을 판정하지 않습니다.

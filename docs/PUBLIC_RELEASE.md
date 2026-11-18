@@ -35,13 +35,13 @@ Review the exported folder before copying it into an authenticated clone of the 
 The default package is self-contained and requires access to missing NuGet runtime/build packs:
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 0.99.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 1.0.0
 ```
 
 An explicitly labelled alternative requires the user's .NET10 Desktop Runtime x64:
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 0.99.0 -FrameworkDependent
+powershell -NoProfile -File scripts/package-release.ps1 -Version 1.0.0 -FrameworkDependent
 ```
 
 The output directory is `artifacts/releases/`. Keep the entire ZIP layout. Compare its `.zip.sha256`, extract it and validate the manifest before reviewing the app on a test Windows profile. Do not use your real assistant configuration as a regression fixture.
@@ -52,7 +52,7 @@ Review the gallery by searching Korean and English aliases, selecting a static c
 
 ## Validation baseline and current scope
 
-The 0.99 candidate Release build passes with zero warnings/errors. Core checks pass 195 cases, with 7 symbolic-link privilege skips out of 202. The nine-character WPF suite includes actual PNG contact/rig settling, fullscreen/session behavior, ZIP/cancellation, custom focus duration, quiet scheduling, language, settings transfer, diagnostics, recovery and read-only installation checks. The actual public executable passes four isolated installation-check/payload lifecycle groups, with real assistant disconnection deliberately stubbed. Runtime-included personal/public output is checked separately. Existing package, installer, hook, optional-pack, source/docs and offline NVIDIA-helper fixtures remain in the final CI gates. Cached local publishing can report NU1900 when vulnerability metadata is unavailable. This does not substitute for a physical clean-PC or mixed-DPI test.
+The 0.99 candidate establishes the stable baseline: a zero-warning/error Release build, 195 passing core cases and 7 symbolic-link privilege skips out of 202. The nine-character WPF suite includes actual PNG contact/rig settling, fullscreen/session behavior, ZIP/cancellation, custom focus duration, quiet scheduling, language, settings transfer, diagnostics, recovery and read-only installation checks. The actual public executable passes four isolated installation-check/payload lifecycle groups, with real assistant disconnection deliberately stubbed. The final 1.0.0 reruns these gates and checks runtime-included personal/public output separately. Package, installer, hook, optional-pack, source/docs and offline NVIDIA-helper checks remain in CI. Cached local publishing can report NU1900 when vulnerability metadata is unavailable. This does not substitute for a physical clean-PC or mixed-DPI test.
 
 The 0.6.0 historical baseline passed original-only and nine-character WPF suites and 130 core cases, with 7 link-privilege skips. Its actual runtime-included ZIP was extracted and checked with empty external runtime roots. The three new raster assets used 4x supersampling and measured less than 0.18 source pixels of contact drift, within the existing 1.25-pixel bound.
 
