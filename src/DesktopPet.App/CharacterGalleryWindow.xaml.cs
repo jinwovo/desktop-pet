@@ -287,7 +287,9 @@ public partial class CharacterGalleryWindow : Window
             if (_closed || token.IsCancellationRequested || revision != _previewRevision || !ReferenceEquals(CharacterCards.SelectedItem, selected)) return;
 
             _motionPreview?.Close();
-            _motionPreview = new MotionPreviewWindow(presentation, _pet.CurrentWalkSpeedMultiplier, _pet.MaximumFps, _pet.ReducedMotion) { Owner = this };
+            var preview = new MotionPreviewWindow(presentation, _pet.CurrentWalkSpeedMultiplier, _pet.MaximumFps, _pet.ReducedMotion) { Owner = this };
+            preview.Closed += (s, e) => { if (ReferenceEquals(_motionPreview, preview)) _motionPreview = null; };
+            _motionPreview = preview;
             _motionPreview.Show();
             SetStatus("미리보기는 현재 친구를 바꾸지 않아요.");
         }

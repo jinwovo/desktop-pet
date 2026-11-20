@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased ? 1.3.0 development
+
+- P021: release the gallery's reference to a closed motion preview so its decoded presentation can be collected while the gallery stays open. Keep replacement-preview ownership intact and allow reopening normally.
+
 ## 1.2.0 — evolution patches P011–P020
 
 - Add session-only roaming pause and keep drag/throw physics intact when reactions are requested; play the latest reaction after landing.

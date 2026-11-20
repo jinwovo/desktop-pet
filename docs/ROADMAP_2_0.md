@@ -30,6 +30,8 @@ P020 marks the current unread snapshot read from either action menu. Receipt IO 
 
 ## Milestones
 
+P021 starts 1.3.0 development: closing a gallery motion preview removes the gallery's reference to that window. Weak-reference tests demonstrate that its decoded presentation becomes collectible while the gallery remains open, and reopening still works. This does not claim a particular working-set reduction or change the immutable 1.2.0 build.
+
 | Verified patch threshold | Planned release | Main review area |
 | --- | --- | --- |
 | 10 | 1.1.0 | Motion and runtime defects |

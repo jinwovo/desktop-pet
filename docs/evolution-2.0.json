@@ -271,11 +271,15 @@
     },
     {
       "id": "P021",
-      "title": "Discovery pending: Character authoring and previews (21)",
-      "status": "planned",
+      "title": "Release closed gallery preview references so decoded presentations become collectible",
+      "status": "verified",
       "milestone": "1.3.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/CharacterGalleryWindow.xaml.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/GalleryLocaleRegressionTests.cs"
+      ]
     },
     {
       "id": "P022",

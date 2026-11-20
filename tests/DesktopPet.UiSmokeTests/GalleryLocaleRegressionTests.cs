@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
@@ -84,6 +85,7 @@ internal static class GalleryLocaleRegressionTests
             gallery.Close();
             VerifyRunningPreviewCancellation(pet);
             VerifyPreviewRequestOwnership(pet);
+            VerifyClosedPreviewCollection(pet);
         }
         finally
         {
@@ -191,7 +193,7 @@ internal static class GalleryLocaleRegressionTests
             Start(2); search.Text = "no such character";
             Check(tokens[2].IsCancellationRequested && !preview.IsEnabled, "Filtering away a selection left its decoder active");
             release[2].Set(); Wait(operations[2]);
-            Check(ReferenceEquals(Get(gallery, "_motionPreview"), motion) && !motion.IsVisible, "Obsolete successful decode opened a late window");
+            Check(Get(gallery, "_motionPreview") is null && !motion.IsVisible, "Obsolete successful decode opened a late window");
             search.Text = "";
             cards.SelectedItem = gallery.AllCharacters.Single(item => item.Name == "Companion");
             Start(3); apply.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
@@ -215,6 +217,39 @@ internal static class GalleryLocaleRegressionTests
             foreach (var operation in operations) Wait(operation);
             foreach (var gate in entered.Concat(release)) gate.Dispose();
         }
+    }
+
+    private static void VerifyClosedPreviewCollection(MainWindow pet)
+    {
+        var gallery = new CharacterGalleryWindow(pet);
+        try
+        {
+            gallery.Show(); Wait(gallery.LoadingTask);
+            ((ListBox)gallery.FindName("CharacterCards")).SelectedItem = gallery.AllCharacters.Single(item => item.Name == "사용자 Locale");
+            var presentation = OpenCloseAndTrackPresentation(gallery);
+            for (var attempt = 0; attempt < 5 && presentation.IsAlive; attempt++)
+            {
+                Pump(); GC.Collect(); GC.WaitForPendingFinalizers(); GC.Collect(); Pump();
+            }
+            Check(!presentation.IsAlive, "Gallery retained a closed preview's decoded presentation");
+            Wait((Task)Invoke(gallery, "PreviewSelectedAsync")!);
+            var reopened = (MotionPreviewWindow)Get(gallery, "_motionPreview")!;
+            Check(reopened.IsVisible && reopened.IsAnimating, "Collecting a closed preview prevented reopening it");
+            gallery.Close();
+            Check(!reopened.IsAnimating && !reopened.IsVisible, "Gallery closure did not close the replacement preview");
+            Console.WriteLine("PASS Closed gallery preview presentations become collectible while the gallery stays open and a fresh preview can be reopened");
+        }
+        finally { gallery.Close(); }
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static WeakReference OpenCloseAndTrackPresentation(CharacterGalleryWindow gallery)
+    {
+        Wait((Task)Invoke(gallery, "PreviewSelectedAsync")!);
+        var window = (MotionPreviewWindow)Get(gallery, "_motionPreview")!;
+        var presentation = new WeakReference(Get(window, "_presentation")!);
+        window.Close();
+        return presentation;
     }
 
     private static void CreateCharacter(string root, string name, bool brokenWalk = false)
