@@ -25,6 +25,9 @@ public partial class CharacterGalleryWindow : Window
     private readonly CancellationTokenSource _lifetime = new();
     private CancellationTokenSource? _loadCancellation;
     private long _loadRevision;
+    private CancellationTokenSource? _previewCancellation;
+    private CharacterGalleryItem? _previewSelection;
+    private long _previewRevision;
     private IReadOnlyList<CharacterGalleryItem> _all = Array.Empty<CharacterGalleryItem>();
     private bool _closed, _started, _filtering, _previewBusy;
     private bool _catalogLoading, _catalogFailed;
@@ -52,6 +55,7 @@ public partial class CharacterGalleryWindow : Window
         Closed += (_, _) =>
         {
             _closed = true;
+            CancelPreview();
             _pet.RenderOptionsChanged -= ApplyRenderOptions;
             UiText.LanguageChanged -= RefreshLanguage;
             _lifetime.Cancel();
@@ -122,6 +126,8 @@ public partial class CharacterGalleryWindow : Window
     {
         Dispatcher.VerifyAccess();
         if (_closed || !_started) return;
+        CancelPreview();
+        UpdateSelection();
         _loadCancellation?.Cancel();
         _loadCancellation?.Dispose();
         _loadCancellation = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
@@ -236,6 +242,7 @@ public partial class CharacterGalleryWindow : Window
     {
         if (PreviewImage is null) return;
         var item = CharacterCards.SelectedItem as CharacterGalleryItem;
+        if (_previewBusy && !ReferenceEquals(item, _previewSelection)) CancelPreview();
         PreviewImage.Source = item?.Thumbnail;
         SelectedNameText.Text = item?.Name ?? "";
         SelectedDetailText.Text = UiText.Get(item?.Detail ?? "친구를 선택해보세요.");
@@ -249,32 +256,64 @@ public partial class CharacterGalleryWindow : Window
         await PreviewOperation;
     }
 
+    private void CancelPreview()
+    {
+        var cancellation = _previewCancellation;
+        if (cancellation is null) return;
+        _previewCancellation = null;
+        _previewSelection = null;
+        _previewBusy = false;
+        ++_previewRevision;
+        cancellation.Cancel();
+    }
+
     private async Task PreviewSelectedAsync()
     {
         if (_closed || _previewBusy || CharacterCards.SelectedItem is not CharacterGalleryItem { IsAvailable: true } selected) return;
+
+        using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
+        var token = cancellation.Token;
+        _previewCancellation = cancellation;
         _previewBusy = true;
+        _previewSelection = selected;
+        var revision = ++_previewRevision;
         UpdateSelection();
+
         try
         {
             var folder = _pet.ResolveCharacterFolder(selected.Name);
-            // Capture before yielding: Close disposes the CTS, but a captured token remains
-            // valid and also reaches cancellation checks between PNG reads/decodes.
-            var cancellation = _lifetime.Token;
-            var presentation = await Task.Run(() => _previewLoader(folder, cancellation), cancellation);
-            if (_closed || !ReferenceEquals(CharacterCards.SelectedItem, selected)) return;
+            var presentation = await Task.Run(() => _previewLoader(folder, token), token);
+
+            if (_closed || token.IsCancellationRequested || revision != _previewRevision || !ReferenceEquals(CharacterCards.SelectedItem, selected)) return;
+
             _motionPreview?.Close();
             _motionPreview = new MotionPreviewWindow(presentation, _pet.CurrentWalkSpeedMultiplier, _pet.MaximumFps, _pet.ReducedMotion) { Owner = this };
             _motionPreview.Show();
             SetStatus("미리보기는 현재 친구를 바꾸지 않아요.");
         }
         catch (OperationCanceledException) { }
-        catch (Exception ex) when (IsCharacterError(ex)) { if (!_closed) SetStatus("움직임을 읽지 못했어요. 캐릭터 파일을 확인해주세요."); }
-        finally { _previewBusy = false; if (!_closed) UpdateSelection(); }
+        catch (Exception ex) when (IsCharacterError(ex))
+        {
+            if (!_closed && !token.IsCancellationRequested && revision == _previewRevision && ReferenceEquals(CharacterCards.SelectedItem, selected))
+                SetStatus("움직임을 읽지 못했어요. 캐릭터 파일을 확인해주세요.");
+        }
+        finally
+        {
+            if (revision == _previewRevision)
+            {
+                _previewBusy = false;
+                _previewCancellation = null;
+                _previewSelection = null;
+                if (!_closed) UpdateSelection();
+            }
+        }
     }
 
     private void Apply_Click(object sender, RoutedEventArgs e)
     {
         if (_closed || CharacterCards.SelectedItem is not CharacterGalleryItem { IsAvailable: true } item) return;
+        CancelPreview();
+        UpdateSelection();
         try
         {
             _pet.SwitchCharacter(item.Name);

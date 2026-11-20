@@ -83,6 +83,7 @@ internal static class GalleryLocaleRegressionTests
 
             gallery.Close();
             VerifyRunningPreviewCancellation(pet);
+            VerifyPreviewRequestOwnership(pet);
         }
         finally
         {
@@ -132,6 +133,88 @@ internal static class GalleryLocaleRegressionTests
             Console.WriteLine("PASS Closing a gallery cancels its already running preview decoder and detaches language updates without late UI");
         }
         finally { gallery.Close(); }
+    }
+
+    private static void VerifyPreviewRequestOwnership(MainWindow pet)
+    {
+        var entered = Enumerable.Range(0, 5).Select(_ => new ManualResetEventSlim()).ToArray();
+        var release = Enumerable.Range(0, 5).Select(_ => new ManualResetEventSlim()).ToArray();
+        var tokens = new CancellationToken[5];
+        var count = 0;
+        var operations = new List<Task>();
+        var gallery = new CharacterGalleryWindow(pet, (folder, token) =>
+        {
+            var index = Interlocked.Increment(ref count) - 1;
+            if (index >= entered.Length) throw new Exception("Unexpected extra preview decoder");
+            tokens[index] = token; entered[index].Set();
+            if (!release[index].Wait(TimeSpan.FromSeconds(15))) throw new TimeoutException("Controlled preview release timed out");
+            if (index == 0) throw new IOException("Obsolete decoder failure");
+            return CharacterPresentation.Load(folder); // Model a decode finishing after cancellation.
+        });
+        try
+        {
+            gallery.Show(); Wait(gallery.LoadingTask);
+            var cards = (ListBox)gallery.FindName("CharacterCards");
+            var preview = (Button)gallery.FindName("PreviewButton");
+            var apply = (Button)gallery.FindName("ApplyButton");
+            var search = (TextBox)gallery.FindName("SearchBox");
+            var status = (TextBlock)gallery.FindName("StatusText");
+            void Start(int index)
+            {
+                var operation = (Task)Invoke(gallery, "PreviewSelectedAsync")!;
+                operations.Add(operation);
+                Check(entered[index].Wait(TimeSpan.FromSeconds(10)), "Selected preview decoder did not start");
+            }
+            cards.SelectedItem = gallery.AllCharacters.Single(item => item.Name == "Companion");
+            Start(0);
+            cards.SelectedItem = gallery.AllCharacters.Single(item => item.Name == "사용자 Locale");
+            Check(tokens[0].IsCancellationRequested && preview.IsEnabled, "Changing selection did not cancel obsolete decoding or allow a new preview");
+            apply.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            var appliedStatus = status.Text;
+            Start(1);
+            foreach (var language in new[] { "ko", "en", "zh-CN" })
+            {
+                UiText.SetLanguage(language);
+                Check(!tokens[1].IsCancellationRequested && !preview.IsEnabled, "Relabeling cancelled the unchanged selection or unlocked its decoder");
+            }
+            appliedStatus = status.Text;
+            release[0].Set(); Wait(operations[0]);
+            Check(status.Text == appliedStatus && !preview.IsEnabled && pet.CurrentCharacterName == "사용자 Locale",
+                "An obsolete decoder overwrote current status, enabled a busy preview or changed the pet");
+            release[1].Set(); Wait(operations[1]);
+            var motion = (MotionPreviewWindow)Get(gallery, "_motionPreview")!;
+            var presentation = (CharacterPresentation)Get(motion, "_presentation")!;
+            Check(motion.IsVisible && preview.IsEnabled && presentation.Definition.Name == "사용자 Locale", "Newest preview did not win");
+            motion.Close();
+
+            cards.SelectedItem = gallery.AllCharacters.Single(item => item.Name == "Companion");
+            Start(2); search.Text = "no such character";
+            Check(tokens[2].IsCancellationRequested && !preview.IsEnabled, "Filtering away a selection left its decoder active");
+            release[2].Set(); Wait(operations[2]);
+            Check(ReferenceEquals(Get(gallery, "_motionPreview"), motion) && !motion.IsVisible, "Obsolete successful decode opened a late window");
+            search.Text = "";
+            cards.SelectedItem = gallery.AllCharacters.Single(item => item.Name == "Companion");
+            Start(3); apply.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            var sameCardStatus = status.Text;
+            Check(tokens[3].IsCancellationRequested && preview.IsEnabled, "Applying a card retained its pending preview operation");
+            release[3].Set(); Wait(operations[3]);
+            Check(status.Text == sameCardStatus && pet.CurrentCharacterName == "Companion" && !motion.IsVisible,
+                "Late preview changed the result of explicit character application");
+            Start(4); gallery.RefreshCharacters();
+            Check(tokens[4].IsCancellationRequested, "Reloading the catalog retained a decoder using its previous snapshot");
+            Wait(gallery.LoadingTask);
+            var refreshedStatus = status.Text;
+            release[4].Set(); Wait(operations[4]);
+            Check(status.Text == refreshedStatus && !motion.IsVisible && preview.IsEnabled, "An old catalog decoder changed the refreshed gallery");
+            Console.WriteLine("PASS Gallery cancels obsolete selection/filter/apply previews, ignores late success/errors, preserves current busy state and keeps locale changes decode-free");
+        }
+        finally
+        {
+            foreach (var gate in release) gate.Set();
+            gallery.Close();
+            foreach (var operation in operations) Wait(operation);
+            foreach (var gate in entered.Concat(release)) gate.Dispose();
+        }
     }
 
     private static void CreateCharacter(string root, string name, bool brokenWalk = false)

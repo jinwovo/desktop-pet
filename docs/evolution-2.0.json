@@ -218,11 +218,15 @@
     },
     {
       "id": "P017",
-      "title": "Discovery pending: Pet interactions and comfort (17)",
-      "status": "planned",
+      "title": "Cancel obsolete gallery preview requests and protect the latest selection and busy state",
+      "status": "verified",
       "milestone": "1.2.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/CharacterGalleryWindow.xaml.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/GalleryLocaleRegressionTests.cs"
+      ]
     },
     {
       "id": "P018",

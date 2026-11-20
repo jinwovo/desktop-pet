@@ -67,6 +67,7 @@ internal static class Program
             if (args.Contains("--gallery-only"))
             {
                 CharacterGalleryRegressionTests.Run(folder, args.Contains("--capture"));
+                GalleryLocaleRegressionTests.Run(folder);
                 Console.WriteLine("Character gallery UI regression checks passed");
                 return 0;
             }

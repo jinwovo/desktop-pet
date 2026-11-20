@@ -20,6 +20,8 @@ P015 adds a copy button that keeps the notification visible and unread. It copie
 
 P016 localizes the motion preview title, instructions, buttons and live state labels. Changing KO/EN/zh-CN preserves the same presentation, simulation state, gait phase and animation clocks without another rig update. Closing the window releases both localization subscriptions. Automated checks and real WPF captures cover the three languages. This fix is planned for 1.2.0.
 
+P017 cancels obsolete gallery preview requests when selection, filtering, application or catalog refresh changes their context. A late success or failure cannot replace the newest preview, overwrite its status or unlock its busy button. Relabeling an unchanged selection keeps its active decoder. Gated-worker regression tests cover cancellation-aware and late-finishing decoders, plus closing the gallery. This fix is planned for 1.2.0.
+
 ## Milestones
 
 | Verified patch threshold | Planned release | Main review area |
