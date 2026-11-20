@@ -1156,7 +1156,7 @@ public partial class MainWindow : Window
         if (gentle) _brain.StartGentleAttention();
         else _brain.StartNagging(emote);
         StartRenderLoop();
-        _bubble?.ShowMessage(n.Title, n.Message, _dpiScale, gentle);
+        _bubble?.ShowMessage(n.Title, n.Message, _dpiScale, gentle, source: n.Source);
         _bubble?.SetPendingCount(Math.Max(0, _unreadNotifications.Count - 1));
         _bubble?.FollowPet(_brain.X, _brain.Y + _brain.NagHopOffset, Width);
         if (resetTimer || !_notificationPopupTimer.IsEnabled)

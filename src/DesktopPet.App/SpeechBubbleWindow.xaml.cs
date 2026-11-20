@@ -52,7 +52,7 @@ public partial class SpeechBubbleWindow : Window
         MouseLeftButtonDown += (_, _) => Acknowledge();
     }
 
-    public void ShowMessage(string title, string message, double dpiScale, bool gentle = true)
+    public void ShowMessage(string title, string message, double dpiScale, bool gentle = true, string? source = null)
     {
         if (_closed) return;
         BeginAnimation(OpacityProperty, null);
@@ -62,6 +62,7 @@ public partial class SpeechBubbleWindow : Window
         TitleText.Text = _usesFallbackTitle ? UiText.Get("알림") : title;
         MessageText.Text = message ?? string.Empty;
         MessageText.Visibility = string.IsNullOrWhiteSpace(message) ? Visibility.Collapsed : Visibility.Visible;
+        SetNotificationSource(source);
 
         IsShowing = true;
         Show();
@@ -70,6 +71,43 @@ public partial class SpeechBubbleWindow : Window
         {
             BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(180)));
         }
+    }
+
+    private string? _sourceKey;
+
+    private void SetNotificationSource(string? source)
+    {
+        if (_closed) return;
+        var normalized = source?.Trim().ToLowerInvariant();
+        _sourceKey = normalized switch
+        {
+            "claude" => "claude",
+            "codex" => "codex",
+            "focus-timer" => "focus-timer",
+            "test" => "test",
+            _ => null
+        };
+        RefreshSourceBadge();
+    }
+
+    private void RefreshSourceBadge()
+    {
+        if (_closed) return;
+        if (SourceText == null) return;
+
+        string displayText = _sourceKey switch
+        {
+            "claude" => "Claude",
+            "codex" => "Codex",
+            "focus-timer" => UiText.Get("집중 타이머"),
+            "test" => UiText.Get("테스트 알림"),
+            _ => string.Empty
+        };
+
+        SourceText.Text = displayText;
+        SourceText.Visibility = string.IsNullOrEmpty(displayText) ||
+            string.Equals(displayText, TitleText.Text.Trim(), StringComparison.OrdinalIgnoreCase)
+            ? Visibility.Collapsed : Visibility.Visible;
     }
 
     public void SetPendingCount(int count)
@@ -93,6 +131,7 @@ public partial class SpeechBubbleWindow : Window
             ? UiText.Format("클릭해서 확인 · 대기 {0}건", _pendingCount)
             : UiText.Get("클릭해서 확인");
         if (_usesFallbackTitle) TitleText.Text = UiText.Get("알림");
+        RefreshSourceBadge();
     }
 
     private void OnClosed(object? sender, EventArgs e)

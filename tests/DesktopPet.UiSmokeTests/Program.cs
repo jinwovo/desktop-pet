@@ -31,6 +31,7 @@ internal static class Program
             {
                 SpeechBubbleLocalizationTests.Run();
                 SpeechBubbleMotionTests.Run(folder);
+                SpeechBubbleSourceTests.Run();
                 Console.WriteLine("All speech bubble checks passed");
                 return 0;
             }
@@ -247,8 +248,9 @@ internal static class Program
                 return delivery!;
             }
             Deliver("003", new PetNotification { Title = "Claude Code", Message = "첫 작업 완료", Source = "claude", EventId = "a" });
+            Check(((TextBlock)bubble.FindName("SourceText")).Text == "Claude", "Claude delivery lost its source badge");
             Deliver("004", new PetNotification { Title = "Codex", Message = "다음 작업 완료", Source = "codex", EventId = "b" });
-            Check(((TextBlock)bubble.FindName("TitleText")).Text == "Codex" && pet.PendingNotificationCount == 2,
+            Check(((TextBlock)bubble.FindName("TitleText")).Text == "Codex" && ((TextBlock)bubble.FindName("SourceText")).Text == "Codex" && pet.PendingNotificationCount == 2,
                 "Default burst did not show latest completion while retaining unread receipts");
             Check(((DispatcherTimer)Get(pet, "_notificationPopupTimer")!).IsEnabled && !idleBrain.IsNagging,
                 "Calm completion did not schedule dismissal or started nagging");
@@ -257,7 +259,7 @@ internal static class Program
             Check(!bubble.IsShowing && pet.PendingNotificationCount == 2 && File.Exists(Path.Combine(folder, "003.json")),
                 "Auto-hide incorrectly acknowledged unread messages");
             pet.ShowUnreadNotifications();
-            Check(((TextBlock)bubble.FindName("TitleText")).Text == "Claude Code", "Unread review lost arrival order");
+            Check(((TextBlock)bubble.FindName("TitleText")).Text == "Claude Code" && ((TextBlock)bubble.FindName("SourceText")).Text == "Claude", "Unread review lost arrival order or source attribution");
             Invoke(bubble, "Acknowledge");
             Invoke(bubble, "Acknowledge");
             Console.WriteLine("PASS Calm burst displays latest completion, auto-hides and preserves FIFO unread review");
@@ -316,6 +318,7 @@ internal static class Program
             EvolutionMotionUiTests.Run(folder);
             SpeechBubbleLocalizationTests.Run();
             SpeechBubbleMotionTests.Run(folder);
+            SpeechBubbleSourceTests.Run();
             GalleryLocaleRegressionTests.Run(folder);
             DiagnosticsUiTests.Run(folder);
             PetRecoveryUiTests.Run(folder);

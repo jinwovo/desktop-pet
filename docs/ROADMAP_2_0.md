@@ -14,6 +14,8 @@ P012 preserves a drag or throw when a manual reaction is requested. The latest r
 
 P013 makes the reduced-motion setting apply to notification appearance and dismissal fades. Enabling it completes an active appearance immediately or hides a popup already being dismissed; restoring preferences applies the same policy. Actual WPF animation-clock and visibility checks cover both transitions while preserving the sender's text. This fix is planned for 1.2.0.
 
+P014 identifies Claude, Codex, focus-timer and test notifications with a compact source label. A label matching the title is hidden to avoid duplicate lines. User titles and messages stay unchanged, focus/test labels follow the UI language and unknown sender identifiers stay hidden. Tests cover live localization, unread review and actual delivery wiring. This feature is planned for 1.2.0.
+
 ## Milestones
 
 | Verified patch threshold | Planned release | Main review area |
