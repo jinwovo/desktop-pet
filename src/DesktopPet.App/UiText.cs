@@ -132,6 +132,7 @@ public static class UiText
         ["걷기와 발의 접지는 유지합니다. FPS는 최대 갱신 빈도이며 실제 성능은 화면과 PC에 따라 달라요."] = ("Walking and foot contact stay continuous. FPS is a work cap; actual performance depends on your display and PC.", "保留连续行走与脚部接地。FPS 是工作上限，实际性能取决于屏幕和电脑。"),
         ["동작"] = ("Behavior", "行为"),
         ["펫 보이기"] = ("Show pet", "显示宠物"),
+        ["자동 산책 잠시 멈춤"] = ("Pause roaming", "暂停自动散步"),
         ["전체화면 앱을 사용할 때 잠시 숨기기"] = ("Pause while a fullscreen app covers this monitor", "当前屏幕全屏时暂时隐藏"),
         ["창 사이를 뛰어다니기"] = ("Hop between windows", "在窗口间跳跃"),
         ["오래 방치하면 잠자기"] = ("Sleep after inactivity", "空闲后睡觉"),

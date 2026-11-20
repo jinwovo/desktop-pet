@@ -433,6 +433,11 @@ public partial class MainWindow : Window
     public double CurrentScaleMultiplier => _settings.ScaleMultiplier;
     public double CurrentWalkSpeedMultiplier => _settings.WalkSpeedMultiplier;
     public bool IsPetVisible => _settings.Visible;
+    public bool RoamingPaused => _brain.RoamingPaused;
+    public void SetRoamingPaused(bool paused)
+    {
+        if (!_disposed) _brain.RoamingPaused = paused;
+    }
     public bool IsTemporarilyPaused => _suppressionReasons != PetSuppressionReason.None;
     public bool PauseDuringFullscreen => _settings.PauseDuringFullscreen;
     public bool IsPresentationActive => !_disposed && _settings.Visible && !IsTemporarilyPaused;

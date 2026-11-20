@@ -159,12 +159,16 @@ public partial class App : System.Windows.Application
         var visibilityItem = new WinForms.ToolStripMenuItem(UiText.Get("펫 보이기"));
         visibilityItem.Click += (_, _) => petWindow.SetVisible(!petWindow.IsPetVisible);
         menu.Items.Add(visibilityItem);
+        var roamingPauseItem = new WinForms.ToolStripMenuItem(UiText.Get("자동 산책 잠시 멈춤"));
+        roamingPauseItem.Click += (_, _) => petWindow.SetRoamingPaused(!petWindow.RoamingPaused);
+        menu.Items.Add(roamingPauseItem);
         menu.Items.Add(UiText.Get("펫 데려오기"), null, (_, _) => petWindow.TryRecoverPet());
 
         // Reflect current state each time the menu opens, since the settings window can change it.
         menu.Opening += (_, _) =>
         {
             visibilityItem.Checked = petWindow.IsPetVisible;
+            roamingPauseItem.Checked = petWindow.RoamingPaused;
             unreadItem.Enabled = petWindow.PendingNotificationCount > 0;
             unreadItem.Text = petWindow.PendingNotificationCount > 0
                 ? UiText.Format("보관된 알림 확인 ({0})", petWindow.PendingNotificationCount) : UiText.Get("보관된 알림 없음");

@@ -24,21 +24,33 @@ internal static class LocalizationUiTests
         try
         {
             Check(!(bool)Get(pet, "_settingsDirty")!, "Loading language controls changed preferences");
+            var visibility = pet.IsPetVisible;
+            var focusBeforePause = pet.FocusSnapshot;
+            pet.SetRoamingPaused(true);
+            pet.SetRoamingPaused(true);
+            Check(pet.RoamingPaused && brain.RoamingPaused && pet.IsPetVisible == visibility && pet.FocusSnapshot == focusBeforePause &&
+                !(bool)Get(pet, "_settingsDirty")!, "Pausing roaming changed visibility, focus or persisted preferences");
             var choice = (ComboBox)settings.FindName("LanguageCombo");
             var pose = (brain.X, brain.Y, brain.State, brain.HorizontalVelocityPxPerSec);
             choice.SelectedValue = "en";
             Check(settings.Title == "DesktopPet Settings" && ((Button)settings.FindName("CloseButton")).Content is "Close" &&
                 ((Button)settings.FindName("FocusStartButton")).Content is "Start focus" && pet.FocusTimerCaption.Contains("Ready to focus") &&
-                UiText.Format("보관된 알림 확인 ({0})", 3) == "Review saved notifications (3)", "English static/dynamic controls did not update together");
+                UiText.Format("보관된 알림 확인 ({0})", 3) == "Review saved notifications (3)" &&
+                UiText.Get("자동 산책 잠시 멈춤") == "Pause roaming", "English static/dynamic controls did not update together");
             choice.SelectedValue = "zh-CN";
             Check(settings.Title == "DesktopPet 设置" && ((Button)settings.FindName("CloseButton")).Content is "关闭" &&
-                ((Button)settings.FindName("BackupPreferencesButton")).Content is "备份设置" && pet.UiLanguagePreference == "zh-CN",
+                ((Button)settings.FindName("BackupPreferencesButton")).Content is "备份设置" && pet.UiLanguagePreference == "zh-CN" &&
+                UiText.Get("자동 산책 잠시 멈춤") == "暂停自动散步",
                 "Chinese settings did not replace the previous language");
             choice.SelectedValue = "ko";
             Check(settings.Title == "DesktopPet 설정" && ((Button)settings.FindName("CloseButton")).Content is "닫기" &&
                 ((Button)settings.FindName("FocusStartButton")).Content is "집중 시작", "Switching back did not restore the original labels");
             Check(pose == (brain.X, brain.Y, brain.State, brain.HorizontalVelocityPxPerSec) && pet.CurrentCharacterName == "Companion" && !pet.AutoConnectAssistants,
                 "Language change moved the pet, changed its character or enabled assistant registration");
+            Check(pet.RoamingPaused && brain.RoamingPaused, "Locale change resumed roaming");
+            pet.SetRoamingPaused(false);
+            Check(!pet.RoamingPaused && !brain.RoamingPaused && pose == (brain.X, brain.Y, brain.State, brain.HorizontalVelocityPxPerSec),
+                "Resuming roaming forced an immediate pose or position change");
             Console.WriteLine("PASS KO/EN/zh-CN language selection updates actual Settings and dynamic timer/tray text without changing motion or assistant preferences");
             settings.Close();
             UiText.SetLanguage("en");

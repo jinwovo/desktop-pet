@@ -134,11 +134,19 @@
     },
     {
       "id": "P011",
-      "title": "Discovery pending: Pet interactions and comfort (11)",
-      "status": "planned",
+      "title": "Pause autonomous roaming without hiding the pet or freezing gravity and interactions",
+      "status": "verified",
       "milestone": "1.2.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.Core/PetBrain.cs",
+        "src/DesktopPet.App/App.xaml.cs",
+        "src/DesktopPet.App/MainWindow.xaml.cs",
+        "src/DesktopPet.App/UiText.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.RegressionTests/RoamingPauseTests.cs",
+        "tests/DesktopPet.UiSmokeTests/LocalizationUiTests.cs"
+      ]
     },
     {
       "id": "P012",

@@ -104,6 +104,19 @@ public sealed class PetBrain
     public bool SleepEnabled { get; set; } = true;
     public bool CalmBehavior { get; set; }
 
+    /// <summary>When true, random rest selection never picks Walk and an in-progress walk decelerates naturally.</summary>
+    public bool RoamingPaused
+    {
+        get => _roamingPaused;
+        set
+        {
+            if (_roamingPaused == value) return;
+            _roamingPaused = value;
+            if (value && State == PetState.Walk) _walkStopDestination = PetState.Idle;
+        }
+    }
+    private bool _roamingPaused;
+
     public PetState State { get; private set; } = PetState.Idle;
     public double X { get; private set; }
     public double Y { get; private set; }
@@ -562,7 +575,7 @@ public sealed class PetBrain
         if (X <= leftEdge)
         {
             // Prefer moving to an adjacent surface over turning around at every edge.
-            if (TryLeaveEdge(-1, platform))
+            if (!_roamingPaused && TryLeaveEdge(-1, platform))
             {
                 return;
             }
@@ -570,11 +583,11 @@ public sealed class PetBrain
             X = leftEdge;
             _walkTargetDirection = 1;
             _walkVelocityX = 0;
-            FacingRight = true;
+            if (!_roamingPaused) FacingRight = true;
         }
         else if (X >= rightEdge)
         {
-            if (TryLeaveEdge(1, platform))
+            if (!_roamingPaused && TryLeaveEdge(1, platform))
             {
                 return;
             }
@@ -582,7 +595,7 @@ public sealed class PetBrain
             X = rightEdge;
             _walkTargetDirection = -1;
             _walkVelocityX = 0;
-            FacingRight = false;
+            if (!_roamingPaused) FacingRight = false;
         }
 
         Y = platform.GroundY - _groundOffset;
@@ -652,7 +665,7 @@ public sealed class PetBrain
 
     private PetState PickNextRestState()
     {
-        var walk = (CalmBehavior ? 42 : 70) * BehaviorProfile.WalkWeight;
+        var walk = _roamingPaused ? 0 : (CalmBehavior ? 42 : 70) * BehaviorProfile.WalkWeight;
         var idle = (CalmBehavior ? 40 : 18) * BehaviorProfile.IdleWeight;
         var sit = (CalmBehavior ? 18 : 12) * BehaviorProfile.SitWeight;
         var roll = _rng.NextDouble() * (walk + idle + sit);
