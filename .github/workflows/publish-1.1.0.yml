@@ -25,9 +25,9 @@ jobs:
           fetch-depth: 0
       - name: Check publication guards offline
         run: |
-          ./tests/evolution-release-regression.ps1
+          powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File tests/evolution-release-regression.ps1
           if ($LASTEXITCODE -ne 0) { throw 'Publication guard checks failed' }
-          ./tests/evolution-recovery-regression.ps1
+          powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File tests/evolution-recovery-regression.ps1
           if ($LASTEXITCODE -ne 0) { throw 'Recovery checks failed' }
       - uses: actions/download-artifact@v4
         with:
