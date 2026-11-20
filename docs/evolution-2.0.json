@@ -242,11 +242,18 @@
     },
     {
       "id": "P019",
-      "title": "Discovery pending: Pet interactions and comfort (19)",
-      "status": "planned",
+      "title": "Open the shared action menu directly from a pet right-click",
+      "status": "verified",
       "milestone": "1.2.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/MainWindow.xaml",
+        "src/DesktopPet.App/MainWindow.xaml.cs",
+        "src/DesktopPet.App/App.xaml.cs",
+        "src/DesktopPet.App/PetMenuBuilder.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/PetContextMenuUiTests.cs"
+      ]
     },
     {
       "id": "P020",

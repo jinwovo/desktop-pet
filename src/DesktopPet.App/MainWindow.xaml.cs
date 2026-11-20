@@ -973,6 +973,15 @@ public partial class MainWindow : Window
         return bitmap;
     }
 
+    public event Action? ContextMenuRequested;
+
+    private void PetImage_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        if (!IsPresentationActive || _isPressed || _isDragging) return;
+        ContextMenuRequested?.Invoke();
+    }
+
     private void PetImage_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         // Don't commit to a drag yet — a press that never moves is a poke, not a drag.

@@ -24,6 +24,8 @@ P017 cancels obsolete gallery preview requests when selection, filtering, applic
 
 P018 keeps notification identity as a source/event pair, so delimiters inside either value cannot cause a different message to be discarded. Unread identities remain protected even after the bounded recent-history cache evicts them, and failed acknowledgements retain that protection. Real inbox/file tests cross the 512-entry history boundary, lock a receipt during acknowledgement and verify notifications without event IDs remain independent. This fix is planned for 1.2.0.
 
+P019 opens the existing action menu from a right-click on the pet. The tray and pet share one menu builder and the same command callbacks, current pause state and localized labels. Right-clicks during a drag, while hidden, during presentation suppression or after disposal cannot open it or change motion. Routed-input tests open the actual WinForms menu, execute injected navigation callbacks and verify the pause command. This feature is planned for 1.2.0.
+
 ## Milestones
 
 | Verified patch threshold | Planned release | Main review area |

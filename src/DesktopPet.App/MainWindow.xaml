@@ -18,7 +18,8 @@
         Width="128" Height="128">
     <Grid x:Name="ActorVisualRoot" Background="Transparent"
           MouseLeftButtonDown="PetImage_MouseLeftButtonDown" MouseMove="PetImage_MouseMove"
-          MouseLeftButtonUp="PetImage_MouseLeftButtonUp" LostMouseCapture="PetImage_LostMouseCapture">
+          MouseLeftButtonUp="PetImage_MouseLeftButtonUp" MouseRightButtonUp="PetImage_MouseRightButtonUp"
+          LostMouseCapture="PetImage_LostMouseCapture">
         <Grid.RenderTransform><TranslateTransform x:Name="ResidualOffset" /></Grid.RenderTransform>
         <Image x:Name="PreviousPetImage" Stretch="Uniform" IsHitTestVisible="False" Focusable="False"
                Visibility="Collapsed" RenderOptions.BitmapScalingMode="HighQuality" />
