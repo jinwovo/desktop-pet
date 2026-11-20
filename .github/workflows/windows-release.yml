@@ -75,6 +75,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Stable publication guard checks failed' }
           powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File tests/evolution-release-regression.ps1
           if ($LASTEXITCODE -ne 0) { throw 'Evolution publication guard checks failed' }
+          powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File tests/evolution-recovery-regression.ps1
+          if ($LASTEXITCODE -ne 0) { throw 'Evolution recovery checks failed' }
       - name: Installer regression checks
         run: |
           powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File tests/install-regression.ps1
@@ -147,9 +149,26 @@ jobs:
           $smokeRoot = Join-Path $env:RUNNER_TEMP ("DesktopPet-release-smoke-" + [Guid]::NewGuid().ToString("N"))
           Expand-Archive -LiteralPath $archive.FullName -DestinationPath $smokeRoot
           Test-DesktopPetReleasePayload -Directory $smokeRoot -ExpectedVersion $env:DESKTOPPET_RELEASE_VERSION -ExpectedDeployment "self-contained-single-file"
-          $process = Start-Process -FilePath (Join-Path $smokeRoot "DesktopPet.App.exe") -ArgumentList "--version" -WindowStyle Hidden -Wait -PassThru
-          if ($process.ExitCode -ne 0) { throw "Packaged startup failed" }
-          powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File tests/installation-check-regression.ps1 -ApplicationPath (Join-Path $smokeRoot 'DesktopPet.App.exe')
+          $exe = Join-Path $smokeRoot "DesktopPet.App.exe"
+          $start = New-Object Diagnostics.ProcessStartInfo
+          $start.FileName = $exe
+          $start.Arguments = "--version"
+          $start.UseShellExecute = $false
+          $start.CreateNoWindow = $true
+          $start.WindowStyle = [Diagnostics.ProcessWindowStyle]::Hidden
+          $start.RedirectStandardOutput = $true
+          $start.RedirectStandardError = $true
+          $process = [Diagnostics.Process]::Start($start)
+          try {
+            $stdoutTask = $process.StandardOutput.ReadToEndAsync()
+            $stderrTask = $process.StandardError.ReadToEndAsync()
+            if (-not $process.WaitForExit(30000)) { $process.Kill(); throw 'Owned version-check child timed out.' }
+            $exitCode = $process.ExitCode
+            $stdout = $stdoutTask.GetAwaiter().GetResult().Trim()
+            $stderr = $stderrTask.GetAwaiter().GetResult()
+          } finally { $process.Dispose() }
+          if ($exitCode -ne 0 -or $stderr -ne '' -or $stdout -ne ($env:DESKTOPPET_RELEASE_VERSION + '.0')) { throw "Packaged startup failed: exit $exitCode, stdout '$stdout', stderr '$stderr'" }
+          powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File tests/installation-check-regression.ps1 -ApplicationPath $exe
           if ($LASTEXITCODE -ne 0) { throw 'Actual release installation checks failed' }
       - uses: actions/upload-artifact@v4
         with:

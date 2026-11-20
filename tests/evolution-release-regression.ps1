@@ -196,6 +196,12 @@ try {
     try { Assert-DesktopPetEvolutionReady -Version '2.0.0' -PlanPath 'docs\empty-evidence-plan.json' -RepositoryRoot $script:fixtureRoot } catch { $caught = $true }
     Write-Result 'Verified-Patch-Empty-Evidence-Rejected' $caught
 
+    foreach ($value in @('C:\Temp', 'D:/runner/temp', '\\server\share\temp', '//server/share/temp')) {
+        Write-Result ('Qualified-Path-'+$value) (Test-DesktopPetEvolutionAbsolutePath -Path $value)
+    }
+    foreach ($value in @('', 'relative/temp', 'C:relative', '\rooted-only', '\\server')) {
+        Write-Result ('Relative-Path-Rejected-'+$value) (-not (Test-DesktopPetEvolutionAbsolutePath -Path $value))
+    }
     Write-Output ("SUMMARY: {0} passed, {1} failed" -f $script:passed, $script:failed)
     if ($script:failed -gt 0) { exit 1 }
 }

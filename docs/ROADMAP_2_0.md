@@ -25,6 +25,8 @@ The first ten patches address pointer-facing jitter, preview state transitions a
 
 Areas guide discovery and can be reprioritized when debugging reveals a higher-impact problem. Milestone publication requires its preceding patch threshold, matching source/tag version and successful Windows verification, packaged-archive checks and installation checks. Existing releases and tags remain immutable. The new evolution publication path supplements the historical 1.0.0 release/recovery path.
 
+The [1.1.0 recovery workflow](../.github/workflows/publish-1.1.0.yml) reuses the successful Windows distribution run `44655275518` at immutable commit `4a69780dc24f0601599182603b6b1005d45831ac`. It validates both SHA256 sidecars, the extracted payload and isolated installation before creating a draft, compares all four uploaded files with the source artifact, then verifies the public release anonymously. Rerunning validates an existing public release without replacing it. [Offline recovery scenarios](../tests/evolution-recovery-regression.ps1) cover new, draft and public releases, failed source CI, wrong tag commits and corrupted downloads. These release repairs do not increase the product patch count.
+
 ## Validation limits
 
 Automated WPF rendering checks inspect actual pixels, contact transforms and window lifecycles. A renderer-loop timing is not a hardware-independent FPS measurement. Physical clean-PC, mixed-DPI and subjective motion checks remain explicitly distinguishable from automated results. The stable 2.0.0 tag is created after the ledger and final verification gates pass.

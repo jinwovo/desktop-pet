@@ -1,0 +1,41 @@
+name: Publish verified 1.1.0
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/publish-1.1.0.yml"
+      - "scripts/publish-verified-1.1.0.ps1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: powershell
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Check publication guards offline
+        run: |
+          ./tests/evolution-release-regression.ps1
+          if ($LASTEXITCODE -ne 0) { throw 'Publication guard checks failed' }
+          ./tests/evolution-recovery-regression.ps1
+          if ($LASTEXITCODE -ne 0) { throw 'Recovery checks failed' }
+      - uses: actions/download-artifact@v4
+        with:
+          name: DesktopPet-public-windows
+          run-id: 44655275518
+          github-token: ${{ github.token }}
+          path: release-files
+      - name: Publish verified 1.1.0
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./scripts/publish-verified-1.1.0.ps1

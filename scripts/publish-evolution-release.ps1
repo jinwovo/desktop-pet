@@ -13,6 +13,13 @@ function Get-DesktopPetEvolutionThreshold {
     throw 'Only stable evolution milestones 1.1.0 through 1.9.0 and 2.0.0 are supported.'
 }
 
+function Test-DesktopPetEvolutionAbsolutePath {
+    param([AllowNull()][AllowEmptyString()][string]$Path)
+    if ([string]::IsNullOrWhiteSpace($Path)) { return $false }
+    # Windows PowerShell 5.1 runs on .NET Framework, which lacks Path.IsPathFullyQualified.
+    return $Path -match '^(?:[A-Za-z]:[\\/]|[\\/]{2}[^\\/]+[\\/][^\\/]+(?:[\\/]|$))'
+}
+
 function Assert-DesktopPetEvolutionNoLinks {
     param([Parameter(Mandatory=$true)][string]$Path)
     $current = [IO.Path]::GetFullPath($Path)
@@ -192,7 +199,7 @@ function Publish-DesktopPetEvolutionRelease {
     $assets = @(Invoke-RestMethod -Uri $assetsUrl -Headers $headers)
     if ($assets.Count -eq 1 -and $assets[0] -is [array]) { $assets = @($assets[0]) }
     Assert-DesktopPetEvolutionAssets -Version $Version -Release $release -Assets $assets
-    if ([string]::IsNullOrWhiteSpace($env:RUNNER_TEMP) -or -not [IO.Path]::IsPathFullyQualified($env:RUNNER_TEMP)) {
+    if (-not (Test-DesktopPetEvolutionAbsolutePath -Path $env:RUNNER_TEMP)) {
         throw 'An explicit workflow temporary directory is required.'
     }
     $temporaryRoot = [IO.Path]::GetFullPath($env:RUNNER_TEMP).TrimEnd('\','/')
