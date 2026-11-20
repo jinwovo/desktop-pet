@@ -14,6 +14,10 @@ AI 작업과 집중 시간에 조용히 함께하는 Windows 데스크톱 캐릭
 
 </div>
 
+[2.0 로드맵과 100개 패치 진행 현황](docs/ROADMAP_2_0.md)
+
+1.1.0은 첫 10개 개선 패치를 담았습니다. 시선 튐·멈춤 중 반투명 현상을 고치고, 숨긴 미리보기의 작업을 중단하며, 수동 알림 열람과 언어 변경 중 선택·애니메이션 상태를 유지합니다.
+
 DesktopPet은 로컬 Claude Code·Codex의 응답 완료를 알려주고, 25분 집중·5분 휴식 타이머와 캐릭터 가져오기를 제공하는 바탕화면 펫입니다. 걷는 동안 캐시한 몸·발 그림을 연속으로 움직이고 실제 이동 거리에 보폭을 맞춥니다.
 
 1.0.2에서는 머리·몸통·양발의 독립 움직임을 유지하면서, 몸의 좌우 반전을 120ms에 걸쳐 전환하고 옆모습↔사선 보간을 100ms 안에 끝냅니다. 기본 9개 캐릭터는 약 20% 빠르게 걷고 발을 덜 높이 들어 올립니다. 기존 6개 텍스처 팩은 그대로 사용하며, 움직임 줄이기 설정을 켜면 관절 움직임과 페이드를 끕니다.
@@ -165,7 +169,7 @@ powershell -NoProfile -File tests/package-regression.ps1
 공용 Windows x64 배포를 만들려면 다음을 실행합니다.
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 1.0.2
+powershell -NoProfile -File scripts/package-release.ps1 -Version 1.1.0
 ```
 
 `artifacts/releases/`에 self-contained ZIP과 SHA256을 만듭니다. 필요한 런타임 팩이 없으면 실패하며 배포 종류를 몰래 바꾸지 않습니다. [Windows 워크플로](.github/workflows/windows-release.yml)는 검사와 아티팩트 생성을 설정한 파일이며, 파일이 있다고 원격 빌드나 공개 릴리스가 성공했다는 뜻은 아닙니다.

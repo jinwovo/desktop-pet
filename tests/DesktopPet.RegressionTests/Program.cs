@@ -238,7 +238,8 @@ var tests = new (string Name, Action Run)[]
  .Concat(DiagnosticReportTests.Create())
  .Concat(PetRecoveryTests.Create())
  .Concat(CharacterImportCancellationTests.Create())
- .Concat(RigSecondaryMotionTests.Create()).ToArray();
+ .Concat(RigSecondaryMotionTests.Create())
+ .Concat(CursorGazeControllerTests.Create()).ToArray();
 
 var failures = 0;
 var skipped = 0;

@@ -25,6 +25,7 @@ internal static class GroundedRigVisualRegressionTests
             VerifyContinuousSettling(presentation);
             VerifyLayeredTransitions(presentation);
             VerifyReversal(presentation);
+            VerifyRestOpacity(presentation);
             benchmark ??= presentation;
             verified++;
         }
@@ -206,11 +207,54 @@ internal static class GroundedRigVisualRegressionTests
         var expectedBitmap = new RenderTargetBitmap((int)visual.Width, (int)visual.Height, 96, 96, PixelFormats.Pbgra32);
         expectedBitmap.Render(expected);
         Check(actualRest.AsSpan().SequenceEqual(Pixels(expectedBitmap)), "Settling did not end on the exact next rest image");
+        var alternate = presentation.Frames[presentation.Definition.GetFrames(PetState.Idle)[1]];
+        visual.UpdatePose(WalkView.Side, 0.8, 0.75, false);
+        var snapshot = typeof(GroundedRigVisual).GetField("_restSnapshot", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(visual);
+        visual.SetRestFrame(alternate, unmirrored: true);
+        visual.UpdatePose(WalkView.Side, 0.8, 0.85, false);
+        Check(snapshot is not null && ReferenceEquals(snapshot, typeof(GroundedRigVisual).GetField("_restSnapshot", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(visual)),
+            "A mid-settle blink rebuilt the walking snapshot instead of changing only the resting target");
+        visual.UpdatePose(WalkView.Side, 0.8, 1, false);
+        var targetDrawing = new DrawingVisual();
+        using (var context = targetDrawing.RenderOpen()) context.DrawImage(alternate, new Rect(0, 0, visual.Width, visual.Height));
+        var targetBitmap = new RenderTargetBitmap((int)visual.Width, (int)visual.Height, 96, 96, PixelFormats.Pbgra32);
+        targetBitmap.Render(targetDrawing);
+        Check(Pixels(Render(visual)).AsSpan().SequenceEqual(Pixels(targetBitmap)), "A changed blink target was not the exact final unmirrored resting image");
+        visual.SetRestFrame(alternate, unmirrored: false);
+        visual.UpdatePose(WalkView.Side, 0.8, 1, false);
+        using (var context = targetDrawing.RenderOpen())
+        {
+            context.PushTransform(new MatrixTransform(-1, 0, 0, 1, visual.Width, 0));
+            context.DrawImage(alternate, new Rect(0, 0, visual.Width, visual.Height)); context.Pop();
+        }
+        targetBitmap = new RenderTargetBitmap((int)visual.Width, (int)visual.Height, 96, 96, PixelFormats.Pbgra32); targetBitmap.Render(targetDrawing);
+        Check(Pixels(Render(visual)).AsSpan().SequenceEqual(Pixels(targetBitmap)), "An authored directional rest was not mirrored exactly after a leftward walk");
         visual.UpdatePose(WalkView.Side, 0.8, 0, true, 1d / 60, reducedMotion: true);
         Near(visual.HeadMatrix.M12, 0, 1e-12, "Reduced motion retained secondary head rotation");
         Near(visual.NearFootMatrix.M12, 0, 1e-12, "Reduced motion retained toe roll");
         Check(visual.TurnWeight == 0 && visual.RestWeight == 0 && !actualRest.AsSpan().SequenceEqual(Pixels(Render(visual))), "Reduced motion did not suppress blends");
         visual.SetPresentation(null); target.SetPresentation(null);
+    }
+
+    private static void VerifyRestOpacity(CharacterPresentation presentation)
+    {
+        foreach (var scale in new[] { 0.5, 1, 2.5 })
+        foreach (var facingRight in new[] { true, false })
+        {
+            var visual = Visual(presentation, scale);
+            visual.UpdatePose(WalkView.Side, 0.175, 0.65, facingRight);
+            var walking = Render(visual);
+            var index = ((int)(walking.PixelHeight * 0.625) * walking.PixelWidth + walking.PixelWidth / 2) * 4 + 3;
+            var alphaWalking = Pixels(walking)[index];
+            visual.UpdatePose(WalkView.Side, 0.175, 0.825, facingRight);
+            var alphaMidpoint = Pixels(Render(visual))[index];
+            visual.UpdatePose(WalkView.Side, 0.175, 1, facingRight);
+            var alphaRest = Pixels(Render(visual))[index];
+            Check(alphaWalking >= 240 && alphaRest >= 240, "Rest-opacity fixture missed the opaque body interior");
+            Check(alphaMidpoint >= Math.Min(alphaWalking, alphaRest) - 4,
+                $"Rest blending made an opaque body translucent: {presentation.Definition.Name}, scale {scale}, right {facingRight}, alpha {alphaWalking}/{alphaMidpoint}/{alphaRest}");
+            visual.SetPresentation(null);
+        }
     }
 
     private static void VerifyReversal(CharacterPresentation presentation)

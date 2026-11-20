@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.1.0 — evolution patches P001–P010
+
+- Stabilize cursor-facing artwork around the pet's center; retain the grounded stopping phase when Settings changes from walking to rest.
+- Pause hidden/minimized Settings and motion previews, rebase their render clocks on resume, and share the weighted idle timeline through walking-to-rest handoff.
+- Preserve explicit unread review across scheduled quiet-hour boundaries. Apply dismissal-policy changes directly to the existing timer so the displayed receipt remains the one acknowledged.
+- Localize bubble controls and gallery categories/status/counts in KO/EN/zh-CN while retaining user notification text, search, selection and image caches. Language changes reuse the current Settings presentation and gait phase.
+- Pass cancellation into an already running gallery preview decoder and ignore late results after close.
+- Replace overlapping rest-layer opacity fades with premultiplied pixel interpolation from one canonical walking snapshot, preserving opaque interior pixels. The final short blend reuses that snapshot and ends on the exact resting bitmap.
+- Begin the [100-patch evolution ledger](docs/ROADMAP_2_0.md). Verified milestone tags publish after the patch threshold and Windows distribution gates pass; release administration is excluded from the product-patch count.
+
 ## 1.0.2 — brisker gait and bounded turns
 
 - Ease upper-body facing changes over 120 ms through a cached, footless frontal pivot instead of mirroring the whole character in one frame or superimposing opposite faces. Keep immediate distance-based foot reflection and ground contact; normal walking remains side/quarter-view. Derive pivot/reflected body images once and reuse the existing premultiplied blend buffer.

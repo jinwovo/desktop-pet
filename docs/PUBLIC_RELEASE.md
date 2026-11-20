@@ -15,8 +15,8 @@ Target repository: [jinwovo/desktop-pet](https://github.com/jinwovo/desktop-pet)
 - The three new fan-art characters were selected from the official [2026 Sanrio Character Ranking](https://corporate.sanrio.co.jp/en/news/20260628_03.html), placing first, second and fourth respectively. [Creation records](../character-packs/fan-art/POPULAR_ASSETS.md), a versioned catalog and a [three-character preview](../character-packs/fan-art/popular-characters-preview.png) accompany the artwork. Third-party character rights and fan-art images are outside the MIT grant.
 - A local25/5 focus timer and test-notification button. Notifications use the existing durable inbox and honor hidden/quiet mode.
 - English, Korean and Simplified Chinese READMEs, a recorded GIF, character gallery, authoring guide, issue/PR templates, contribution/security guidance and MIT license.
-- Continuous body/foot rendering and fractional native-position correction. Whole-body angle changes are still immediate transitions.
-- Windows verification/package workflow and a **Verified GitHub release** workflow. Other version tags create drafts after verification. At the owner's explicit distribution request, only the `v1.0.0` push publishes the newly verified 1.0.0 draft as Latest after checking its source and four assets. Existing releases are never replaced.
+- Continuous head/torso/foot rendering, bounded view/facing transitions and fractional native-position correction.
+- Windows verification/package workflow and a **Verified GitHub release** workflow. The historical `v1.0.0` publication path remains intact. The owner-authorized [2.0 evolution milestones](ROADMAP_2_0.md) publish after their verified patch thresholds and distribution checks pass; other tags create drafts. Existing releases are never replaced.
 
 ## Export a clean public source tree
 
@@ -35,18 +35,18 @@ Review the exported folder before copying it into an authenticated clone of the 
 The default package is self-contained and requires access to missing NuGet runtime/build packs:
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 1.0.2
+powershell -NoProfile -File scripts/package-release.ps1 -Version 1.1.0
 ```
 
 An explicitly labelled alternative requires the user's .NET10 Desktop Runtime x64:
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 1.0.2 -FrameworkDependent
+powershell -NoProfile -File scripts/package-release.ps1 -Version 1.1.0 -FrameworkDependent
 ```
 
 The output directory is `artifacts/releases/`. Keep the entire ZIP layout. Compare its `.zip.sha256`, extract it and validate the manifest before reviewing the app on a test Windows profile. Do not use your real assistant configuration as a regression fixture.
 
-For GitHub, push reviewed source through the authenticated workflow. **Windows distribution** collects artifacts. **Verified GitHub release** requires an existing matching remote tag and creates a new draft after all checks, with app/optional ZIPs and checksums. A `v1.0.0` push additionally runs the explicitly authorized stable publication step; other tags and manual runs remain drafts. Source version and four expected assets must match, and existing releases/tags are never replaced. See [workflow triggers](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow) and [publishing a draft with GitHub CLI](https://cli.github.com/manual/gh_release_edit).
+For GitHub, push reviewed source through the authenticated workflow. **Windows distribution** collects artifacts. **Verified GitHub release** creates a new draft after all checks with app/optional ZIPs and checksums. Pushed evolution tags `v1.1.0` through `v1.9.0` and `v2.0.0` additionally require 10 through 100 verified ledger entries before publishing that draft as Latest. The historical `v1.0.0` path is preserved; other tags and manual runs remain drafts. Source version and four expected assets must match, and existing releases/tags are never replaced. See the [evolution plan](ROADMAP_2_0.md).
 
 Review the gallery by searching Korean and English aliases, selecting a static card preview, opening **움직임 미리보기**, and applying with **이 친구와 함께하기**. Confirm that search and both preview steps leave the active desktop pet unchanged. For optional packs, verify six import folders plus the catalog, notices, provenance and per-file SHA256 inventory in the separate archive.
 

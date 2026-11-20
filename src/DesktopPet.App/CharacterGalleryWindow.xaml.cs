@@ -21,11 +21,15 @@ public sealed record CharacterGalleryItem(string Name, string EnglishName, Chara
 public partial class CharacterGalleryWindow : Window
 {
     private readonly MainWindow _pet;
+    private readonly Func<string, CancellationToken, CharacterPresentation> _previewLoader;
     private readonly CancellationTokenSource _lifetime = new();
     private CancellationTokenSource? _loadCancellation;
     private long _loadRevision;
     private IReadOnlyList<CharacterGalleryItem> _all = Array.Empty<CharacterGalleryItem>();
     private bool _closed, _started, _filtering, _previewBusy;
+    private bool _catalogLoading, _catalogFailed;
+    private string _statusKey = "";
+    private object[] _statusArguments = [];
     private MotionPreviewWindow? _motionPreview;
     private sealed record CategoryChoice(string Label, CharacterGalleryCategory Category);
     private sealed record Alias(string EnglishName, string[] Names);
@@ -36,29 +40,30 @@ public partial class CharacterGalleryWindow : Window
         ["시나모롤"] = new("Cinnamoroll", ["시나몬롤", "cinnamonroll", "シナモロール"]), ["쿠로미"] = new("Kuromi", ["クロミ"]),
     };
 
-    public CharacterGalleryWindow(MainWindow pet)
+    public CharacterGalleryWindow(MainWindow pet, Func<string, CancellationToken, CharacterPresentation>? previewLoader = null)
     {
         _pet = pet;
+        _previewLoader = previewLoader ?? ((folder, cancellation) => CharacterPresentation.Load(folder, cancellationToken: cancellation));
         _pet.RenderOptionsChanged += ApplyRenderOptions;
         InitializeComponent();
         MaxHeight = Math.Max(MinHeight, SystemParameters.WorkArea.Height - 40);
-        CategoryCombo.ItemsSource = new[]
-        {
-            new CategoryChoice(UiText.Get("전체 친구"), CharacterGalleryCategory.All), new CategoryChoice(UiText.Get("오리지널"), CharacterGalleryCategory.Original),
-            new CategoryChoice(UiText.Get("팬아트 팩"), CharacterGalleryCategory.FanArt), new CategoryChoice(UiText.Get("추가한 캐릭터"), CharacterGalleryCategory.Custom),
-        };
-        CategoryCombo.SelectedValue = CharacterGalleryCategory.All;
+        SetCategoryChoices(CharacterGalleryCategory.All);
         Loaded += (_, _) => { if (!_started) { _started = true; RefreshCharacters(); } };
         Closed += (_, _) =>
         {
             _closed = true;
             _pet.RenderOptionsChanged -= ApplyRenderOptions;
+            UiText.LanguageChanged -= RefreshLanguage;
             _lifetime.Cancel();
             _loadCancellation?.Dispose();
             _lifetime.Dispose();
             _motionPreview?.Close();
         };
         UiText.Attach(this);
+        Loaded += (_, _) => RefreshLanguage();
+        // Translate static controls first, then redraw stateful labels that must not be reset
+        // to the empty strings present when UiText first attached to this window.
+        UiText.LanguageChanged += RefreshLanguage;
     }
 
     public Task LoadingTask { get; private set; } = Task.CompletedTask;
@@ -66,6 +71,51 @@ public partial class CharacterGalleryWindow : Window
     public IReadOnlyList<CharacterGalleryItem> AllCharacters => _all;
     public event Action<string>? CharacterApplied;
     private void ApplyRenderOptions(int fps, bool reducedMotion) => _motionPreview?.SetRenderOptions(fps, reducedMotion);
+
+    private void SetCategoryChoices(CharacterGalleryCategory category)
+    {
+        _filtering = true;
+        try
+        {
+            CategoryCombo.ItemsSource = new[]
+            {
+                new CategoryChoice(UiText.Get("전체 친구"), CharacterGalleryCategory.All), new CategoryChoice(UiText.Get("오리지널"), CharacterGalleryCategory.Original),
+                new CategoryChoice(UiText.Get("팬아트 팩"), CharacterGalleryCategory.FanArt), new CategoryChoice(UiText.Get("추가한 캐릭터"), CharacterGalleryCategory.Custom),
+            };
+            CategoryCombo.SelectedValue = category;
+        }
+        finally { _filtering = false; }
+    }
+
+    private void RefreshLanguage()
+    {
+        if (_closed) return;
+        var selected = (CharacterCards.SelectedItem as CharacterGalleryItem)?.Name;
+        var category = CategoryCombo.SelectedValue is CharacterGalleryCategory value ? value : CharacterGalleryCategory.All;
+        SetCategoryChoices(category);
+        FilterCharacters();
+        CharacterCards.Items.Refresh();
+        CharacterCards.SelectedItem = CharacterCards.Items.OfType<CharacterGalleryItem>().FirstOrDefault(item => item.Name == selected);
+        UpdateSelection();
+        RenderStatus();
+    }
+
+    private void SetStatus(string key, params object[] arguments)
+    {
+        _statusKey = key;
+        _statusArguments = arguments;
+        RenderStatus();
+    }
+
+    private void RenderStatus() => StatusText.Text = _statusArguments.Length == 0
+        ? UiText.Get(_statusKey) : UiText.Format(_statusKey, _statusArguments);
+
+    private void RenderCount(int visibleCount)
+    {
+        CountText.Text = _catalogLoading ? UiText.Get("친구들을 불러오고 있어요…")
+            : _catalogFailed ? UiText.Get("목록을 불러오지 못했어요.")
+            : _started ? UiText.Format("{0}종 중 {1}종", _all.Count, visibleCount) : "";
+    }
 
     /// <summary>Reload the library after import without applying a character or changing filters.</summary>
     public void RefreshCharacters()
@@ -80,7 +130,9 @@ public partial class CharacterGalleryWindow : Window
 
     private async Task LoadCharactersAsync(long revision, CancellationToken cancellation)
     {
-        CountText.Text = "친구들을 불러오고 있어요…";
+        _catalogLoading = true;
+        _catalogFailed = false;
+        RenderCount(CharacterCards.Items.Count);
         try
         {
             var names = _pet.AvailableCharacterNames.ToArray();
@@ -116,14 +168,21 @@ public partial class CharacterGalleryWindow : Window
             var selectedName = (CharacterCards.SelectedItem as CharacterGalleryItem)?.Name ??
                 (_all.Count == 0 ? _pet.CurrentCharacterName : null);
             _all = items;
+            _catalogLoading = false;
             FilterCharacters();
             CharacterCards.SelectedItem = CharacterCards.Items.OfType<CharacterGalleryItem>().FirstOrDefault(item => item.Name == selectedName);
-            StatusText.Text = "현재 친구: " + _pet.CurrentCharacterName;
+            SetStatus("현재 친구: {0}", _pet.CurrentCharacterName);
         }
         catch (OperationCanceledException) { }
         catch (Exception ex) when (IsCharacterError(ex))
         {
-            if (!_closed && revision == _loadRevision) { CountText.Text = "목록을 불러오지 못했어요."; StatusText.Text = "캐릭터 폴더를 확인하고 다시 열어주세요."; }
+            if (!_closed && revision == _loadRevision)
+            {
+                _catalogLoading = false;
+                _catalogFailed = true;
+                RenderCount(CharacterCards.Items.Count);
+                SetStatus("캐릭터 폴더를 확인하고 다시 열어주세요.");
+            }
         }
     }
 
@@ -153,8 +212,8 @@ public partial class CharacterGalleryWindow : Window
         return result;
     }
 
-    private void Filter_Changed(object sender, TextChangedEventArgs e) { if (IsInitialized) FilterCharacters(); }
-    private void Category_Changed(object sender, SelectionChangedEventArgs e) { if (IsInitialized) FilterCharacters(); }
+    private void Filter_Changed(object sender, TextChangedEventArgs e) { if (IsInitialized && !_filtering) FilterCharacters(); }
+    private void Category_Changed(object sender, SelectionChangedEventArgs e) { if (IsInitialized && !_filtering) FilterCharacters(); }
 
     private void FilterCharacters()
     {
@@ -167,8 +226,8 @@ public partial class CharacterGalleryWindow : Window
         CharacterCards.ItemsSource = visible;
         CharacterCards.SelectedItem = previous is not null && visible.Contains(previous) ? previous : null;
         _filtering = false;
-        EmptyText.Visibility = visible.Length == 0 && _started ? Visibility.Visible : Visibility.Collapsed;
-        CountText.Text = $"{_all.Count}종 중 {visible.Length}종";
+        EmptyText.Visibility = visible.Length == 0 && _started && !_catalogLoading && !_catalogFailed ? Visibility.Visible : Visibility.Collapsed;
+        RenderCount(visible.Length);
         UpdateSelection();
     }
 
@@ -179,7 +238,7 @@ public partial class CharacterGalleryWindow : Window
         var item = CharacterCards.SelectedItem as CharacterGalleryItem;
         PreviewImage.Source = item?.Thumbnail;
         SelectedNameText.Text = item?.Name ?? "";
-        SelectedDetailText.Text = item?.Detail ?? UiText.Get("친구를 선택해보세요.");
+        SelectedDetailText.Text = UiText.Get(item?.Detail ?? "친구를 선택해보세요.");
         ApplyButton.IsEnabled = item is { IsAvailable: true };
         PreviewButton.IsEnabled = item is { IsAvailable: true } && !_previewBusy;
     }
@@ -198,15 +257,18 @@ public partial class CharacterGalleryWindow : Window
         try
         {
             var folder = _pet.ResolveCharacterFolder(selected.Name);
-            var presentation = await Task.Run(() => CharacterPresentation.Load(folder), _lifetime.Token);
+            // Capture before yielding: Close disposes the CTS, but a captured token remains
+            // valid and also reaches cancellation checks between PNG reads/decodes.
+            var cancellation = _lifetime.Token;
+            var presentation = await Task.Run(() => _previewLoader(folder, cancellation), cancellation);
             if (_closed || !ReferenceEquals(CharacterCards.SelectedItem, selected)) return;
             _motionPreview?.Close();
             _motionPreview = new MotionPreviewWindow(presentation, _pet.CurrentWalkSpeedMultiplier, _pet.MaximumFps, _pet.ReducedMotion) { Owner = this };
             _motionPreview.Show();
-            StatusText.Text = UiText.Get("미리보기는 현재 친구를 바꾸지 않아요.");
+            SetStatus("미리보기는 현재 친구를 바꾸지 않아요.");
         }
         catch (OperationCanceledException) { }
-        catch (Exception ex) when (IsCharacterError(ex)) { if (!_closed) StatusText.Text = "움직임을 읽지 못했어요. 캐릭터 파일을 확인해주세요."; }
+        catch (Exception ex) when (IsCharacterError(ex)) { if (!_closed) SetStatus("움직임을 읽지 못했어요. 캐릭터 파일을 확인해주세요."); }
         finally { _previewBusy = false; if (!_closed) UpdateSelection(); }
     }
 
@@ -217,9 +279,9 @@ public partial class CharacterGalleryWindow : Window
         {
             _pet.SwitchCharacter(item.Name);
             CharacterApplied?.Invoke(item.Name);
-            StatusText.Text = item.Name + " 적용했어요.";
+            SetStatus("{0} 적용했어요.", item.Name);
         }
-        catch (Exception ex) when (IsCharacterError(ex)) { StatusText.Text = "적용하지 못했어요. 현재 친구는 그대로예요."; }
+        catch (Exception ex) when (IsCharacterError(ex)) { SetStatus("적용하지 못했어요. 현재 친구는 그대로예요."); }
     }
 
     private void Close_Click(object sender, RoutedEventArgs e) => Close();

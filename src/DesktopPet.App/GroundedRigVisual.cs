@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using DesktopPet.Core;
 
 namespace DesktopPet.App;
@@ -13,6 +14,9 @@ public sealed class GroundedRigVisual : FrameworkElement
     private readonly ImageDrawing _restDrawing = new();
     private readonly ViewLayers _layers;
     private RigTextureBlend? _bodyBlend, _nearBlend, _farBlend;
+    private RigTextureBlend? _restBlend;
+    private BitmapSource? _restFrame, _restSnapshot;
+    private readonly DrawingVisual _restCapture = new();
     private readonly RigViewBlend _viewBlend = new();
     private readonly RigFacingBlend _facingBlend = new();
     private CharacterPresentation? _presentation;
@@ -71,6 +75,7 @@ public sealed class GroundedRigVisual : FrameworkElement
         _presentation = presentation; _rig = presentation?.Definition.WalkRig;
         PoseUpdateCount = 0; Pose = default; _viewBlend.Reset(); _facingBlend.Reset(); RestWeight = 0;
         _layers.Clear(); _restDrawing.ImageSource = null;
+        _restFrame = _restSnapshot = null; _restBlend = null;
         _bodyBlend = _nearBlend = _farBlend = null;
         if (_rig is not null && presentation is not null)
         {
@@ -91,9 +96,14 @@ public sealed class GroundedRigVisual : FrameworkElement
     }
     public void SetRestFrame(ImageSource source, bool unmirrored)
     {
-        if (!ReferenceEquals(_restDrawing.ImageSource, source)) _restDrawing.ImageSource = source;
+        if (source is not BitmapSource bitmap) throw new ArgumentException("A rig resting frame must be a bitmap.", nameof(source));
+        if (!ReferenceEquals(_restFrame, source))
+        {
+            _restFrame = bitmap; _restBlend = null;
+            if (RestWeight == 0) _restDrawing.ImageSource = source;
+        }
         if (_unmirroredRest == unmirrored) return;
-        _unmirroredRest = unmirrored; UpdateDisplayMatrix();
+        _unmirroredRest = unmirrored; _restSnapshot = null; _restBlend = null; UpdateDisplayMatrix();
     }
     private static double SplitY(CharacterDefinition definition) => Math.Clamp(definition.AnchorY - definition.FrameHeight * 0.2,
         definition.FrameHeight * 0.55, definition.FrameHeight * 0.85);
@@ -128,10 +138,47 @@ public sealed class GroundedRigVisual : FrameworkElement
         head.Translate(0, pose.BodyBob + joints.HeadLagY); _headTransform.Matrix = head;
         var rest = double.IsFinite(settleProgress) ? Math.Clamp((settleProgress - 0.65) / 0.35, 0, 1) : 0;
         RestWeight = reducedMotion ? 0 : rest * rest * (3 - 2 * rest);
-        _walking.Opacity = 1 - RestWeight; _rest.Opacity = RestWeight;
-        if (_facingRight != facingRight) { _facingRight = facingRight; UpdateDisplayMatrix(); }
+        if (_facingRight != facingRight)
+        {
+            _facingRight = facingRight; _restSnapshot = null; _restBlend = null; UpdateDisplayMatrix();
+        }
+        UpdateRestBlend();
         PoseUpdateCount++;
         return true;
+    }
+
+    private void UpdateRestBlend()
+    {
+        if (RestWeight == 0 || _restFrame is null)
+        {
+            _walking.Opacity = 1; _rest.Opacity = 0;
+            _restSnapshot = null; _restBlend = null; _restDrawing.ImageSource = _restFrame;
+            return;
+        }
+        _walking.Opacity = 0; _rest.Opacity = 1;
+        if (RestWeight == 1)
+        {
+            _restDrawing.ImageSource = _restFrame;
+            _restSnapshot = null; _restBlend = null;
+            return;
+        }
+        if (_restSnapshot is null)
+        {
+            var frame = _presentation!.Definition;
+            using (var context = _restCapture.RenderOpen())
+            {
+                // Capture unscaled parts in the resting layer's coordinate system. Its final
+                // display transform still owns scaling and any authored resting-frame flip.
+                if (!_facingRight && _unmirroredRest)
+                    context.PushTransform(new MatrixTransform(-1, 0, 0, 1, frame.FrameWidth, 0));
+                context.DrawDrawing(_layers.Group);
+                if (!_facingRight && _unmirroredRest) context.Pop();
+            }
+            var snapshot = new RenderTargetBitmap(frame.FrameWidth, frame.FrameHeight, 96, 96, PixelFormats.Pbgra32);
+            snapshot.Render(_restCapture); snapshot.Freeze(); _restSnapshot = snapshot;
+        }
+        _restBlend ??= new RigTextureBlend(_restSnapshot, _restFrame);
+        _restDrawing.ImageSource = _restBlend.At(RestWeight);
     }
     private void UpdateDisplayMatrix()
     {

@@ -27,6 +27,8 @@ public partial class SettingsWindow : Window
     private readonly Stopwatch _previewClock = Stopwatch.StartNew();
     private double _previewLastElapsedMs;
     private double _previewAnimationMs;
+    private double _previewStateElapsedMs;
+    private bool _previewRenderingSubscribed;
     private readonly WalkAppearanceController _walkAppearance = new(new Random(7));
     private readonly FramePacer _framePacer = new();
     private readonly PoseTransitionPresenter _poseTransition;
@@ -52,8 +54,10 @@ public partial class SettingsWindow : Window
         _pet.FocusTimerChanged += RenderFocusTimer;
         _pet.RenderOptionsChanged += ApplyRenderOptions;
         ApplyRenderOptions(_pet.MaximumFps, _pet.ReducedMotion);
-        _previewTimer.Tick += (_, _) => { if (!NeedsLiveRendering) RenderPreview(); };
-        Loaded += (_, _) => { _previewTimer.Start(); CompositionTarget.Rendering += OnPreviewRendering; };
+        _previewTimer.Tick += (_, _) => { if (IsPreviewActive && !NeedsLiveRendering) RenderPreview(); };
+        Loaded += (_, _) => UpdatePreviewAnimationState();
+        IsVisibleChanged += (_, _) => UpdatePreviewAnimationState();
+        StateChanged += (_, _) => UpdatePreviewAnimationState();
         Closed += (_, _) =>
         {
             _closed = true;
@@ -63,6 +67,7 @@ public partial class SettingsWindow : Window
             UiText.LanguageChanged -= RefreshLanguage;
             _previewTimer.Stop();
             CompositionTarget.Rendering -= OnPreviewRendering;
+            _previewRenderingSubscribed = false;
             _poseTransition.Reset();
             PreviewRig.SetPresentation(null);
             _motionPreview?.Close();
@@ -73,8 +78,27 @@ public partial class SettingsWindow : Window
         UiText.LanguageChanged += RefreshLanguage;
     }
 
-    private void LoadFromPet()
+    private bool IsPreviewActive => !_closed && IsLoaded && IsVisible && WindowState != WindowState.Minimized;
+    private void UpdatePreviewAnimationState()
     {
+        if (IsPreviewActive == _previewRenderingSubscribed) return;
+        if (IsPreviewActive)
+        {
+            _previewLastElapsedMs = _previewClock.Elapsed.TotalMilliseconds;
+            _lastPreviewRenderingTime = null; _framePacer.Reset();
+            _previewTimer.Start(); CompositionTarget.Rendering += OnPreviewRendering;
+        }
+        else
+        {
+            _previewTimer.Stop(); CompositionTarget.Rendering -= OnPreviewRendering;
+            _poseTransition.Reset();
+        }
+        _previewRenderingSubscribed = IsPreviewActive;
+    }
+
+    private void LoadFromPet(bool preservePreview = false)
+    {
+        var previewState = preservePreview && PreviewStateCombo.SelectedValue is PetState selected ? selected : PetState.Idle;
         _loading = true;
         LanguageCombo.SelectedValue = _pet.UiLanguagePreference;
         PreviewStateCombo.ItemsSource = new[]
@@ -83,7 +107,7 @@ public partial class SettingsWindow : Window
             new PreviewChoice(UiText.Get("울기"), PetState.Cry), new PreviewChoice(UiText.Get("화내기"), PetState.Angry),
             new PreviewChoice(UiText.Get("잠자기"), PetState.Sleep), new PreviewChoice(UiText.Get("떨어지기"), PetState.Falling),
         };
-        PreviewStateCombo.SelectedValue = PetState.Idle;
+        PreviewStateCombo.SelectedValue = previewState;
 
         CharacterCombo.ItemsSource = _pet.AvailableCharacterNames;
         CharacterCombo.SelectedItem = _pet.CurrentCharacterName;
@@ -110,7 +134,8 @@ public partial class SettingsWindow : Window
         _loading = false;
 
         UpdateValueLabels();
-        UpdatePreview();
+        if (preservePreview && _previewPresentation is not null) UpdateCharacterHint();
+        else UpdatePreview();
     }
 
     private void LoadMonitorChoices()
@@ -142,9 +167,7 @@ public partial class SettingsWindow : Window
     private void RefreshLanguage()
     {
         if (_closed) return;
-        var selectedState = PreviewStateCombo.SelectedValue;
-        LoadFromPet();
-        if (selectedState is PetState state) PreviewStateCombo.SelectedValue = state;
+        LoadFromPet(preservePreview: true);
         RenderFocusTimer();
     }
 
@@ -190,14 +213,10 @@ public partial class SettingsWindow : Window
             _lastPreviewState = PetState.Idle;
             _previewVirtualPositionPx = 0;
             _previewClock.Restart();
-            _previewLastElapsedMs = _previewAnimationMs = 0;
+            _previewLastElapsedMs = _previewAnimationMs = _previewStateElapsedMs = 0;
             _walkAppearance.Reset();
             RenderPreview();
-            CharacterHint.Text = _previewPresentation.Definition.HasDirectionalWalk
-                ? UiText.Get("걷는 방향을 바라보며 움직여요.")
-                : UiText.Get("동작을 골라 미리 볼 수 있어요.");
-            if (_previewPresentation.Definition.BehaviorProfile.Description.Length > 0)
-                CharacterHint.Text += "\n" + _previewPresentation.Definition.BehaviorProfile.Description;
+            UpdateCharacterHint();
         }
         catch (Exception ex) when (ex is InvalidDataException or IOException or UnauthorizedAccessException)
         {
@@ -212,12 +231,20 @@ public partial class SettingsWindow : Window
         }
     }
 
+    private void UpdateCharacterHint()
+    {
+        if (_previewPresentation is null) return;
+        CharacterHint.Text = _previewPresentation.Definition.HasDirectionalWalk
+            ? UiText.Get("걷는 방향을 바라보며 움직여요.") : UiText.Get("동작을 골라 미리 볼 수 있어요.");
+        if (_previewPresentation.Definition.BehaviorProfile.Description.Length > 0)
+            CharacterHint.Text += "\n" + _previewPresentation.Definition.BehaviorProfile.Description;
+    }
+
     private void PreviewStateCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_loading) return;
         _previewClock.Restart();
-        _previewLastElapsedMs = _previewAnimationMs = 0;
-        _walkAppearance.Reset();
+        _previewLastElapsedMs = _previewAnimationMs = _previewStateElapsedMs = 0;
         RenderPreview();
     }
 
@@ -226,6 +253,7 @@ public partial class SettingsWindow : Window
 
     private void OnPreviewRendering(object? sender, EventArgs e)
     {
+        if (!IsPreviewActive) return;
         if (!NeedsLiveRendering) return;
         if (e is RenderingEventArgs rendering)
         {
@@ -253,7 +281,8 @@ public partial class SettingsWindow : Window
             definition.WalkSpeedPxPerSec, elapsedMs / 1000, definition.WalkSpeedPxPerSec * _pet.CurrentWalkSpeedMultiplier,
             _previewVirtualPositionPx - previousPosition, definition.WalkCycleDistancePx);
         var displayWalkPose = _walkAppearance.DisplayWalkPose;
-        _previewAnimationMs = displayWalkPose ? _walkAppearance.AnimationElapsedMs : _previewAnimationMs + elapsedMs;
+        _previewStateElapsedMs += elapsedMs;
+        _previewAnimationMs = displayWalkPose ? _walkAppearance.AnimationElapsedMs : _previewStateElapsedMs;
         var frames = displayWalkPose ? definition.GetWalkFrames(_walkAppearance.View) : definition.GetFrames(state);
         var path = displayWalkPose && definition.WalkCycleDistancePx is not null
             ? definition.GetWalkFramePath(_walkAppearance.View, _walkAppearance.GaitPhase,
@@ -271,7 +300,7 @@ public partial class SettingsWindow : Window
             if (_walkAppearance.IsSettling)
             {
                 var rest = definition.GetFrames(state);
-                PreviewRig.SetRestFrame(_previewPresentation.Frames[definition.GetFramePath(state, rest, _previewAnimationMs)], definition.UsesFrontalRestFrames(state));
+                PreviewRig.SetRestFrame(_previewPresentation.Frames[definition.GetFramePath(state, rest, _previewStateElapsedMs)], definition.UsesFrontalRestFrames(state));
             }
             PreviewRig.UpdatePose(_walkAppearance.View, _walkAppearance.GaitPhase,
                 _walkAppearance.IsSettling ? _walkAppearance.SettleProgress : 0, _walkAppearance.FacingRight, elapsedMs / 1000, _pet.ReducedMotion);

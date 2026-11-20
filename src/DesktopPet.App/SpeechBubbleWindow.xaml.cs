@@ -9,13 +9,16 @@ using DesktopPet.Interop;
 namespace DesktopPet.App;
 
 /// <summary>
-/// The pet's speech bubble. Stays up until the user clicks it — the whole point is that a
-/// finished task shouldn't be missed, so it doesn't quietly time out.
+/// The pet's speech bubble. Only its acknowledgement chrome and fallback title are localized;
+/// notification titles and messages remain exactly as supplied by their sender.
 /// </summary>
 public partial class SpeechBubbleWindow : Window
 {
     private IntPtr _hwnd;
     private double _dpiScale = 1.0;
+    private int _pendingCount;
+    private bool _usesFallbackTitle = true;
+    private bool _closed;
 
     /// <summary>Raised when the user clicks the bubble to acknowledge it.</summary>
     public event Action? Acknowledged;
@@ -26,11 +29,23 @@ public partial class SpeechBubbleWindow : Window
     {
         InitializeComponent();
         PetWindowBehavior.Attach(this);
+        UiText.LanguageChanged += OnLanguageChanged;
+        Closed += OnClosed;
+        RefreshLocalizedChrome();
 
         Left = -10000;
         Top = -10000;
-        Show();
-        Hide();
+        try
+        {
+            Show();
+            Hide();
+        }
+        catch
+        {
+            UiText.LanguageChanged -= OnLanguageChanged;
+            Closed -= OnClosed;
+            throw;
+        }
 
         _hwnd = new WindowInteropHelper(this).Handle;
         MouseLeftButtonDown += (_, _) => Acknowledge();
@@ -38,10 +53,12 @@ public partial class SpeechBubbleWindow : Window
 
     public void ShowMessage(string title, string message, double dpiScale, bool gentle = true)
     {
+        if (_closed) return;
         BeginAnimation(OpacityProperty, null);
         Opacity = 1;
         _dpiScale = dpiScale;
-        TitleText.Text = string.IsNullOrWhiteSpace(title) ? "알림" : title;
+        _usesFallbackTitle = string.IsNullOrWhiteSpace(title);
+        TitleText.Text = _usesFallbackTitle ? UiText.Get("알림") : title;
         MessageText.Text = message ?? string.Empty;
         MessageText.Visibility = string.IsNullOrWhiteSpace(message) ? Visibility.Collapsed : Visibility.Visible;
 
@@ -51,9 +68,36 @@ public partial class SpeechBubbleWindow : Window
         BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(180)));
     }
 
-    public void SetPendingCount(int count) => AcknowledgementText.Text = count > 0
-        ? $"클릭해서 확인 · 대기 {count}건"
-        : "클릭해서 확인";
+    public void SetPendingCount(int count)
+    {
+        if (_closed) return;
+        _pendingCount = Math.Max(0, count);
+        RefreshLocalizedChrome();
+    }
+
+    private void OnLanguageChanged()
+    {
+        if (_closed) return;
+        if (Dispatcher.CheckAccess()) RefreshLocalizedChrome();
+        else if (!Dispatcher.HasShutdownStarted) Dispatcher.BeginInvoke(RefreshLocalizedChrome);
+    }
+
+    private void RefreshLocalizedChrome()
+    {
+        if (_closed) return;
+        AcknowledgementText.Text = _pendingCount > 0
+            ? UiText.Format("클릭해서 확인 · 대기 {0}건", _pendingCount)
+            : UiText.Get("클릭해서 확인");
+        if (_usesFallbackTitle) TitleText.Text = UiText.Get("알림");
+    }
+
+    private void OnClosed(object? sender, EventArgs e)
+    {
+        _closed = true;
+        IsShowing = false;
+        UiText.LanguageChanged -= OnLanguageChanged;
+        Closed -= OnClosed;
+    }
 
     /// <summary>Keeps the bubble parked above the pet as it moves around.</summary>
     public void FollowPet(double petLeft, double petTop, double petWidth)
@@ -98,6 +142,7 @@ public partial class SpeechBubbleWindow : Window
     /// <summary>Closes the bubble without re-raising <see cref="Acknowledged"/> (the caller already acted).</summary>
     public void Dismiss()
     {
+        if (_closed) return;
         BeginAnimation(OpacityProperty, null);
         IsShowing = false;
         Hide();
@@ -114,6 +159,8 @@ public partial class SpeechBubbleWindow : Window
 
     public void Shutdown()
     {
+        if (_closed) return;
+        BeginAnimation(OpacityProperty, null);
         IsShowing = false;
         Close();
     }

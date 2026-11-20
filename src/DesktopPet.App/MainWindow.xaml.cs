@@ -58,6 +58,7 @@ public partial class MainWindow : Window
     // Smoothed cursor velocity during a drag, carried into the throw on release.
     private readonly DragVelocityTracker _dragVelocity = new();
     private readonly WalkAppearanceController _walkAppearance = new();
+    private readonly CursorGazeController _cursorGaze = new();
     private readonly FramePacer _framePacer = new();
     private readonly PoseTransitionPresenter _poseTransition;
     private PetState _lastPoseState = PetState.Idle;
@@ -220,6 +221,7 @@ public partial class MainWindow : Window
         _idleAppearanceElapsedMs = 0;
         _walkAnimationElapsedMs = 0;
         _walkAppearance.Reset();
+        _cursorGaze.Reset();
         _lastGaitPositionX = double.NaN;
     }
 
@@ -629,7 +631,12 @@ public partial class MainWindow : Window
     {
         if (_settings.AutoDismissNotifications == enabled) return;
         _settings.AutoDismissNotifications = enabled;
-        if (_bubble is { IsShowing: true }) ShowActiveNotification();
+        _notificationPopupTimer.Stop();
+        if (enabled && _bubble is { IsShowing: true })
+        {
+            _notificationPopupTimer.Interval = TimeSpan.FromSeconds(_settings.NotificationDisplaySeconds);
+            _notificationPopupTimer.Start();
+        }
         ScheduleSettingsSave();
     }
 
@@ -666,7 +673,7 @@ public partial class MainWindow : Window
     public void ShowUnreadNotifications()
     {
         _activeNotification = _unreadNotifications.FirstOrDefault();
-        _reviewingNotifications = true;
+        _reviewingNotifications = _activeNotification is not null;
         ShowActiveNotification(userRequested: true);
     }
 
@@ -848,7 +855,7 @@ public partial class MainWindow : Window
             _bubble.FollowPet(_brain.X, drawY, Width);
         }
 
-        var cursorIsOnRight = cursorWpf.X >= _brain.X + Width / 2;
+        var cursorIsOnRight = _cursorGaze.Update(cursorWpf.X, _brain.X + Width / 2, 8 * Width / _character.FrameWidth);
         var spriteScale = Width / _character.FrameWidth;
         var distanceDeltaPx = spriteScale > 0 && double.IsFinite(_lastGaitPositionX)
             ? (_brain.X - _lastGaitPositionX) / spriteScale : 0;
@@ -876,7 +883,7 @@ public partial class MainWindow : Window
             : _character.GetFrames(_brain.State);
 
         var animationElapsedMs = displayWalkPose ? _walkAnimationElapsedMs : _brain.StateElapsedMs;
-        if (!displayWalkPose && _brain.State == PetState.Idle && _character.FrameDurationsByState.ContainsKey(PetState.Idle))
+        if (_brain.State == PetState.Idle && _character.FrameDurationsByState.ContainsKey(PetState.Idle))
         {
             _idleAppearanceElapsedMs += dt * 1000;
             animationElapsedMs = _idleAppearanceElapsedMs;
@@ -903,7 +910,9 @@ public partial class MainWindow : Window
             if (_walkAppearance.IsSettling)
             {
                 var rest = _character.GetFrames(_brain.State);
-                PetRig.SetRestFrame(GetFrame(_character.GetFramePath(_brain.State, rest, _brain.StateElapsedMs)), _character.UsesFrontalRestFrames(_brain.State));
+                var restElapsed = _brain.State == PetState.Idle && _character.FrameDurationsByState.ContainsKey(PetState.Idle)
+                    ? _idleAppearanceElapsedMs : _brain.StateElapsedMs;
+                PetRig.SetRestFrame(GetFrame(_character.GetFramePath(_brain.State, rest, restElapsed)), _character.UsesFrontalRestFrames(_brain.State));
             }
             PetRig.UpdatePose(_walkAppearance.View, _walkAppearance.GaitPhase,
                 _walkAppearance.IsSettling ? _walkAppearance.SettleProgress : 0, _walkAppearance.FacingRight, dt, _settings.ReducedMotion);
@@ -1118,6 +1127,10 @@ public partial class MainWindow : Window
     {
         RefreshQuietHours();
         if (_activeNotification is null || IsTemporarilyPaused) return;
+        // Crossing a quiet-hours boundary may dismiss an automatic popup and clear the
+        // review flag. An explicit review/queue advance must establish its intent after
+        // that refresh, so later quiet deliveries cannot replace the receipt on screen.
+        if (userRequested) _reviewingNotifications = true;
         if (!_settings.Visible)
         {
             if (!userRequested) return;

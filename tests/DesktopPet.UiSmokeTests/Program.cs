@@ -306,6 +306,9 @@ internal static class Program
             RenderOptionsUiTests.Run(folder);
             PreferencesBackupUiTests.Run(folder);
             LocalizationUiTests.Run(folder);
+            EvolutionMotionUiTests.Run(folder);
+            SpeechBubbleLocalizationTests.Run();
+            GalleryLocaleRegressionTests.Run(folder);
             DiagnosticsUiTests.Run(folder);
             PetRecoveryUiTests.Run(folder);
             ImportCancellationUiTests.Run(folder);

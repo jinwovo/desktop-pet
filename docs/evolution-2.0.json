@@ -1,0 +1,856 @@
+{
+  "schemaVersion": 1,
+  "baselineVersion": "1.0.2",
+  "baselineCommit": "b6c1bc73a9eab60c3f6b4b8b4345521ae793beb0",
+  "targetVersion": "2.0.0",
+  "requiredPatches": 100,
+  "patches": [
+    {
+      "id": "P001",
+      "title": "Stabilize cursor-facing poses around the center of the pet",
+      "status": "verified",
+      "milestone": "1.1.0",
+      "changedFiles": [
+        "src/DesktopPet.Core/CursorGazeController.cs",
+        "src/DesktopPet.App/MainWindow.xaml.cs",
+        "src/DesktopPet.App/MotionPreviewWindow.xaml.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.RegressionTests/CursorGazeControllerTests.cs",
+        "tests/DesktopPet.UiSmokeTests/EvolutionMotionUiTests.cs"
+      ]
+    },
+    {
+      "id": "P002",
+      "title": "Preserve grounded settling when the Settings preview changes state",
+      "status": "verified",
+      "milestone": "1.1.0",
+      "changedFiles": [
+        "src/DesktopPet.App/SettingsWindow.xaml.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/EvolutionMotionUiTests.cs"
+      ]
+    },
+    {
+      "id": "P003",
+      "title": "Suspend hidden and minimized preview work and rebase clocks on resume",
+      "status": "verified",
+      "milestone": "1.1.0",
+      "changedFiles": [
+        "src/DesktopPet.App/MotionPreviewWindow.xaml.cs",
+        "src/DesktopPet.App/SettingsWindow.xaml.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/EvolutionMotionUiTests.cs"
+      ]
+    },
+    {
+      "id": "P004",
+      "title": "Use the same weighted idle clock through the final walking-to-rest frame",
+      "status": "verified",
+      "milestone": "1.1.0",
+      "changedFiles": [
+        "src/DesktopPet.App/MainWindow.xaml.cs",
+        "src/DesktopPet.App/MotionPreviewWindow.xaml.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/EvolutionMotionUiTests.cs"
+      ]
+    },
+    {
+      "id": "P005",
+      "title": "Keep manual quiet notification review and dismissal policy consistent",
+      "status": "verified",
+      "milestone": "1.1.0",
+      "changedFiles": [
+        "src/DesktopPet.App/MainWindow.xaml.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/QuietHoursUiTests.cs"
+      ]
+    },
+    {
+      "id": "P006",
+      "title": "Translate speech-bubble controls while preserving notification text",
+      "status": "verified",
+      "milestone": "1.1.0",
+      "changedFiles": [
+        "src/DesktopPet.App/SpeechBubbleWindow.xaml.cs",
+        "src/DesktopPet.App/UiText.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/SpeechBubbleLocalizationTests.cs"
+      ]
+    },
+    {
+      "id": "P007",
+      "title": "Cancel an in-progress gallery decoder when its window closes",
+      "status": "verified",
+      "milestone": "1.1.0",
+      "changedFiles": [
+        "src/DesktopPet.App/CharacterGalleryWindow.xaml.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/GalleryLocaleRegressionTests.cs"
+      ]
+    },
+    {
+      "id": "P008",
+      "title": "Keep decoded preview resources and gait phase when changing UI language",
+      "status": "verified",
+      "milestone": "1.1.0",
+      "changedFiles": [
+        "src/DesktopPet.App/SettingsWindow.xaml.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/EvolutionMotionUiTests.cs"
+      ]
+    },
+    {
+      "id": "P009",
+      "title": "Retain gallery selection, filters and dynamic information across languages",
+      "status": "verified",
+      "milestone": "1.1.0",
+      "changedFiles": [
+        "src/DesktopPet.App/CharacterGalleryWindow.xaml.cs",
+        "src/DesktopPet.App/UiText.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/GalleryLocaleRegressionTests.cs"
+      ]
+    },
+    {
+      "id": "P010",
+      "title": "Preserve opaque body pixels during the walking-to-rest blend",
+      "status": "verified",
+      "milestone": "1.1.0",
+      "changedFiles": [
+        "src/DesktopPet.App/GroundedRigVisual.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/GroundedRigVisualRegressionTests.cs"
+      ]
+    },
+    {
+      "id": "P011",
+      "title": "Discovery pending: Pet interactions and comfort (11)",
+      "status": "planned",
+      "milestone": "1.2.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P012",
+      "title": "Discovery pending: Pet interactions and comfort (12)",
+      "status": "planned",
+      "milestone": "1.2.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P013",
+      "title": "Discovery pending: Pet interactions and comfort (13)",
+      "status": "planned",
+      "milestone": "1.2.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P014",
+      "title": "Discovery pending: Pet interactions and comfort (14)",
+      "status": "planned",
+      "milestone": "1.2.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P015",
+      "title": "Discovery pending: Pet interactions and comfort (15)",
+      "status": "planned",
+      "milestone": "1.2.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P016",
+      "title": "Discovery pending: Pet interactions and comfort (16)",
+      "status": "planned",
+      "milestone": "1.2.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P017",
+      "title": "Discovery pending: Pet interactions and comfort (17)",
+      "status": "planned",
+      "milestone": "1.2.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P018",
+      "title": "Discovery pending: Pet interactions and comfort (18)",
+      "status": "planned",
+      "milestone": "1.2.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P019",
+      "title": "Discovery pending: Pet interactions and comfort (19)",
+      "status": "planned",
+      "milestone": "1.2.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P020",
+      "title": "Discovery pending: Pet interactions and comfort (20)",
+      "status": "planned",
+      "milestone": "1.2.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P021",
+      "title": "Discovery pending: Character authoring and previews (21)",
+      "status": "planned",
+      "milestone": "1.3.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P022",
+      "title": "Discovery pending: Character authoring and previews (22)",
+      "status": "planned",
+      "milestone": "1.3.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P023",
+      "title": "Discovery pending: Character authoring and previews (23)",
+      "status": "planned",
+      "milestone": "1.3.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P024",
+      "title": "Discovery pending: Character authoring and previews (24)",
+      "status": "planned",
+      "milestone": "1.3.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P025",
+      "title": "Discovery pending: Character authoring and previews (25)",
+      "status": "planned",
+      "milestone": "1.3.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P026",
+      "title": "Discovery pending: Character authoring and previews (26)",
+      "status": "planned",
+      "milestone": "1.3.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P027",
+      "title": "Discovery pending: Character authoring and previews (27)",
+      "status": "planned",
+      "milestone": "1.3.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P028",
+      "title": "Discovery pending: Character authoring and previews (28)",
+      "status": "planned",
+      "milestone": "1.3.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P029",
+      "title": "Discovery pending: Character authoring and previews (29)",
+      "status": "planned",
+      "milestone": "1.3.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P030",
+      "title": "Discovery pending: Character authoring and previews (30)",
+      "status": "planned",
+      "milestone": "1.3.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P031",
+      "title": "Discovery pending: Focus and notification workflows (31)",
+      "status": "planned",
+      "milestone": "1.4.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P032",
+      "title": "Discovery pending: Focus and notification workflows (32)",
+      "status": "planned",
+      "milestone": "1.4.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P033",
+      "title": "Discovery pending: Focus and notification workflows (33)",
+      "status": "planned",
+      "milestone": "1.4.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P034",
+      "title": "Discovery pending: Focus and notification workflows (34)",
+      "status": "planned",
+      "milestone": "1.4.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P035",
+      "title": "Discovery pending: Focus and notification workflows (35)",
+      "status": "planned",
+      "milestone": "1.4.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P036",
+      "title": "Discovery pending: Focus and notification workflows (36)",
+      "status": "planned",
+      "milestone": "1.4.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P037",
+      "title": "Discovery pending: Focus and notification workflows (37)",
+      "status": "planned",
+      "milestone": "1.4.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P038",
+      "title": "Discovery pending: Focus and notification workflows (38)",
+      "status": "planned",
+      "milestone": "1.4.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P039",
+      "title": "Discovery pending: Focus and notification workflows (39)",
+      "status": "planned",
+      "milestone": "1.4.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P040",
+      "title": "Discovery pending: Focus and notification workflows (40)",
+      "status": "planned",
+      "milestone": "1.4.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P041",
+      "title": "Discovery pending: Accessibility and localization (41)",
+      "status": "planned",
+      "milestone": "1.5.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P042",
+      "title": "Discovery pending: Accessibility and localization (42)",
+      "status": "planned",
+      "milestone": "1.5.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P043",
+      "title": "Discovery pending: Accessibility and localization (43)",
+      "status": "planned",
+      "milestone": "1.5.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P044",
+      "title": "Discovery pending: Accessibility and localization (44)",
+      "status": "planned",
+      "milestone": "1.5.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P045",
+      "title": "Discovery pending: Accessibility and localization (45)",
+      "status": "planned",
+      "milestone": "1.5.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P046",
+      "title": "Discovery pending: Accessibility and localization (46)",
+      "status": "planned",
+      "milestone": "1.5.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P047",
+      "title": "Discovery pending: Accessibility and localization (47)",
+      "status": "planned",
+      "milestone": "1.5.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P048",
+      "title": "Discovery pending: Accessibility and localization (48)",
+      "status": "planned",
+      "milestone": "1.5.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P049",
+      "title": "Discovery pending: Accessibility and localization (49)",
+      "status": "planned",
+      "milestone": "1.5.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P050",
+      "title": "Discovery pending: Accessibility and localization (50)",
+      "status": "planned",
+      "milestone": "1.5.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P051",
+      "title": "Discovery pending: Resource and rendering performance (51)",
+      "status": "planned",
+      "milestone": "1.6.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P052",
+      "title": "Discovery pending: Resource and rendering performance (52)",
+      "status": "planned",
+      "milestone": "1.6.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P053",
+      "title": "Discovery pending: Resource and rendering performance (53)",
+      "status": "planned",
+      "milestone": "1.6.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P054",
+      "title": "Discovery pending: Resource and rendering performance (54)",
+      "status": "planned",
+      "milestone": "1.6.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P055",
+      "title": "Discovery pending: Resource and rendering performance (55)",
+      "status": "planned",
+      "milestone": "1.6.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P056",
+      "title": "Discovery pending: Resource and rendering performance (56)",
+      "status": "planned",
+      "milestone": "1.6.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P057",
+      "title": "Discovery pending: Resource and rendering performance (57)",
+      "status": "planned",
+      "milestone": "1.6.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P058",
+      "title": "Discovery pending: Resource and rendering performance (58)",
+      "status": "planned",
+      "milestone": "1.6.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P059",
+      "title": "Discovery pending: Resource and rendering performance (59)",
+      "status": "planned",
+      "milestone": "1.6.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P060",
+      "title": "Discovery pending: Resource and rendering performance (60)",
+      "status": "planned",
+      "milestone": "1.6.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P061",
+      "title": "Discovery pending: Recovery and durable preferences (61)",
+      "status": "planned",
+      "milestone": "1.7.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P062",
+      "title": "Discovery pending: Recovery and durable preferences (62)",
+      "status": "planned",
+      "milestone": "1.7.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P063",
+      "title": "Discovery pending: Recovery and durable preferences (63)",
+      "status": "planned",
+      "milestone": "1.7.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P064",
+      "title": "Discovery pending: Recovery and durable preferences (64)",
+      "status": "planned",
+      "milestone": "1.7.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P065",
+      "title": "Discovery pending: Recovery and durable preferences (65)",
+      "status": "planned",
+      "milestone": "1.7.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P066",
+      "title": "Discovery pending: Recovery and durable preferences (66)",
+      "status": "planned",
+      "milestone": "1.7.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P067",
+      "title": "Discovery pending: Recovery and durable preferences (67)",
+      "status": "planned",
+      "milestone": "1.7.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P068",
+      "title": "Discovery pending: Recovery and durable preferences (68)",
+      "status": "planned",
+      "milestone": "1.7.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P069",
+      "title": "Discovery pending: Recovery and durable preferences (69)",
+      "status": "planned",
+      "milestone": "1.7.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P070",
+      "title": "Discovery pending: Recovery and durable preferences (70)",
+      "status": "planned",
+      "milestone": "1.7.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P071",
+      "title": "Discovery pending: Distribution and maintenance (71)",
+      "status": "planned",
+      "milestone": "1.8.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P072",
+      "title": "Discovery pending: Distribution and maintenance (72)",
+      "status": "planned",
+      "milestone": "1.8.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P073",
+      "title": "Discovery pending: Distribution and maintenance (73)",
+      "status": "planned",
+      "milestone": "1.8.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P074",
+      "title": "Discovery pending: Distribution and maintenance (74)",
+      "status": "planned",
+      "milestone": "1.8.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P075",
+      "title": "Discovery pending: Distribution and maintenance (75)",
+      "status": "planned",
+      "milestone": "1.8.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P076",
+      "title": "Discovery pending: Distribution and maintenance (76)",
+      "status": "planned",
+      "milestone": "1.8.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P077",
+      "title": "Discovery pending: Distribution and maintenance (77)",
+      "status": "planned",
+      "milestone": "1.8.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P078",
+      "title": "Discovery pending: Distribution and maintenance (78)",
+      "status": "planned",
+      "milestone": "1.8.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P079",
+      "title": "Discovery pending: Distribution and maintenance (79)",
+      "status": "planned",
+      "milestone": "1.8.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P080",
+      "title": "Discovery pending: Distribution and maintenance (80)",
+      "status": "planned",
+      "milestone": "1.8.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P081",
+      "title": "Discovery pending: Compatibility and release hardening (81)",
+      "status": "planned",
+      "milestone": "1.9.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P082",
+      "title": "Discovery pending: Compatibility and release hardening (82)",
+      "status": "planned",
+      "milestone": "1.9.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P083",
+      "title": "Discovery pending: Compatibility and release hardening (83)",
+      "status": "planned",
+      "milestone": "1.9.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P084",
+      "title": "Discovery pending: Compatibility and release hardening (84)",
+      "status": "planned",
+      "milestone": "1.9.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P085",
+      "title": "Discovery pending: Compatibility and release hardening (85)",
+      "status": "planned",
+      "milestone": "1.9.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P086",
+      "title": "Discovery pending: Compatibility and release hardening (86)",
+      "status": "planned",
+      "milestone": "1.9.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P087",
+      "title": "Discovery pending: Compatibility and release hardening (87)",
+      "status": "planned",
+      "milestone": "1.9.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P088",
+      "title": "Discovery pending: Compatibility and release hardening (88)",
+      "status": "planned",
+      "milestone": "1.9.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P089",
+      "title": "Discovery pending: Compatibility and release hardening (89)",
+      "status": "planned",
+      "milestone": "1.9.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P090",
+      "title": "Discovery pending: Compatibility and release hardening (90)",
+      "status": "planned",
+      "milestone": "1.9.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P091",
+      "title": "Discovery pending: 2.0 acceptance and publication (91)",
+      "status": "planned",
+      "milestone": "2.0.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P092",
+      "title": "Discovery pending: 2.0 acceptance and publication (92)",
+      "status": "planned",
+      "milestone": "2.0.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P093",
+      "title": "Discovery pending: 2.0 acceptance and publication (93)",
+      "status": "planned",
+      "milestone": "2.0.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P094",
+      "title": "Discovery pending: 2.0 acceptance and publication (94)",
+      "status": "planned",
+      "milestone": "2.0.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P095",
+      "title": "Discovery pending: 2.0 acceptance and publication (95)",
+      "status": "planned",
+      "milestone": "2.0.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P096",
+      "title": "Discovery pending: 2.0 acceptance and publication (96)",
+      "status": "planned",
+      "milestone": "2.0.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P097",
+      "title": "Discovery pending: 2.0 acceptance and publication (97)",
+      "status": "planned",
+      "milestone": "2.0.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P098",
+      "title": "Discovery pending: 2.0 acceptance and publication (98)",
+      "status": "planned",
+      "milestone": "2.0.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P099",
+      "title": "Discovery pending: 2.0 acceptance and publication (99)",
+      "status": "planned",
+      "milestone": "2.0.0",
+      "changedFiles": [],
+      "checks": []
+    },
+    {
+      "id": "P100",
+      "title": "Discovery pending: 2.0 acceptance and publication (100)",
+      "status": "planned",
+      "milestone": "2.0.0",
+      "changedFiles": [],
+      "checks": []
+    }
+  ]
+}

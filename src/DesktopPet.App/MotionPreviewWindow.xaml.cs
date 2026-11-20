@@ -25,9 +25,11 @@ public partial class MotionPreviewWindow : Window
     private bool _liveRigActive;
     private TimeSpan? _lastRenderingTime;
     private readonly WalkAppearanceController _walkAppearance = new(new Random(7));
+    private readonly CursorGazeController _cursorGaze = new();
     private readonly PoseTransitionPresenter _poseTransition;
     private readonly FramePacer _framePacer = new();
     private bool _reducedMotion;
+    private bool _closed;
     private PetState _lastPoseState = PetState.Idle;
 
     public MotionPreviewWindow(CharacterPresentation presentation, double speedMultiplier, int maximumFps = 60, bool reducedMotion = false)
@@ -49,12 +51,13 @@ public partial class MotionPreviewWindow : Window
         Loaded += (_, _) =>
         {
             ResetScene();
-            _lastTimestamp = Stopwatch.GetTimestamp();
-            CompositionTarget.Rendering += OnRendering;
-            IsAnimating = true;
+            UpdateAnimationState();
         };
+        IsVisibleChanged += (_, _) => UpdateAnimationState();
+        StateChanged += (_, _) => UpdateAnimationState();
         Closed += (_, _) =>
         {
+            _closed = true;
             _poseTransition.Reset();
             MotionRig.SetPresentation(null);
             CompositionTarget.Rendering -= OnRendering;
@@ -62,6 +65,23 @@ public partial class MotionPreviewWindow : Window
             _dragging = false;
             ActorInput.ReleaseMouseCapture();
         };
+    }
+
+    private void UpdateAnimationState()
+    {
+        var active = !_closed && IsLoaded && IsVisible && WindowState != WindowState.Minimized;
+        if (active == IsAnimating) return;
+        if (active)
+        {
+            _lastTimestamp = Stopwatch.GetTimestamp(); _lastRenderingTime = null; _framePacer.Reset();
+            CompositionTarget.Rendering += OnRendering;
+        }
+        else
+        {
+            CompositionTarget.Rendering -= OnRendering;
+            _poseTransition.Reset();
+        }
+        IsAnimating = active;
     }
 
     public void SetRenderOptions(int maximumFps, bool reducedMotion)
@@ -96,6 +116,7 @@ public partial class MotionPreviewWindow : Window
         _walkElapsedMs = 0;
         _idleAppearanceElapsedMs = 0;
         _walkAppearance.Reset();
+        _cursorGaze.Reset();
         _lastGaitPositionX = _brain.X;
         RenderActor(0);
     }
@@ -109,6 +130,7 @@ public partial class MotionPreviewWindow : Window
 
     private void OnRendering(object? sender, EventArgs e)
     {
+        if (!IsAnimating) return;
         if (e is RenderingEventArgs rendering)
         {
             if (_lastRenderingTime == rendering.RenderingTime) return;
@@ -139,7 +161,7 @@ public partial class MotionPreviewWindow : Window
         Canvas.SetTop(MotionRig, _brain.Y);
         Canvas.SetLeft(ActorInput, _brain.X);
         Canvas.SetTop(ActorInput, _brain.Y);
-        var right = _cursor.X >= _brain.X + Actor.Width / 2;
+        var right = _cursorGaze.Update(_cursor.X, _brain.X + Actor.Width / 2, 8 * _scale);
         var displayWalkPose = _walkAppearance.DisplayWalkPose;
         var directional = !displayWalkPose && _brain.State == PetState.LookAtCursor &&
             (right ? definition.LookRightFrames : definition.LookLeftFrames).Count > 0;
@@ -150,7 +172,7 @@ public partial class MotionPreviewWindow : Window
         var frames = displayWalkPose ? definition.GetWalkFrames(_walkAppearance.View)
             : _brain.State == PetState.LookAtCursor ? definition.GetLookFrames(right) : definition.GetFrames(_brain.State);
         var elapsed = displayWalkPose ? _walkElapsedMs : _brain.StateElapsedMs;
-        if (!displayWalkPose && _brain.State == PetState.Idle && definition.FrameDurationsByState.ContainsKey(PetState.Idle))
+        if (_brain.State == PetState.Idle && definition.FrameDurationsByState.ContainsKey(PetState.Idle))
         {
             _idleAppearanceElapsedMs += dt * 1000;
             elapsed = _idleAppearanceElapsedMs;
@@ -171,7 +193,9 @@ public partial class MotionPreviewWindow : Window
             if (_walkAppearance.IsSettling)
             {
                 var rest = definition.GetFrames(_brain.State);
-                MotionRig.SetRestFrame(_presentation.Frames[definition.GetFramePath(_brain.State, rest, _brain.StateElapsedMs)], definition.UsesFrontalRestFrames(_brain.State));
+                var restElapsed = _brain.State == PetState.Idle && definition.FrameDurationsByState.ContainsKey(PetState.Idle)
+                    ? _idleAppearanceElapsedMs : _brain.StateElapsedMs;
+                MotionRig.SetRestFrame(_presentation.Frames[definition.GetFramePath(_brain.State, rest, restElapsed)], definition.UsesFrontalRestFrames(_brain.State));
             }
             MotionRig.UpdatePose(_walkAppearance.View, _walkAppearance.GaitPhase,
                 _walkAppearance.IsSettling ? _walkAppearance.SettleProgress : 0, _walkAppearance.FacingRight, dt, _reducedMotion);

@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Version matching the checked-out source (for example 1.0.2)
+        description: Version matching the checked-out source (for example 1.1.0)
         required: true
-        default: "1.0.2"
+        default: "1.1.0"
         type: string
 
 permissions:
@@ -85,3 +85,11 @@ jobs:
           $published = gh api "repos/$env:GITHUB_REPOSITORY/releases/tags/v1.0.0" | ConvertFrom-Json
           if ($LASTEXITCODE -ne 0 -or $published.draft -or $published.prerelease) { throw 'Stable publication could not be verified' }
           Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value ("Published verified DesktopPet 1.0.0: " + $published.html_url)
+      - name: Publish verified evolution milestone
+        if: github.event_name == 'push' && contains(fromJSON('["v1.1.0","v1.2.0","v1.3.0","v1.4.0","v1.5.0","v1.6.0","v1.7.0","v1.8.0","v1.9.0","v2.0.0"]'), github.ref_name)
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          . ./scripts/publish-evolution-release.ps1
+          Publish-DesktopPetEvolutionRelease -Version $env:GITHUB_REF_NAME.Substring(1) -RepositoryRoot $PWD.Path
