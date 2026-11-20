@@ -42,6 +42,11 @@ internal static class Program
                 Console.WriteLine("All motion preview checks passed");
                 return 0;
             }
+            if (args.Contains("--notification-identity-only"))
+            {
+                NotificationIdentityUiTests.Run(folder);
+                return 0;
+            }
             var archiveIndex = Array.IndexOf(args, "--verify-archive");
             if (archiveIndex >= 0)
             {
@@ -328,6 +333,7 @@ internal static class Program
             SpeechBubbleMotionTests.Run(folder);
             SpeechBubbleSourceTests.Run();
             SpeechBubbleCopyTests.Run(args.Contains("--capture"));
+            NotificationIdentityUiTests.Run(folder);
             GalleryLocaleRegressionTests.Run(folder);
             DiagnosticsUiTests.Run(folder);
             PetRecoveryUiTests.Run(folder);

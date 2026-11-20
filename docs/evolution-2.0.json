@@ -230,11 +230,15 @@
     },
     {
       "id": "P018",
-      "title": "Discovery pending: Pet interactions and comfort (18)",
-      "status": "planned",
+      "title": "Preserve distinct notification identities and protect unread receipts after recent-history eviction",
+      "status": "verified",
       "milestone": "1.2.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/MainWindow.xaml.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/NotificationIdentityUiTests.cs"
+      ]
     },
     {
       "id": "P019",

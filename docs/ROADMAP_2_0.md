@@ -22,6 +22,8 @@ P016 localizes the motion preview title, instructions, buttons and live state la
 
 P017 cancels obsolete gallery preview requests when selection, filtering, application or catalog refresh changes their context. A late success or failure cannot replace the newest preview, overwrite its status or unlock its busy button. Relabeling an unchanged selection keeps its active decoder. Gated-worker regression tests cover cancellation-aware and late-finishing decoders, plus closing the gallery. This fix is planned for 1.2.0.
 
+P018 keeps notification identity as a source/event pair, so delimiters inside either value cannot cause a different message to be discarded. Unread identities remain protected even after the bounded recent-history cache evicts them, and failed acknowledgements retain that protection. Real inbox/file tests cross the 512-entry history boundary, lock a receipt during acknowledgement and verify notifications without event IDs remain independent. This fix is planned for 1.2.0.
+
 ## Milestones
 
 | Verified patch threshold | Planned release | Main review area |

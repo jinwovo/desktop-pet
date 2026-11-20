@@ -40,8 +40,9 @@ public partial class MainWindow : Window
     private InboxNotification? _activeNotification;
     private readonly DispatcherTimer _settingsSaveTimer = new() { Interval = TimeSpan.FromMilliseconds(400) };
     private readonly DispatcherTimer _notificationPopupTimer = new();
-    private readonly HashSet<string> _seenNotificationIds = new(StringComparer.Ordinal);
-    private readonly Queue<string> _recentNotificationIds = new();
+    private readonly HashSet<(string Source, string EventId)> _seenNotificationIds = new();
+    private readonly Queue<(string Source, string EventId)> _recentNotificationIds = new();
+    private readonly HashSet<(string Source, string EventId)> _unreadNotificationIds = new();
     private bool _settingsDirty;
     private bool _settingsSaveFailed;
     private bool _disposed;
@@ -1100,8 +1101,8 @@ public partial class MainWindow : Window
         var notification = delivery.Notification;
         if (!string.IsNullOrWhiteSpace(notification.EventId) && notification.EventId.Length <= 512)
         {
-            var key = notification.Source + ":" + notification.EventId;
-            if (!_seenNotificationIds.Add(key))
+            var key = (notification.Source ?? string.Empty, notification.EventId);
+            if (_unreadNotificationIds.Contains(key) || !_seenNotificationIds.Add(key))
             {
                 if (!delivery.Acknowledge() && _duplicateCleanup.Count < 128)
                 {
@@ -1110,10 +1111,12 @@ public partial class MainWindow : Window
                 }
                 return;
             }
-            else
+            _unreadNotificationIds.Add(key);
+            _recentNotificationIds.Enqueue(key);
+            if (_recentNotificationIds.Count > 512)
             {
-                _recentNotificationIds.Enqueue(key);
-                if (_recentNotificationIds.Count > 512) _seenNotificationIds.Remove(_recentNotificationIds.Dequeue());
+                var evicted = _recentNotificationIds.Dequeue();
+                _seenNotificationIds.Remove(evicted);
             }
         }
         if (notification.Source is "claude" or "codex") AssistantNotificationReceived?.Invoke(notification.Source);
@@ -1191,6 +1194,7 @@ public partial class MainWindow : Window
         }
         _brain.StopNagging();
         _bubble?.Dismiss();
+        _unreadNotificationIds.Remove((_activeNotification.Notification.Source ?? string.Empty, _activeNotification.Notification.EventId ?? string.Empty));
         _unreadNotifications.Remove(_activeNotification);
         _activeNotification = _unreadNotifications.FirstOrDefault();
         _reviewingNotifications = _activeNotification is not null;
