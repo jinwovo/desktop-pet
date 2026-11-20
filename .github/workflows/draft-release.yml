@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Version matching the checked-out source (for example 1.1.0)
+        description: Version matching the checked-out source (for example 1.2.0)
         required: true
-        default: "1.1.0"
+        default: "1.2.0"
         type: string
 
 permissions:
@@ -51,8 +51,19 @@ jobs:
           $optionalExpected = ([IO.File]::ReadAllText($optionalChecksum.FullName).Trim() -split '\s+')[0]
           if ((Get-FileHash -LiteralPath $optional.FullName -Algorithm SHA256).Hash -ine $optionalExpected) { throw 'Optional pack checksum mismatch' }
           $releaseFiles += @($optional.FullName, $optionalChecksum.FullName)
+          $evolutionNotes = ''
+          if ($env:RELEASE_VERSION -match '^(?:1\.[1-9]\.0|2\.0\.0)$') {
+            . ./scripts/publish-evolution-release.ps1
+            $null = Assert-DesktopPetEvolutionReady -Version $env:RELEASE_VERSION -PlanPath 'docs/evolution-2.0.json' -RepositoryRoot $PWD.Path
+            $plan = [IO.File]::ReadAllText((Join-Path $PWD.Path 'docs/evolution-2.0.json')) | ConvertFrom-Json
+            $milestone = @($plan.patches | Where-Object { $_.milestone -ceq $env:RELEASE_VERSION -and $_.status -ceq 'verified' })
+            if ($milestone.Count -ne 10) { throw 'A milestone must contain its ten verified product patches' }
+            $evolutionNotes = ($milestone | ForEach-Object { '- ' + $_.id + ': ' + $_.title }) -join "`n"
+          }
           $notes = @"
           Windows 10/11 x64 portable release. Extract the entire ZIP and run DesktopPet.App.exe.
+
+          $evolutionNotes
 
           Includes Companion, Nimbus and Ember, a searchable ZIP-import gallery, local AI completion hooks, configurable focus sessions and quiet hours.
           Korean/English/Simplified Chinese primary settings, reduced motion and frame caps, portable preferences, private diagnostic preview and monitor recovery are included.

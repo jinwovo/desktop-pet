@@ -16,7 +16,7 @@ A quiet desktop companion for AI work, focused sessions, and a less empty taskba
 
 [2.0 roadmap and 100-patch progress](docs/ROADMAP_2_0.md)
 
-1.1.0 contains the first ten verified evolution patches: stable cursor gaze, opaque stopping transitions, background-preview suspension, consistent unread review and state-preserving language changes.
+1.2.0 brings the evolution total to 20 verified improvements. Its ten new patches add roaming pause, landing-safe reactions, pet right-click actions, copyable notifications, bulk read, safer gallery previews and multilingual motion controls.
 
 DesktopPet is a Windows desktop pet with gentle completion notifications for local Claude Code and Codex, a 25/5 focus timer, and importable character packs. Its live walking renderer moves cached body and foot layers continuously, using actual travel distance to keep a planted foot from sliding.
 
@@ -55,6 +55,10 @@ NuGet access is needed for missing build or runtime packs. Runtime use does not 
 
 | Feature | Behavior |
 | --- | --- |
+| Right-click pet | Opens the same actions as the tray. |
+| Pause roaming | Pauses automatic walking/hops for this session; the pet stays visible and dragging/falling still work. |
+| Copy | Copies the title and original message while keeping the notification unread. |
+| Mark all notifications read | Marks existing notifications read; new arrivals and failed items remain available. |
 | Three public companions | Choose Companion, Nimbus, or Ember in Settings. |
 | Grounded walking | Continuous body/foot transforms follow measured distance and sprite scale; raised feet settle before the resting pose. |
 | Gentle completions | Short local bubbles; the default display duration is 8 seconds. |
@@ -169,7 +173,7 @@ The suites use fixture directories and do not register hooks in your real assist
 To create a public Windows x64 package:
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 1.1.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 1.2.0
 ```
 
 The output is a self-contained ZIP and a SHA256 sidecar under `artifacts/releases/`. Missing runtime packs cause a build failure; the script does not silently change deployment type. The [Windows workflow](.github/workflows/windows-release.yml) is configured to run checks and create artifacts; its presence does not imply a successful remote build or a published release.

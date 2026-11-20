@@ -16,7 +16,7 @@
 
 [2.0 路线图与 100 次改进进度](docs/ROADMAP_2_0.md)
 
-1.1.0 包含首批十项改进：稳定视线、保持停止过渡的透明度、暂停隐藏预览、修复手动通知查看，并在切换语言时保留选择和动画状态。
+1.2.0 累计包含 20 项经过验证的改进。本次十项补丁增加暂停散步、落地后播放表情、宠物右键菜单、通知复制与批量已读，并改进预览请求处理和三语动作预览。
 
 DesktopPet 可以提醒本地 Claude Code、Codex 的回复完成，提供 25 分钟专注 / 5 分钟休息计时器，并支持导入角色包。行走时使用缓存的身体与双脚图层连续运动，根据实际移动距离调整步态，减少脚踩地时的滑动。
 
@@ -55,6 +55,10 @@ dotnet build DesktopPet.sln -c Release --no-restore
 
 | 功能 | 行为 |
 | --- | --- |
+| 右键点击宠物 | 打开与托盘相同的操作菜单。 |
+| 暂停自动散步 | 本次运行中暂停自动走动与跳跃，宠物仍可见，拖动与下落不受影响。 |
+| 复制 | 复制标题和原始正文，通知保持未读。 |
+| 全部标为已读 | 批量处理已有通知，新到达与处理失败的通知继续保留。 |
 | 三个公开角色 | 在设置中选择 Companion、Nimbus 或 Ember。 |
 | 脚部接地行走 | 身体与双脚按实际距离和显示大小连续移动，停止时先放下抬起的脚。 |
 | 轻柔完成提醒 | 默认显示 8 秒的简短气泡。 |
@@ -168,7 +172,7 @@ powershell -NoProfile -File tests/package-regression.ps1
 构建公开 Windows x64 包：
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 1.1.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 1.2.0
 ```
 
 输出位于 `artifacts/releases/`，包含 self-contained ZIP 与 SHA256 文件。缺少运行时包时构建会失败，不会静默切换为其他部署方式。[Windows 工作流](.github/workflows/windows-release.yml)配置了测试与构建产物；存在该文件不等于远程构建已通过或版本已经发布。

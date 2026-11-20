@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.0 — evolution patches P011–P020
+
+- Add session-only roaming pause and keep drag/throw physics intact when reactions are requested; play the latest reaction after landing.
+- Apply reduced motion to notification fades, show compact source labels, and copy notification text without marking it read.
+- Share tray actions with a pet right-click menu. Mark current notifications read in the background while preserving new arrivals, failed receipts and responsive UI.
+- Keep notification source/event identities distinct and protect unread duplicates beyond the bounded recent-history window.
+- Cancel obsolete gallery preview requests and ignore late results/errors without altering current busy state. Localize live motion previews without resetting their caches or simulation.
+- Reach 20 verified product patches in the [2.0 ledger](docs/evolution-2.0.json). Documentation, version changes and release repairs are excluded from that count.
+
 ## 1.1.0 — evolution patches P001–P010
 
 - Stabilize cursor-facing artwork around the pet's center; retain the grounded stopping phase when Settings changes from walking to rest.

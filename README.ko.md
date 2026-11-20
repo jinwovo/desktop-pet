@@ -16,7 +16,7 @@ AI 작업과 집중 시간에 조용히 함께하는 Windows 데스크톱 캐릭
 
 [2.0 로드맵과 100개 패치 진행 현황](docs/ROADMAP_2_0.md)
 
-1.1.0은 첫 10개 개선 패치를 담았습니다. 시선 튐·멈춤 중 반투명 현상을 고치고, 숨긴 미리보기의 작업을 중단하며, 수동 알림 열람과 언어 변경 중 선택·애니메이션 상태를 유지합니다.
+1.2.0은 누적 20개 개선을 담았습니다. 이번 10개 패치에서는 산책 멈춤, 착지 후 감정 표현, 캐릭터 우클릭 메뉴, 알림 복사·일괄 확인, 갤러리 요청 처리와 움직임 미리보기의 한·영·중 지원을 개선했습니다.
 
 DesktopPet은 로컬 Claude Code·Codex의 응답 완료를 알려주고, 25분 집중·5분 휴식 타이머와 캐릭터 가져오기를 제공하는 바탕화면 펫입니다. 걷는 동안 캐시한 몸·발 그림을 연속으로 움직이고 실제 이동 거리에 보폭을 맞춥니다.
 
@@ -55,6 +55,10 @@ dotnet build DesktopPet.sln -c Release --no-restore
 
 | 기능 | 동작 |
 | --- | --- |
+| 캐릭터 우클릭 | 트레이와 같은 동작 메뉴를 엽니다. |
+| 자동 산책 잠시 멈춤 | 이번 실행 중 자동 걷기·점프를 멈춥니다. 캐릭터는 계속 보이며 직접 옮기거나 놓을 수 있습니다. |
+| 복사 | 제목과 원문을 복사하며 알림은 미확인 상태로 유지합니다. |
+| 알림 모두 확인 | 기존 알림을 일괄 확인합니다. 새 알림과 확인에 실패한 항목은 보관합니다. |
 | 공용 캐릭터 3종 | 설정에서 Companion·Nimbus·Ember를 선택합니다. |
 | 접지 보행 | 실제 이동 거리와 화면 크기에 맞춰 몸과 발을 연속 이동하고, 멈추면 들린 발을 내린 뒤 쉽니다. |
 | 조용한 완료 알림 | 기본 8초 동안 짧은 말풍선을 표시합니다. |
@@ -169,7 +173,7 @@ powershell -NoProfile -File tests/package-regression.ps1
 공용 Windows x64 배포를 만들려면 다음을 실행합니다.
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 1.1.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 1.2.0
 ```
 
 `artifacts/releases/`에 self-contained ZIP과 SHA256을 만듭니다. 필요한 런타임 팩이 없으면 실패하며 배포 종류를 몰래 바꾸지 않습니다. [Windows 워크플로](.github/workflows/windows-release.yml)는 검사와 아티팩트 생성을 설정한 파일이며, 파일이 있다고 원격 빌드나 공개 릴리스가 성공했다는 뜻은 아닙니다.
