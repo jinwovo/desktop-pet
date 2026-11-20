@@ -12,6 +12,9 @@ internal static class SpeechBubbleMotionTests
     public static void Run(string root)
     {
         var pet = new MainWindow(new CharacterLibrary(MainWindow.CharactersRoot, Path.Combine(root, "motion-custom")), inboxDirectory: Path.Combine(root, "motion-inbox"));
+        var loaded = (RoutedEventHandler)Delegate.CreateDelegate(typeof(RoutedEventHandler), pet,
+            typeof(MainWindow).GetMethod("MainWindow_Loaded", BindingFlags.Instance | BindingFlags.NonPublic)!);
+        pet.Loaded -= loaded; // This fixture supplies its own isolated preferences and presentation.
         var preferences = new PetSettings { AutoConnectAssistants = false };
         Set(pet, "_settings", preferences);
         var brain = new PetBrain(new PlatformLayout(new[] { new Platform(0, 1920, 1080) }), 128, 122, 500, 958);
@@ -53,7 +56,7 @@ internal static class SpeechBubbleMotionTests
         finally
         {
             save.Stop(); Set(pet, "_settingsDirty", false);
-            pet.DisposeResources(); bubble.Shutdown();
+            pet.DisposeResources(); bubble.Shutdown(); pet.Close();
         }
     }
     private static bool Animated(SpeechBubbleWindow bubble) => bubble.HasAnimatedProperties;
