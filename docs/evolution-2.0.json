@@ -150,11 +150,15 @@
     },
     {
       "id": "P012",
-      "title": "Discovery pending: Pet interactions and comfort (12)",
-      "status": "planned",
+      "title": "Queue manual reactions during drag and flight so movement completes naturally",
+      "status": "verified",
       "milestone": "1.2.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.Core/PetBrain.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.RegressionTests/EmoteFlightTests.cs"
+      ]
     },
     {
       "id": "P013",

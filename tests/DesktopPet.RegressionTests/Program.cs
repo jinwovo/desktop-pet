@@ -238,6 +238,7 @@ var tests = new (string Name, Action Run)[]
  .Concat(DiagnosticReportTests.Create())
  .Concat(PetRecoveryTests.Create())
  .Concat(RoamingPauseTests.Create())
+ .Concat(EmoteFlightTests.Create())
  .Concat(CharacterImportCancellationTests.Create())
  .Concat(RigSecondaryMotionTests.Create())
  .Concat(CursorGazeControllerTests.Create()).ToArray();

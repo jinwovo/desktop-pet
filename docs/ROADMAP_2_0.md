@@ -10,6 +10,8 @@ The first ten patches address pointer-facing jitter, preview state transitions a
 
 [1.1.0 is publicly available](https://github.com/jinwovo/desktop-pet/releases/tag/v1.1.0) with P001-P010. Development toward 1.2.0 adds P011: the tray's **Pause roaming** toggle gently stops an existing walk and prevents new automatic walks and ledge hops. The pet stays visible; manual dragging, gravity, reactions and notification delivery continue. The toggle lasts for the current session, survives language and character changes, and resumes through the same menu item. Pausing at either ledge preserves the current facing direction. P011 has core regression and WPF localization checks and is not included in the 1.1.0 download.
 
+P012 preserves a drag or throw when a manual reaction is requested. The latest requested reaction starts after landing with its full duration, while a pending notification keeps priority. Desktop recovery clears old queued reactions. Deterministic tests compare the full trajectory against an unaffected pet and check landing, duration, drag offsets and stale-reaction cleanup. This improvement is also planned for 1.2.0.
+
 ## Milestones
 
 | Verified patch threshold | Planned release | Main review area |

@@ -88,6 +88,7 @@ public sealed class PetBrain
     private double _walkVelocityX;
     private PetState? _walkStopDestination;
     private double _emoteEndsAtMs;
+    private PetState? _queuedEmote;
     private double _totalElapsedMs;
     private double _lookCooldownUntilMs;
     private double _lastActivityMs;
@@ -162,6 +163,7 @@ public sealed class PetBrain
         _dragOffsetX = _dragOffsetY = 0;
         _isHopping = false;
         IsNagging = false;
+        _queuedEmote = null;
         _gentleHoldUntilMs = 0;
         _pokeStreak = 0;
         _lastActivityMs = _totalElapsedMs;
@@ -345,8 +347,15 @@ public sealed class PetBrain
         }
 
         _lastActivityMs = _totalElapsedMs; // an emote means something just happened
-        _emoteEndsAtMs = emote == PetState.Cry ? CryDurationMs : AngryDurationMs;
-        ChangeState(emote);
+        if (State is PetState.Dragged or PetState.Falling)
+        {
+            _queuedEmote = emote; // latest wins
+        }
+        else
+        {
+            _emoteEndsAtMs = emote == PetState.Cry ? CryDurationMs : AngryDurationMs;
+            ChangeState(emote);
+        }
     }
 
     private void TickFalling(double dtSeconds)
@@ -409,17 +418,21 @@ public sealed class PetBrain
             _isHopping = false;
 
             // A gentle drop is shrugged off; a long fall hurts — unless the pet jumped on purpose.
+            // Finish the physical landing before starting a reaction; StartEmote queues while airborne.
+            var queuedEmote = _queuedEmote;
+            _queuedEmote = null;
+            ChangeState(PetState.Idle);
             if (IsNagging)
             {
                 StartEmote(_nagEmote);
             }
+            else if (queuedEmote is { } requested)
+            {
+                StartEmote(requested);
+            }
             else if (impactSpeed >= CryOnImpactSpeed && !wasHopping)
             {
                 StartEmote(PetState.Cry);
-            }
-            else
-            {
-                ChangeState(PetState.Idle);
             }
         }
         else
