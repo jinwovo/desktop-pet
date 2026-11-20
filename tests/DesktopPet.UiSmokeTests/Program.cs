@@ -52,6 +52,11 @@ internal static class Program
                 PetContextMenuUiTests.Run(folder, args.Contains("--capture"));
                 return 0;
             }
+            if (args.Contains("--notification-batch-only"))
+            {
+                NotificationBatchUiTests.Run(folder);
+                return 0;
+            }
             var archiveIndex = Array.IndexOf(args, "--verify-archive");
             if (archiveIndex >= 0)
             {
@@ -340,6 +345,7 @@ internal static class Program
             SpeechBubbleCopyTests.Run(args.Contains("--capture"));
             NotificationIdentityUiTests.Run(folder);
             PetContextMenuUiTests.Run(folder, args.Contains("--capture"));
+            NotificationBatchUiTests.Run(folder);
             GalleryLocaleRegressionTests.Run(folder);
             DiagnosticsUiTests.Run(folder);
             PetRecoveryUiTests.Run(folder);

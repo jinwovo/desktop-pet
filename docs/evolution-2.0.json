@@ -257,11 +257,17 @@
     },
     {
       "id": "P020",
-      "title": "Discovery pending: Pet interactions and comfort (20)",
-      "status": "planned",
+      "title": "Mark current notifications read in the background while retaining new and failed receipts",
+      "status": "verified",
       "milestone": "1.2.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/MainWindow.xaml.cs",
+        "src/DesktopPet.App/PetMenuBuilder.cs",
+        "src/DesktopPet.App/UiText.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/NotificationBatchUiTests.cs"
+      ]
     },
     {
       "id": "P021",

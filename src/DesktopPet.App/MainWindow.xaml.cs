@@ -1191,9 +1191,91 @@ public partial class MainWindow : Window
         // Auto-hide is not acknowledgement: the receipt and tray badge stay available.
     }
 
+    private HashSet<InboxNotification>? _acknowledgingAll;
+    public bool IsAcknowledgingAll => _acknowledgingAll is not null;
+
+    public async Task<int> AcknowledgeAllNotificationsAsync()
+    {
+        Dispatcher.VerifyAccess();
+
+        if (_disposed || IsAcknowledgingAll || _unreadNotifications.Count == 0)
+        {
+            return 0;
+        }
+
+        var snapshot = new HashSet<InboxNotification>(_unreadNotifications);
+        _acknowledgingAll = snapshot;
+
+        try
+        {
+            var success = await Task.Run(() =>
+            {
+                var acknowledged = new HashSet<InboxNotification>();
+                foreach (var receipt in snapshot)
+                {
+                    if (receipt.Acknowledge())
+                    {
+                        acknowledged.Add(receipt);
+                    }
+                }
+                return acknowledged;
+            });
+
+            if (_disposed)
+            {
+                return 0;
+            }
+
+            var removed = _unreadNotifications
+                .Where(n => success.Contains(n))
+                .ToArray();
+
+            foreach (var receipt in removed)
+            {
+                var key = (receipt.Notification.Source ?? string.Empty, receipt.Notification.EventId ?? string.Empty);
+                _unreadNotificationIds.Remove(key);
+            }
+
+            _unreadNotifications.RemoveAll(success.Contains);
+
+            if (_activeNotification is null || success.Contains(_activeNotification))
+            {
+                _notificationPopupTimer.Stop();
+                _brain.StopNagging();
+                _bubble?.Dismiss();
+
+                _activeNotification = _unreadNotifications.FirstOrDefault();
+                _reviewingNotifications = false;
+                ShowActiveNotification();
+            }
+            else
+            {
+                _bubble?.SetPendingCount(PendingNotificationCount - 1);
+                if (snapshot.Contains(_activeNotification) && _bubble?.IsShowing == false)
+                {
+                    ShowActiveNotification();
+                }
+            }
+
+            PendingNotificationCountChanged?.Invoke(PendingNotificationCount);
+
+            var failures = snapshot.Count - success.Count;
+            if (failures > 0)
+            {
+                OperationFailed?.Invoke(UiText.Format("{0}개 알림을 확인하지 못했어요. 보관된 알림에서 다시 시도해주세요.", failures));
+            }
+
+            return removed.Length;
+        }
+        finally
+        {
+            _acknowledgingAll = null;
+        }
+    }
+
     private void AcknowledgeNotification()
     {
-        if (_activeNotification is null) return;
+        if (_activeNotification is null || _acknowledgingAll?.Contains(_activeNotification) == true) return;
         _notificationPopupTimer.Stop();
         if (!_activeNotification.Acknowledge())
         {

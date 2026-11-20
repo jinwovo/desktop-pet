@@ -171,6 +171,10 @@ public static class UiText
         ["설정..."] = ("Settings...", "设置..."),
         ["AI 연결..."] = ("AI connections...", "AI 连接..."),
         ["보관된 알림 확인"] = ("Review saved notifications", "查看已保存通知"),
+        ["알림 모두 확인"] = ("Mark all notifications read", "全部标为已读"),
+        ["알림 확인 처리 중..."] = ("Marking notifications read...", "正在标记通知..."),
+        ["{0}개 알림을 확인하지 못했어요. 보관된 알림에서 다시 시도해주세요."] =
+            ("Could not mark {0} notifications read. Retry from saved notifications.", "有 {0} 条通知未能标记，请从已保存通知中重试。"),
         ["보관된 알림 없음"] = ("No saved notifications", "没有已保存通知"),
         ["기분 표현"] = ("Emotes", "表情"),
         ["울기 😢"] = ("Cry 😢", "哭泣 😢"),

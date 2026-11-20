@@ -26,6 +26,8 @@ P018 keeps notification identity as a source/event pair, so delimiters inside ei
 
 P019 opens the existing action menu from a right-click on the pet. The tray and pet share one menu builder and the same command callbacks, current pause state and localized labels. Right-clicks during a drag, while hidden, during presentation suppression or after disposal cannot open it or change motion. Routed-input tests open the actual WinForms menu, execute injected navigation callbacks and verify the pause command. This feature is planned for 1.2.0.
 
+P020 marks the current unread snapshot read from either action menu. Receipt IO runs on a worker; new arrivals and failed receipts stay available. A second bulk request cannot start competing work, while a new receipt can still be acknowledged separately. Partial failures report a localized retry message, an expired new popup stays closed and late completion after disposal cannot update UI. Tests cover gated workers, a locked real receipt, dispatcher responsiveness and actual menu retry. This feature is planned for 1.2.0.
+
 ## Milestones
 
 | Verified patch threshold | Planned release | Main review area |

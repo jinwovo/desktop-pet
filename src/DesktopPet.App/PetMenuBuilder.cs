@@ -13,6 +13,8 @@ internal static class PetMenuBuilder
         settingsItem.Font = new System.Drawing.Font(menu.Font, System.Drawing.FontStyle.Bold);
         menu.Items.Add(UiText.Get("AI 연결..."), null, (_, _) => showAssistantConnections());
         var unreadItem = menu.Items.Add(UiText.Get("보관된 알림 확인"), null, (_, _) => petWindow.ShowUnreadNotifications());
+        var markAllItem = menu.Items.Add(UiText.Get("알림 모두 확인"), null,
+            async (_, _) => await petWindow.AcknowledgeAllNotificationsAsync());
 
         menu.Items.Add(new WinForms.ToolStripSeparator());
 
@@ -53,6 +55,8 @@ internal static class PetMenuBuilder
             visibilityItem.Checked = petWindow.IsPetVisible;
             roamingPauseItem.Checked = petWindow.RoamingPaused;
             unreadItem.Enabled = petWindow.PendingNotificationCount > 0;
+            markAllItem.Enabled = petWindow.PendingNotificationCount > 0 && !petWindow.IsAcknowledgingAll;
+            markAllItem.Text = UiText.Get(petWindow.IsAcknowledgingAll ? "알림 확인 처리 중..." : "알림 모두 확인");
             unreadItem.Text = petWindow.PendingNotificationCount > 0
                 ? UiText.Format("보관된 알림 확인 ({0})", petWindow.PendingNotificationCount) : UiText.Get("보관된 알림 없음");
         };
