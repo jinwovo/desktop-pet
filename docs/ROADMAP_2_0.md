@@ -12,6 +12,8 @@ The first ten patches address pointer-facing jitter, preview state transitions a
 
 P012 preserves a drag or throw when a manual reaction is requested. The latest requested reaction starts after landing with its full duration, while a pending notification keeps priority. Desktop recovery clears old queued reactions. Deterministic tests compare the full trajectory against an unaffected pet and check landing, duration, drag offsets and stale-reaction cleanup. This improvement is also planned for 1.2.0.
 
+P013 makes the reduced-motion setting apply to notification appearance and dismissal fades. Enabling it completes an active appearance immediately or hides a popup already being dismissed; restoring preferences applies the same policy. Actual WPF animation-clock and visibility checks cover both transitions while preserving the sender's text. This fix is planned for 1.2.0.
+
 ## Milestones
 
 | Verified patch threshold | Planned release | Main review area |

@@ -162,11 +162,16 @@
     },
     {
       "id": "P013",
-      "title": "Discovery pending: Pet interactions and comfort (13)",
-      "status": "planned",
+      "title": "Apply reduced motion to notification fades, including live and restored preferences",
+      "status": "verified",
       "milestone": "1.2.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/SpeechBubbleWindow.xaml.cs",
+        "src/DesktopPet.App/MainWindow.xaml.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/SpeechBubbleMotionTests.cs"
+      ]
     },
     {
       "id": "P014",

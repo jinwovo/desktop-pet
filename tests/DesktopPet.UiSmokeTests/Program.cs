@@ -27,6 +27,13 @@ internal static class Program
                 GroundedRigVisualRegressionTests.Run(MainWindow.CharactersRoot, capture: args.Contains("--capture"));
                 return 0;
             }
+            if (args.Contains("--bubble-only"))
+            {
+                SpeechBubbleLocalizationTests.Run();
+                SpeechBubbleMotionTests.Run(folder);
+                Console.WriteLine("All speech bubble checks passed");
+                return 0;
+            }
             var archiveIndex = Array.IndexOf(args, "--verify-archive");
             if (archiveIndex >= 0)
             {
@@ -308,6 +315,7 @@ internal static class Program
             LocalizationUiTests.Run(folder);
             EvolutionMotionUiTests.Run(folder);
             SpeechBubbleLocalizationTests.Run();
+            SpeechBubbleMotionTests.Run(folder);
             GalleryLocaleRegressionTests.Run(folder);
             DiagnosticsUiTests.Run(folder);
             PetRecoveryUiTests.Run(folder);

@@ -19,6 +19,7 @@ public partial class SpeechBubbleWindow : Window
     private int _pendingCount;
     private bool _usesFallbackTitle = true;
     private bool _closed;
+    private bool _reducedMotion;
 
     /// <summary>Raised when the user clicks the bubble to acknowledge it.</summary>
     public event Action? Acknowledged;
@@ -65,7 +66,10 @@ public partial class SpeechBubbleWindow : Window
         IsShowing = true;
         Show();
         UpdateLayout();
-        BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(180)));
+        if (!_reducedMotion)
+        {
+            BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(180)));
+        }
     }
 
     public void SetPendingCount(int count)
@@ -152,6 +156,12 @@ public partial class SpeechBubbleWindow : Window
     {
         if (!IsShowing) return;
         IsShowing = false;
+        if (_reducedMotion)
+        {
+            BeginAnimation(OpacityProperty, null);
+            Hide();
+            return;
+        }
         var fade = new DoubleAnimation(Opacity, 0, TimeSpan.FromMilliseconds(220));
         fade.Completed += (_, _) => { if (!IsShowing) Hide(); };
         BeginAnimation(OpacityProperty, fade);
@@ -163,5 +173,20 @@ public partial class SpeechBubbleWindow : Window
         BeginAnimation(OpacityProperty, null);
         IsShowing = false;
         Close();
+    }
+
+    public void SetReducedMotion(bool reducedMotion)
+    {
+        if (_closed || _reducedMotion == reducedMotion) return;
+        _reducedMotion = reducedMotion;
+        if (_reducedMotion)
+        {
+            BeginAnimation(OpacityProperty, null);
+            Opacity = 1;
+            if (!IsShowing)
+            {
+                Hide();
+            }
+        }
     }
 }

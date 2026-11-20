@@ -171,6 +171,7 @@ public partial class MainWindow : Window
             _platformLayout.UpdateWindowPlatforms);
 
         _bubble = new SpeechBubbleWindow();
+        _bubble.SetReducedMotion(_settings.ReducedMotion);
         _bubble.Acknowledged += AcknowledgeNotification;
 
         _inbox = new NotificationInbox(_inboxDirectory);
@@ -296,6 +297,7 @@ public partial class MainWindow : Window
         _settings.CharacterName = CurrentCharacterName;
         ApplyCurrentCharacterSizing();
         _brain.HopBetweenPlatforms = candidate.HopBetweenWindowsEnabled && !candidate.ReducedMotion;
+        _bubble?.SetReducedMotion(candidate.ReducedMotion);
         _brain.SleepEnabled = candidate.SleepEnabled;
         _brain.CalmBehavior = candidate.CalmBehavior;
         _framePacer.MaximumFps = candidate.MaximumFps;
@@ -470,6 +472,7 @@ public partial class MainWindow : Window
         WindowFallEnabledChanged?.Invoke(CanUseWindowFall);
         RenderOptionsChanged?.Invoke(maximumFps, reducedMotion);
         ScheduleSettingsSave();
+        _bubble?.SetReducedMotion(reducedMotion);
     }
     public bool CalmBehaviorEnabled => _settings.CalmBehavior;
     public bool AutoDismissNotifications => _settings.AutoDismissNotifications;
