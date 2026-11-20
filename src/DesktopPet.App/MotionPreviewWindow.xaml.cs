@@ -58,6 +58,7 @@ public partial class MotionPreviewWindow : Window
         Closed += (_, _) =>
         {
             _closed = true;
+            UiText.LanguageChanged -= RefreshLanguage;
             _poseTransition.Reset();
             MotionRig.SetPresentation(null);
             CompositionTarget.Rendering -= OnRendering;
@@ -65,6 +66,10 @@ public partial class MotionPreviewWindow : Window
             _dragging = false;
             ActorInput.ReleaseMouseCapture();
         };
+        UiText.Attach(this);
+        Loaded += (_, _) => RefreshLanguage();
+        UiText.LanguageChanged += RefreshLanguage;
+        RefreshLanguage();
     }
 
     private void UpdateAnimationState()
@@ -214,17 +219,35 @@ public partial class MotionPreviewWindow : Window
                 (_brain.State != PetState.Walk || _lastPoseState == PetState.Walk));
         }
         _lastPoseState = _brain.State;
-        StateText.Text = _walkAppearance.IsSettling ? "발을 모으는 중" : _brain.State switch
+        UpdateStateText();
+    }
+
+    private void RefreshLanguage()
+    {
+        if (_closed) return;
+        Title = UiText.Format("DesktopPet 움직임 시험 · {0}", _presentation.Definition.Name);
+        UpdateStateText();
+    }
+
+    private void UpdateStateText()
+    {
+        if (_closed) return;
+        var state = _brain?.State ?? PetState.Idle;
+        StateText.Text = UiText.Get(_walkAppearance.IsSettling ? "발을 모으는 중" : state switch
         {
             PetState.Walk => _walkAppearance.View switch
             {
-                WalkView.Front when definition.WalkFrontFrames.Count > 0 => "걷는 중 · 앞을 살펴요",
-                WalkView.Turn when definition.WalkTurnFrames.Count > 0 => "걷는 중 · 고개를 돌려요",
-                _ => "걷는 중 · 진행 방향을 봐요",
+                WalkView.Front when _presentation.Definition.WalkFrontFrames.Count > 0 => "걷는 중 · 앞을 살펴요",
+                WalkView.Turn when _presentation.Definition.WalkTurnFrames.Count > 0 => "걷는 중 · 고개를 돌려요",
+                _ => "걷는 중 · 진행 방향을 봐요"
             },
-            PetState.Falling => "공중", PetState.Dragged => "잡고 있는 중",
-            PetState.Cry => "울기", PetState.Angry => "화내기", PetState.LookAtCursor => "바라보는 중", _ => "쉬는 중",
-        };
+            PetState.Falling => "공중",
+            PetState.Dragged => "잡고 있는 중",
+            PetState.Cry => "울기",
+            PetState.Angry => "화내기",
+            PetState.LookAtCursor => "바라보는 중",
+            _ => "쉬는 중"
+        });
     }
 
     private void Actor_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)

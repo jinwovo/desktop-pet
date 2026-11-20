@@ -204,11 +204,17 @@
     },
     {
       "id": "P016",
-      "title": "Discovery pending: Pet interactions and comfort (16)",
-      "status": "planned",
+      "title": "Localize the motion preview and live state labels without restarting its animation",
+      "status": "verified",
       "milestone": "1.2.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/MotionPreviewWindow.xaml",
+        "src/DesktopPet.App/MotionPreviewWindow.xaml.cs",
+        "src/DesktopPet.App/UiText.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/EvolutionMotionUiTests.cs"
+      ]
     },
     {
       "id": "P017",

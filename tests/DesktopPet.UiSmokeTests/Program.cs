@@ -36,6 +36,12 @@ internal static class Program
                 Console.WriteLine("All speech bubble checks passed");
                 return 0;
             }
+            if (args.Contains("--motion-only"))
+            {
+                EvolutionMotionUiTests.Run(folder);
+                Console.WriteLine("All motion preview checks passed");
+                return 0;
+            }
             var archiveIndex = Array.IndexOf(args, "--verify-archive");
             if (archiveIndex >= 0)
             {

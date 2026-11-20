@@ -35,9 +35,9 @@
         </Border>
         <DockPanel Grid.Row="2" Margin="0,12,0,0">
             <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
-                <Button Content="처음으로" Click="ResetButton_Click" Padding="12,6" Margin="0,0,8,0" />
-                <Button Content="점프" Click="JumpButton_Click" Padding="12,6" Margin="0,0,8,0" />
-                <Button Content="위에서 놓기" Click="DropButton_Click" Padding="12,6" />
+                <Button x:Name="ResetSceneButton" Content="처음으로" Click="ResetButton_Click" Padding="12,6" Margin="0,0,8,0" />
+                <Button x:Name="JumpButton" Content="점프" Click="JumpButton_Click" Padding="12,6" Margin="0,0,8,0" />
+                <Button x:Name="DropButton" Content="위에서 놓기" Click="DropButton_Click" Padding="12,6" />
             </StackPanel>
             <TextBlock x:Name="StateText" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="#68738C" />
         </DockPanel>

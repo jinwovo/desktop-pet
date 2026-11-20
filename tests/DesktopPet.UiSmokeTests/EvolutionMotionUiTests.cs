@@ -45,6 +45,7 @@ internal static class EvolutionMotionUiTests
             VerifyPreviewLifecycle(settings, motion);
             VerifyWeightedIdleHandoff(motion, presentation);
             VerifyLanguagePreservesPreview(settings);
+            VerifyMotionLanguagePreservesPose(motion, presentation);
             Check(!pet.AutoConnectAssistants && Get(pet, "_inbox") is null && Get(pet, "_windowPlatformMonitor") is null,
                 "Motion fixtures initialized assistant registration, a real inbox or desktop window scanning");
         }
@@ -223,6 +224,45 @@ internal static class EvolutionMotionUiTests
                 "Changing UI language decoded/reset the same character or changed its active preview state");
         }
         Console.WriteLine("PASS EN/zh-CN/KO relabeling preserves the same Settings presentation, walk phase, state and animation clock");
+    }
+
+    private static void VerifyMotionLanguagePreservesPose(MotionPreviewWindow motion, CharacterPresentation presentation)
+    {
+        var brain = (PetBrain)Get(motion, "_brain")!;
+        Invoke(brain, "ChangeState", PetState.Walk);
+        brain.Tick(0.12, new PetPoint(-10000, -10000));
+        Invoke(motion, "RenderActor", 0.12);
+        var gait = (WalkAppearanceController)Get(motion, "_walkAppearance")!;
+        var before = (brain.X, brain.Y, brain.State, brain.StateElapsedMs, brain.HorizontalVelocityPxPerSec, gait.GaitPhase,
+            (double)Get(motion, "_walkElapsedMs")!, ((GroundedRigVisual)motion.FindName("MotionRig")).PoseUpdateCount);
+        foreach (var (language, title, reset, jump, drop, statePrefix) in new[]
+        {
+            ("en", "DesktopPet Motion Preview · ", "Reset", "Jump", "Drop from above", "Walking"),
+            ("zh-CN", "DesktopPet 动作预览 · ", "重置", "跳跃", "从上方放下", "行走中"),
+            ("ko", "DesktopPet 움직임 시험 · ", "처음으로", "점프", "위에서 놓기", "걷는 중"),
+        })
+        {
+            UiText.SetLanguage(language);
+            Check(motion.Title == title + presentation.Definition.Name &&
+                ((Button)motion.FindName("ResetSceneButton")).Content is string resetLabel && resetLabel == reset &&
+                ((Button)motion.FindName("JumpButton")).Content is string jumpLabel && jumpLabel == jump &&
+                ((Button)motion.FindName("DropButton")).Content is string dropLabel && dropLabel == drop &&
+                ((TextBlock)motion.FindName("StateText")).Text.StartsWith(statePrefix, StringComparison.Ordinal),
+                "Motion preview title, controls or live state did not follow the selected language");
+            Check(before == (brain.X, brain.Y, brain.State, brain.StateElapsedMs, brain.HorizontalVelocityPxPerSec, gait.GaitPhase,
+                (double)Get(motion, "_walkElapsedMs")!, ((GroundedRigVisual)motion.FindName("MotionRig")).PoseUpdateCount) &&
+                ReferenceEquals(presentation, Get(motion, "_presentation")), "Localizing the motion window restarted simulation, redrew the rig or decoded textures");
+            if (Environment.GetCommandLineArgs().Contains("--capture")) Program.SaveWindowSnapshot(motion, "motion-localized-" + language + ".png");
+        }
+        var languageEvent = typeof(UiText).GetField("LanguageChanged", BindingFlags.Static | BindingFlags.NonPublic)!;
+        var subscribers = ((Delegate?)languageEvent.GetValue(null))?.GetInvocationList().Length ?? 0;
+        motion.Close();
+        Check((((Delegate?)languageEvent.GetValue(null))?.GetInvocationList().Length ?? 0) == subscribers - 2,
+            "Closed motion window retained static or dynamic localization subscriptions");
+        var closedTitle = motion.Title;
+        UiText.SetLanguage("en");
+        Check(motion.Title == closedTitle, "Closed motion window retained language updates");
+        Console.WriteLine("PASS Motion window localizes its title, buttons and live walking labels in EN/zh-CN/KO without changing character, pose, gait or clocks");
     }
 
     private static void AdvanceSettings(SettingsWindow settings, double milliseconds)
