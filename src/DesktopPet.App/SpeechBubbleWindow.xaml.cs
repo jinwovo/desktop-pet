@@ -26,8 +26,9 @@ public partial class SpeechBubbleWindow : Window
 
     public bool IsShowing { get; private set; }
 
-    public SpeechBubbleWindow()
+    public SpeechBubbleWindow(Func<string, bool>? copyText = null)
     {
+        _copyText = copyText ?? TryCopyNotification;
         InitializeComponent();
         PetWindowBehavior.Attach(this);
         UiText.LanguageChanged += OnLanguageChanged;
@@ -63,6 +64,8 @@ public partial class SpeechBubbleWindow : Window
         MessageText.Text = message ?? string.Empty;
         MessageText.Visibility = string.IsNullOrWhiteSpace(message) ? Visibility.Collapsed : Visibility.Visible;
         SetNotificationSource(source);
+        _copyLabelKey = "복사";
+        RefreshLocalizedChrome();
 
         IsShowing = true;
         Show();
@@ -110,6 +113,36 @@ public partial class SpeechBubbleWindow : Window
             ? Visibility.Collapsed : Visibility.Visible;
     }
 
+    private readonly Func<string, bool> _copyText;
+    private string _copyLabelKey = "복사";
+
+    private static bool TryCopyNotification(string text)
+    {
+        System.Windows.Clipboard.SetText(text);
+        return true;
+    }
+
+    private void Copy_Click(object sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (_closed || !IsShowing) return;
+
+        string text = TitleText.Text + (MessageText.Text.Length > 0 ? Environment.NewLine + MessageText.Text : "");
+        bool copied = false;
+
+        try
+        {
+            copied = _copyText(text);
+        }
+        catch (System.Runtime.InteropServices.ExternalException)
+        {
+            copied = false;
+        }
+
+        _copyLabelKey = copied ? "복사했어요" : "다시 복사";
+        RefreshLocalizedChrome();
+    }
+
     public void SetPendingCount(int count)
     {
         if (_closed) return;
@@ -132,6 +165,8 @@ public partial class SpeechBubbleWindow : Window
             : UiText.Get("클릭해서 확인");
         if (_usesFallbackTitle) TitleText.Text = UiText.Get("알림");
         RefreshSourceBadge();
+        CopyButton.Content = UiText.Get(_copyLabelKey);
+        CopyButton.ToolTip = UiText.Get("알림 내용 복사");
     }
 
     private void OnClosed(object? sender, EventArgs e)

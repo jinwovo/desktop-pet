@@ -16,6 +16,8 @@ P013 makes the reduced-motion setting apply to notification appearance and dismi
 
 P014 identifies Claude, Codex, focus-timer and test notifications with a compact source label. A label matching the title is hidden to avoid duplicate lines. User titles and messages stay unchanged, focus/test labels follow the UI language and unknown sender identifiers stay hidden. Tests cover live localization, unread review and actual delivery wiring. This feature is planned for 1.2.0.
 
+P015 adds a copy button that keeps the notification visible and unread. It copies the displayed title and original message, offers localized retry feedback if the clipboard is busy, and resets feedback for the next notification. Routed input checks verify that the button neither acknowledges the receipt nor changes keyboard focus. Clipboard tests use an injected fake rather than touching the developer's clipboard; KO/EN/zh-CN WPF captures check the actual layout. This feature is planned for 1.2.0.
+
 ## Milestones
 
 | Verified patch threshold | Planned release | Main review area |

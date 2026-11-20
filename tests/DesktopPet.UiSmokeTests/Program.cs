@@ -32,6 +32,7 @@ internal static class Program
                 SpeechBubbleLocalizationTests.Run();
                 SpeechBubbleMotionTests.Run(folder);
                 SpeechBubbleSourceTests.Run();
+                SpeechBubbleCopyTests.Run(args.Contains("--capture"));
                 Console.WriteLine("All speech bubble checks passed");
                 return 0;
             }
@@ -319,6 +320,7 @@ internal static class Program
             SpeechBubbleLocalizationTests.Run();
             SpeechBubbleMotionTests.Run(folder);
             SpeechBubbleSourceTests.Run();
+            SpeechBubbleCopyTests.Run(args.Contains("--capture"));
             GalleryLocaleRegressionTests.Run(folder);
             DiagnosticsUiTests.Run(folder);
             PetRecoveryUiTests.Run(folder);
@@ -750,7 +752,7 @@ internal static class Program
         finally { upgradeWindow.Close(); }
     }
 
-    private static void SaveWindowSnapshot(Window window, string fileName)
+    internal static void SaveWindowSnapshot(Window window, string fileName)
     {
         window.UpdateLayout();
         var content = (FrameworkElement)window.Content;

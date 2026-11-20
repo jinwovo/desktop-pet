@@ -190,11 +190,17 @@
     },
     {
       "id": "P015",
-      "title": "Discovery pending: Pet interactions and comfort (15)",
-      "status": "planned",
+      "title": "Copy notification text with localized retry feedback while keeping the receipt unread",
+      "status": "verified",
       "milestone": "1.2.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/SpeechBubbleWindow.xaml",
+        "src/DesktopPet.App/SpeechBubbleWindow.xaml.cs",
+        "src/DesktopPet.App/UiText.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/SpeechBubbleCopyTests.cs"
+      ]
     },
     {
       "id": "P016",

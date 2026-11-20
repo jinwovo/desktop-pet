@@ -43,11 +43,38 @@
                            TextWrapping="Wrap"
                            MaxHeight="120"
                            TextTrimming="CharacterEllipsis" />
-                <TextBlock x:Name="AcknowledgementText" Text="클릭해서 확인"
-                           FontSize="11"
-                           Foreground="#FF8A8A8A"
-                           Margin="0,8,0,0"
-                           HorizontalAlignment="Right" />
+                <Grid Margin="0,8,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Button x:Name="CopyButton" Content="복사" Click="Copy_Click"
+                            Focusable="False" MinWidth="60" Padding="6,3" FontSize="11"
+                            Background="#FFF0F4EE" Foreground="#FF385546" BorderBrush="#FFCCD7D0"
+                            BorderThickness="1" VerticalAlignment="Center">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="CopySurface" CornerRadius="5" Padding="{TemplateBinding Padding}"
+                                        Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="CopySurface" Property="Background" Value="#FFE4EDE2" />
+                                    </Trigger>
+                                    <Trigger Property="IsPressed" Value="True">
+                                        <Setter TargetName="CopySurface" Property="Background" Value="#FFD6E3D3" />
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                    <TextBlock x:Name="AcknowledgementText" Text="클릭해서 확인"
+                               Grid.Column="1" FontSize="11" Foreground="#FF6B6B6B"
+                               Margin="8,0,0,0" TextWrapping="Wrap" TextAlignment="Right"
+                               VerticalAlignment="Center" HorizontalAlignment="Right" />
+                </Grid>
             </StackPanel>
         </Border>
 
