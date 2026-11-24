@@ -295,11 +295,17 @@
     },
     {
       "id": "P023",
-      "title": "Discovery pending: Character authoring and previews (23)",
-      "status": "planned",
+      "title": "Rescan external character changes and retry gallery errors with localized Refresh and F5",
+      "status": "verified",
       "milestone": "1.3.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/CharacterGalleryWindow.xaml",
+        "src/DesktopPet.App/CharacterGalleryWindow.xaml.cs",
+        "src/DesktopPet.App/UiText.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/GalleryLocaleRegressionTests.cs"
+      ]
     },
     {
       "id": "P024",

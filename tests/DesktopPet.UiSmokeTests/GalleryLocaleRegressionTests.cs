@@ -5,6 +5,8 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using DesktopPet.App;
@@ -12,7 +14,7 @@ using DesktopPet.Core;
 
 internal static class GalleryLocaleRegressionTests
 {
-    public static void Run(string root)
+    public static void Run(string root, bool capture = false)
     {
         var fixture = Path.Combine(root, "gallery-locale");
         var bundled = Path.Combine(fixture, "bundled");
@@ -87,6 +89,7 @@ internal static class GalleryLocaleRegressionTests
             VerifyPreviewRequestOwnership(pet);
             VerifyClosedPreviewCollection(pet);
             VerifyCatalogDiscoveryWorker(pet);
+            VerifyManualCatalogRefresh(pet, capture);
         }
         finally
         {
@@ -98,6 +101,98 @@ internal static class GalleryLocaleRegressionTests
         }
     }
 
+    private static void VerifyManualCatalogRefresh(MainWindow pet, bool capture)
+    {
+        using var entered = new ManualResetEventSlim();
+        using var release = new ManualResetEventSlim();
+        var calls = 0;
+        var priorLanguage = UiText.Language;
+        var gallery = new CharacterGalleryWindow(pet, catalogDiscovery: token =>
+        {
+            var request = Interlocked.Increment(ref calls);
+            if (request == 2)
+            {
+                entered.Set();
+                if (!release.Wait(TimeSpan.FromSeconds(15))) throw new TimeoutException("Manual refresh never released");
+            }
+            if (request == 3) throw new IOException("Synthetic temporarily unavailable library");
+            token.ThrowIfCancellationRequested();
+            return pet.AvailableCharacterNames;
+        });
+        try
+        {
+            gallery.Show();
+            Wait(gallery.LoadingTask);
+            var refresh = gallery.FindName("RefreshButton") as Button;
+            Check(refresh is { IsEnabled: true }, "Gallery has no enabled manual refresh action");
+            var cards = (ListBox)gallery.FindName("CharacterCards");
+            var search = (TextBox)gallery.FindName("SearchBox");
+            var category = (ComboBox)gallery.FindName("CategoryCombo");
+            var source = PresentationSource.FromVisual(gallery)!;
+            var originalPet = Get(pet, "_character");
+            var settings = JsonSerializer.Serialize(Get(pet, "_settings"));
+            var originallyDirty = (bool)Get(pet, "_settingsDirty")!;
+            search.Text = "Locale";
+            category.SelectedValue = CharacterGalleryCategory.Custom;
+            cards.SelectedItem = gallery.AllCharacters.Single(item => item.Name == "사용자 Locale");
+            CreateCharacter(pet.CustomCharactersRoot, "New Locale");
+            Check(!gallery.AllCharacters.Any(item => item.Name == "New Locale"), "External addition appeared before a rescan");
+            refresh!.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+            var pending = gallery.LoadingTask;
+            Check(entered.Wait(TimeSpan.FromSeconds(10)) && !refresh.IsEnabled && !pending.IsCompleted,
+                "Manual refresh did not enter its worker or disable its action while busy");
+            var busyKey = new KeyEventArgs(Keyboard.PrimaryDevice, source, 0, Key.F5) { RoutedEvent = Keyboard.PreviewKeyDownEvent };
+            gallery.RaiseEvent(busyKey);
+            Check(busyKey.Handled && ReferenceEquals(pending, gallery.LoadingTask) && Volatile.Read(ref calls) == 2,
+                "F5 started competing discovery while a manual refresh was busy");
+            release.Set();
+            Wait(pending);
+            Check(refresh.IsEnabled && gallery.AllCharacters.Any(item => item.Name == "New Locale") &&
+                search.Text == "Locale" && category.SelectedValue is CharacterGalleryCategory.Custom &&
+                cards.SelectedItem is CharacterGalleryItem { Name: "사용자 Locale" } &&
+                cards.Items.OfType<CharacterGalleryItem>().Any(item => item.Name == "New Locale"),
+                "Refresh lost filters/selection or omitted an externally added character");
+            Console.WriteLine("PASS Gallery refresh discovers external additions, preserves filters/selection and ignores repeated F5 while busy");
+
+            File.Delete(Path.Combine(pet.CustomCharactersRoot, "New Locale", "character.json"));
+            var failureKey = new KeyEventArgs(Keyboard.PrimaryDevice, source, 0, Key.F5) { RoutedEvent = Keyboard.PreviewKeyDownEvent };
+            gallery.RaiseEvent(failureKey);
+            Wait(gallery.LoadingTask);
+            Check(failureKey.Handled && refresh.IsEnabled && (bool)Get(gallery, "_catalogFailed")!,
+                "F5 did not reload or a failed rescan disabled retry");
+            foreach (var language in new[] { "ko", "en", "zh-CN" })
+            {
+                UiText.SetLanguage(language);
+                Check((string)refresh.Content == UiText.Get("새로고침 (F5)") &&
+                    ((TextBlock)gallery.FindName("StatusText")).Text == UiText.Get("캐릭터 폴더를 확인하고 새로고침해주세요."),
+                    "Refresh action or retry guidance did not follow the current language");
+                gallery.Width = gallery.MinWidth;
+                gallery.Height = gallery.MinHeight;
+                gallery.UpdateLayout();
+                if (capture) Program.SaveWindowSnapshot(gallery, "gallery-refresh-" + language + ".png");
+                // WPF DesiredSize includes the external margin; ActualWidth does not.
+                Check(refresh.ActualWidth >= refresh.DesiredSize.Width - refresh.Margin.Left - refresh.Margin.Right - 0.5 && search.ActualWidth >= 160,
+                    $"Localized refresh layout: button actual={refresh.ActualWidth}, desired={refresh.DesiredSize.Width}, margin={refresh.Margin}, search={search.ActualWidth}");
+            }
+            refresh.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+            Wait(gallery.LoadingTask);
+            Check(refresh.IsEnabled && !(bool)Get(gallery, "_catalogFailed")! && Volatile.Read(ref calls) == 4,
+                "Retry did not recover its loading/button state");
+            Check(!gallery.AllCharacters.Any(item => item.Name == "New Locale"), "Retry retained an externally removed character");
+            Check(cards.SelectedItem is CharacterGalleryItem { Name: "사용자 Locale" }, "Retry lost the original card selection");
+            Check(ReferenceEquals(originalPet, Get(pet, "_character")) && settings == JsonSerializer.Serialize(Get(pet, "_settings")) &&
+                originallyDirty == (bool)Get(pet, "_settingsDirty")!, "Retry changed the active pet/preferences");
+            Console.WriteLine("PASS Localized refresh/F5 recovers from a failed directory scan, removes missing entries and keeps pet/preferences intact");
+        }
+        finally
+        {
+            release.Set();
+            gallery.Close();
+            Wait(gallery.LoadingTask);
+            UiText.SetLanguage(priorLanguage);
+        }
+    }
+
     private static void VerifyCatalogDiscoveryWorker(MainWindow pet)
     {
         var uiThread = Environment.CurrentManagedThreadId;
@@ -105,6 +200,8 @@ internal static class GalleryLocaleRegressionTests
         using var firstRelease = new ManualResetEventSlim();
         using var oldEntered = new ManualResetEventSlim();
         using var oldRelease = new ManualResetEventSlim();
+        using var latestEntered = new ManualResetEventSlim();
+        using var latestRelease = new ManualResetEventSlim();
         using var closeEntered = new ManualResetEventSlim();
         using var closeRelease = new ManualResetEventSlim();
         var call = 0;
@@ -129,7 +226,12 @@ internal static class GalleryLocaleRegressionTests
                 if (!oldRelease.Wait(TimeSpan.FromSeconds(15))) throw new TimeoutException("Old catalog discovery was never released");
                 return new[] { "Broken Locale" };
             }
-            if (request == 3) return new[] { "Companion" };
+            if (request == 3)
+            {
+                latestEntered.Set();
+                if (!latestRelease.Wait(TimeSpan.FromSeconds(15))) throw new TimeoutException("Latest catalog discovery was never released");
+                return new[] { "Companion" };
+            }
             closeToken = token;
             closeEntered.Set();
             if (!closeRelease.Wait(TimeSpan.FromSeconds(15))) throw new TimeoutException("Closed catalog discovery was never released");
@@ -162,16 +264,21 @@ internal static class GalleryLocaleRegressionTests
             Until(() => oldEntered.IsSet, "Superseded discovery did not start");
             gallery.RefreshCharacters();
             operations.Add(gallery.LoadingTask);
-            Wait(gallery.LoadingTask);
-            Check(oldToken.IsCancellationRequested && gallery.AllCharacters.Select(item => item.Name).SequenceEqual(new[] { "Companion" }),
-                "Refreshing did not cancel old discovery or install the latest catalog");
-            var installed = gallery.AllCharacters;
-            var status = ((TextBlock)gallery.FindName("StatusText")).Text;
+            Until(() => latestEntered.IsSet, "Latest discovery did not start");
+            Check(oldToken.IsCancellationRequested, "Refreshing did not cancel old discovery");
+            var priorCatalog = gallery.AllCharacters;
             oldRelease.Set();
             Wait(oldOperation);
-            Check(ReferenceEquals(installed, gallery.AllCharacters) && !(bool)Get(gallery, "_catalogLoading")! &&
-                ((TextBlock)gallery.FindName("StatusText")).Text == status,
-                "Late discovery replaced the latest catalog or changed its status/loading state");
+            Check(ReferenceEquals(priorCatalog, gallery.AllCharacters) && (bool)Get(gallery, "_catalogLoading")! &&
+                !((Button)gallery.FindName("RefreshButton")).IsEnabled,
+                "A superseded discovery changed the catalog or enabled refresh while the latest load was busy");
+            latestRelease.Set();
+            Wait(gallery.LoadingTask);
+            Check(gallery.AllCharacters.Select(item => item.Name).SequenceEqual(new[] { "Companion" }) &&
+                !(bool)Get(gallery, "_catalogLoading")! && ((Button)gallery.FindName("RefreshButton")).IsEnabled,
+                "Latest catalog did not finish or re-enable refresh");
+            var installed = gallery.AllCharacters;
+            var status = ((TextBlock)gallery.FindName("StatusText")).Text;
             Console.WriteLine("PASS Gallery refresh cancels old discovery and ignores its late result without changing the latest catalog");
 
             gallery.RefreshCharacters();
@@ -189,6 +296,7 @@ internal static class GalleryLocaleRegressionTests
         {
             firstRelease.Set();
             oldRelease.Set();
+            latestRelease.Set();
             closeRelease.Set();
             gallery.Close();
             foreach (var operation in operations) Wait(operation);

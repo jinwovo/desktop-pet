@@ -10,7 +10,7 @@
             <TextBlock Text="골라서 미리 보고, 마음에 들면 적용하세요." Foreground="#68766A" Margin="0,6,0,15"/>
         </StackPanel>
         <Grid Grid.Row="1" Margin="0,0,0,14">
-            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="145"/></Grid.ColumnDefinitions>
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="145"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
             <TextBox x:Name="SearchBox" Padding="10,7" Margin="0,0,10,0" VerticalContentAlignment="Center"
                      ToolTip="이름으로 검색 · 한글 또는 영어" AutomationProperties.Name="캐릭터 이름 검색" TextChanged="Filter_Changed"/>
             <TextBlock Text="이름 검색 · 한글 / English" IsHitTestVisible="False" Margin="11,0,15,0" VerticalAlignment="Center" Foreground="#899386">
@@ -23,6 +23,7 @@
             </TextBlock>
             <ComboBox x:Name="CategoryCombo" Grid.Column="1" Padding="6" DisplayMemberPath="Label" SelectedValuePath="Category"
                       AutomationProperties.Name="캐릭터 종류" SelectionChanged="Category_Changed"/>
+            <Button x:Name="RefreshButton" Grid.Column="2" Content="새로고침 (F5)" Margin="8,0,0,0" Padding="10,6" Click="Refresh_Click"/>
         </Grid>
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="215"/></Grid.ColumnDefinitions>

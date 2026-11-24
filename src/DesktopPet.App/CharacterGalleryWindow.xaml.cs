@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media.Imaging;
 
 namespace DesktopPet.App;
@@ -124,6 +125,22 @@ public partial class CharacterGalleryWindow : Window
             : _started ? UiText.Format("{0}종 중 {1}종", _all.Count, visibleCount) : "";
     }
 
+    private void Refresh_Click(object sender, RoutedEventArgs e)
+    {
+        if (_closed || _catalogLoading || !_started) return;
+        RefreshCharacters();
+    }
+
+    protected override void OnPreviewKeyDown(System.Windows.Input.KeyEventArgs e)
+    {
+        base.OnPreviewKeyDown(e);
+        if (!e.Handled && e.Key == Key.F5)
+        {
+            e.Handled = true;
+            Refresh_Click(this, new RoutedEventArgs());
+        }
+    }
+
     /// <summary>Reload the library after import without applying a character or changing filters.</summary>
     public void RefreshCharacters()
     {
@@ -141,6 +158,7 @@ public partial class CharacterGalleryWindow : Window
     {
         _catalogLoading = true;
         _catalogFailed = false;
+        RefreshButton.IsEnabled = false;
         RenderCount(CharacterCards.Items.Count);
         try
         {
@@ -195,8 +213,12 @@ public partial class CharacterGalleryWindow : Window
                 _catalogLoading = false;
                 _catalogFailed = true;
                 RenderCount(CharacterCards.Items.Count);
-                SetStatus("캐릭터 폴더를 확인하고 다시 열어주세요.");
+                SetStatus("캐릭터 폴더를 확인하고 새로고침해주세요.");
             }
+        }
+        finally
+        {
+            if (!_closed && revision == _loadRevision) RefreshButton.IsEnabled = true;
         }
     }
 

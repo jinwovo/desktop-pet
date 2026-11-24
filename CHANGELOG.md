@@ -4,6 +4,7 @@
 
 - P021: release the gallery's reference to a closed motion preview so its decoded presentation can be collected while the gallery stays open. Keep replacement-preview ownership intact and allow reopening normally.
 - P022: discover character directories and read gallery aliases on the existing background worker. Keep input/search responsive during slow discovery, cancel superseded/closed requests and discard late results without overwriting the current catalog.
+- P023: refresh the gallery with a localized button or F5, discover externally added/removed characters and retry failed scans without reopening. Preserve search/category/selection and ignore repeat input while loading; stale workers cannot re-enable the action during a newer scan.
 
 ## 1.2.0 — evolution patches P011–P020
 

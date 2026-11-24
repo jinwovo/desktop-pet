@@ -34,6 +34,8 @@ P021 starts 1.3.0 development: closing a gallery motion preview removes the gall
 
 P022 moves directory discovery and catalog JSON reads off WPF's UI thread. A gated worker test reproduces the original failure, verifies input/search while blocked, refreshes to a newer snapshot and closes during a late failure. The full nine-character UI suite and 227 core checks pass. P021-P022 are development changes for 1.3.0; the public 1.2.0 files remain unchanged.
 
+P023 adds a localized **Refresh (F5)** action. External character additions/removals and temporary scan errors can be resolved without reopening the gallery. Filters, selection and the current pet/preferences remain intact; repeated F5 is ignored while loading, and an older request cannot enable the button while its successor is busy. Routed keyboard/button tests, gated workers and KO/EN/zh-CN minimum-size captures pass. P021-P023 remain unreleased until the 1.3.0 milestone reaches 30 verified patches.
+
 The [1.2.0 release audit](RELEASE_AUDIT_1_2.md) records the original post-publication API rate-limit failure and the successful read-only comparison of all four public files.
 
 | Verified patch threshold | Planned release | Main review area |
