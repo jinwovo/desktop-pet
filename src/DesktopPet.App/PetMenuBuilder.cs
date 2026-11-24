@@ -12,6 +12,7 @@ internal static class PetMenuBuilder
         var settingsItem = menu.Items.Add(UiText.Get("설정..."), null, (_, _) => showSettings());
         settingsItem.Font = new System.Drawing.Font(menu.Font, System.Drawing.FontStyle.Bold);
         menu.Items.Add(UiText.Get("AI 연결..."), null, (_, _) => showAssistantConnections());
+        var notificationListItem = menu.Items.Add(UiText.Get("알림 목록..."), null, (_, _) => petWindow.ShowNotificationReview());
         var unreadItem = menu.Items.Add(UiText.Get("보관된 알림 확인"), null, (_, _) => petWindow.ShowUnreadNotifications());
         var markAllItem = menu.Items.Add(UiText.Get("알림 모두 확인"), null,
             async (_, _) => await petWindow.AcknowledgeAllNotificationsAsync());
@@ -64,6 +65,7 @@ internal static class PetMenuBuilder
         // Reflect current state each time the menu opens, since the settings window can change it.
         menu.Opening += (_, _) =>
         {
+            notificationListItem.Text = UiText.Get("알림 목록...");
             visibilityItem.Checked = petWindow.IsPetVisible;
             roamingPauseItem.Checked = petWindow.RoamingPaused;
             unreadItem.Enabled = petWindow.PendingNotificationCount > 0;

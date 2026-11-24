@@ -64,6 +64,8 @@ P034 preserves timer/schedule feedback across locale changes. Actual WPF tests r
 
 P035 adds 25/5 and 50/10 quick-fill controls. Tests prove that they only prepare a draft across stopped/running/paused timers, do not schedule a save, preserve temporary extensions and require explicit Apply/restart for configured defaults. KO/EN/zh-CN feedback/tooltips and closed callbacks are covered. The full suite exposed an older gaze-fixture dependency on whether automatic walking had started: a deterministic pre-walk reproduces it, and resetting only the resting-gaze fixture fixes its precondition without changing production settling or weakening assertions. That test repair is part of validation, not another product patch. P035 remains 1.4.0 development work.
 
+P036 adds an independent read-only saved-notification browser through both shared menus. Real receipt files remain unchanged while browsing, and original user titles/messages survive KO/EN/zh-CN relabeling. Stable receipt identity keeps selection through arrivals and language changes. A hundred-arrival fixture proves one queued refresh and virtualized offscreen rows; language changes share that pending refresh. External explicit acknowledgement updates the open list, while closing aborts queued work, detaches subscriptions and clears Main's reference. Native captures verify all three locales. This is 1.4.0 development work, absent from the immutable 1.3.0 download.
+
 | Verified patch threshold | Planned release | Main review area |
 | --- | --- | --- |
 | 10 | 1.1.0 | Motion and runtime defects |

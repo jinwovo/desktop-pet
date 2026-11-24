@@ -38,6 +38,7 @@ public partial class MainWindow : Window
     private WindowPlatformMonitor? _windowPlatformMonitor;
     private NotificationInbox? _inbox;
     private SpeechBubbleWindow? _bubble;
+    private NotificationReviewWindow? _notificationReviewWindow;
     private readonly List<InboxNotification> _unreadNotifications = new();
     private readonly Queue<InboxNotification> _duplicateCleanup = new();
     private readonly DispatcherTimer _duplicateCleanupTimer = new() { Interval = TimeSpan.FromSeconds(5) };
@@ -776,6 +777,31 @@ public partial class MainWindow : Window
         ScheduleSettingsSave();
     }
 
+    public IReadOnlyList<SavedNotificationItem> GetPendingNotificationsSnapshot()
+    {
+        Dispatcher.VerifyAccess();
+        return _disposed ? [] : _unreadNotifications.Select(receipt => new SavedNotificationItem(receipt)).ToArray();
+    }
+
+    public void ShowNotificationReview()
+    {
+        Dispatcher.VerifyAccess();
+        if (_disposed) return;
+        if (_notificationReviewWindow is { } existing)
+        {
+            if (existing.WindowState == WindowState.Minimized) existing.WindowState = WindowState.Normal;
+            existing.Activate();
+            return;
+        }
+        var window = new NotificationReviewWindow(this);
+        _notificationReviewWindow = window;
+        window.Closed += (_, _) =>
+        {
+            if (ReferenceEquals(_notificationReviewWindow, window)) _notificationReviewWindow = null;
+        };
+        window.Show();
+    }
+
     public void ShowUnreadNotifications()
     {
         _activeNotification = _unreadNotifications.FirstOrDefault();
@@ -1165,6 +1191,8 @@ public partial class MainWindow : Window
     {
         if (_disposed) return;
         _disposed = true;
+        _notificationReviewWindow?.Close();
+        _notificationReviewWindow = null;
         CancelCharacterSwitch();
         _attentionTimer.Stop();
         _windowPlatformMonitor?.Dispose();

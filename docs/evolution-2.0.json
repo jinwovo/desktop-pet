@@ -505,11 +505,20 @@
     },
     {
       "id": "P036",
-      "title": "Discovery pending: Focus and notification workflows (36)",
-      "status": "planned",
+      "title": "Browse saved notifications without acknowledging receipts or revealing the hidden pet",
+      "status": "verified",
       "milestone": "1.4.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/SavedNotificationItem.cs",
+        "src/DesktopPet.App/NotificationReviewWindow.xaml",
+        "src/DesktopPet.App/NotificationReviewWindow.xaml.cs",
+        "src/DesktopPet.App/MainWindow.xaml.cs",
+        "src/DesktopPet.App/PetMenuBuilder.cs",
+        "src/DesktopPet.App/UiText.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/NotificationReviewUiTests.cs"
+      ]
     },
     {
       "id": "P037",

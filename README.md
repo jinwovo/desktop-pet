@@ -115,6 +115,7 @@ The 1.4.0 preview also offers **25 / 5** and **50 / 10** quick-fill buttons. The
 
 ## Notification controls
 
+- **1.4.0 development:** open **Notification list...** from the tray or pet menu to browse saved items, even with the pet hidden. Selecting an item keeps it unread; its original text can be selected and copied. Source labels and local timestamps help identify completions, and the selected item stays in place as new notifications arrive. This is not in the 1.3.0 download.
 - Auto-hide closes a bubble without deleting it; the unread tray entry remains available.
 - A burst shows the latest completion and retains unread receipts in arrival order.
 - A hidden pet stays hidden when a notification arrives.

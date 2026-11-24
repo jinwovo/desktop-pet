@@ -22,6 +22,11 @@ internal static class Program
         MainWindow? pet = null;
         try
         {
+            if (args.Contains("--notification-review-only"))
+            {
+                NotificationReviewUiTests.Run(folder, args.Contains("--capture"));
+                return 0;
+            }
             if (args.Contains("--focus-presets-only"))
             {
                 FocusPresetUiTests.Run(folder, args.Contains("--capture"));
@@ -410,6 +415,7 @@ internal static class Program
             NotificationIdentityUiTests.Run(folder);
             PetContextMenuUiTests.Run(folder, args.Contains("--capture"));
             NotificationBatchUiTests.Run(folder);
+            NotificationReviewUiTests.Run(folder, args.Contains("--capture"));
             GalleryLocaleRegressionTests.Run(folder, args.Contains("--capture"));
             CharacterSwitchUiTests.Run(folder);
             CharacterExportUiTests.Run(folder, args.Contains("--capture"));
