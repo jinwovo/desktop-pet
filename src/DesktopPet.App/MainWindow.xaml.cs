@@ -481,6 +481,21 @@ public partial class MainWindow : Window
     public string CustomCharactersRoot => _characterLibrary.CustomRoot;
     public string ResolveCharacterFolder(string name) => _characterLibrary.Resolve(name);
 
+    public Task<string> ExportCharacterAsync(string name, string destination, CancellationToken cancellationToken = default,
+        IProgress<CharacterExportProgress>? progress = null)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        return Task.Run(() =>
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!_characterLibrary.GetNames().Contains(name, StringComparer.OrdinalIgnoreCase))
+                throw new InvalidDataException("캐릭터 목록에서 선택해주세요.");
+            return CharacterPackExporter.ExportFolder(_characterLibrary.Resolve(name), destination,
+                staged => { _ = CharacterPresentation.Load(staged, includeRasterGait: true, cancellationToken); },
+                cancellationToken, progress);
+        }, cancellationToken);
+    }
+
     /// <summary>Validate/decode the complete prepared pack off the UI thread before publishing it.</summary>
     public Task<string> ImportCharacterFolderAsync(string folder, CancellationToken cancellationToken = default,
         IProgress<CharacterImportProgress>? progress = null) => Task.Run(() =>

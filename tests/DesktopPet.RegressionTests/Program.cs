@@ -232,6 +232,7 @@ var tests = new (string Name, Action Run)[]
  .Concat(MonitorTopologyTests.Create())
  .Concat(BehaviorProfileTests.Create())
  .Concat(CharacterArchiveTests.Create())
+ .Concat(CharacterPackExportTests.Create())
  .Concat(QuietHoursTests.Create())
  .Concat(FramePacerTests.Create())
  .Concat(PetSettingsBackupTests.Create())
@@ -243,6 +244,7 @@ var tests = new (string Name, Action Run)[]
  .Concat(RigSecondaryMotionTests.Create())
  .Concat(CursorGazeControllerTests.Create()).ToArray();
 
+if (args.Contains("--character-export-only")) tests = CharacterPackExportTests.Create().ToArray();
 var failures = 0;
 var skipped = 0;
 foreach (var (name, run) in tests)

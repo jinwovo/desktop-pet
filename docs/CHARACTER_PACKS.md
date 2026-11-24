@@ -78,6 +78,16 @@ The bundled public characters are complete examples. In addition to their fallba
 
 Merge these fields into a complete manifest; this fragment is not a standalone pack. Every part is a full-size transparent canvas aligned to the same neutral body/foot coordinates. The runtime translates the near foot, far foot and body independently. Supply side/quarter fallback cycles of matching length; distance is measured in unscaled sprite pixels. Resting art stays separate. Do not bake movement into a full-body layer and expect the rig to remove it.
 
+## Export a character ZIP (1.3.0 development)
+
+This source-build feature is not included in the 1.2.0 download. Open the gallery, select a character and choose **Export ZIP**. Save to a new `.zip` filename outside the selected character's folder. Existing files and directories are never replaced.
+
+The exporter copies the selected manifest and declared PNGs into private staging, validates the complete image set, and creates a ZIP with one character folder. Extra files such as local `.env`, preference files and unrelated images are excluded. The manifest, nested frame paths and behavior profile are preserved. The original character folder and the active pet/preferences remain unchanged.
+
+Progress identifies the character being exported, even when you browse another card. **Cancel export** or closing the gallery cancels unfinished work. Validation, write failures and cancellation clean up the partial output; if the final ZIP was already committed, it remains saved. A new file created by another program during export is preserved. Recipients install the ZIP through **Add ZIP** as usual.
+
+The same 256-file, 64 MiB source/decoded-image limits apply; the final ZIP must also fit the 64 MiB archive limit. Export includes every declared image, including raster fallback frames, and rejects a damaged image even when its gallery thumbnail is valid.
+
 ## Validation and limits
 
 All referenced files must remain inside the selected folder. Import rejects absolute paths, parent traversal, alternate streams, links, missing files, invalid PNGs and conflicting names. The prepared folder is limited to256 files,64MiB source data and64MiB declared decoded image data. Manifests are limited to256KiB for folder, archive and startup loading. Actual PNG dimensions must match `frameSizePx`. Unreferenced files count toward source bounds but are not copied into the installed pack.

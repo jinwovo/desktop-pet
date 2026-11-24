@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
+using DesktopPet.Core;
 
 namespace DesktopPet.App;
 
@@ -24,6 +25,10 @@ public partial class CharacterGalleryWindow : Window
     private readonly MainWindow _pet;
     private readonly Func<string, CancellationToken, CharacterPresentation> _previewLoader;
     private readonly Func<CancellationToken, IReadOnlyList<string>> _catalogDiscovery;
+    private readonly Func<string, string?> _chooseExportPath;
+    private readonly Func<string, string, CancellationToken, IProgress<CharacterExportProgress>?, Task<string>> _exporter;
+    private CancellationTokenSource? _exportCancellation;
+    private bool _exportBusy;
     private readonly CancellationTokenSource _lifetime = new();
     private CancellationTokenSource? _loadCancellation;
     private long _loadRevision;
@@ -47,11 +52,15 @@ public partial class CharacterGalleryWindow : Window
     };
 
     public CharacterGalleryWindow(MainWindow pet, Func<string, CancellationToken, CharacterPresentation>? previewLoader = null,
-        Func<CancellationToken, IReadOnlyList<string>>? catalogDiscovery = null)
+        Func<CancellationToken, IReadOnlyList<string>>? catalogDiscovery = null,
+        Func<string, string?>? chooseExportPath = null,
+        Func<string, string, CancellationToken, IProgress<CharacterExportProgress>?, Task<string>>? exporter = null)
     {
         _pet = pet;
         _previewLoader = previewLoader ?? ((folder, cancellation) => CharacterPresentation.Load(folder, cancellationToken: cancellation));
         _catalogDiscovery = catalogDiscovery ?? (_ => _pet.AvailableCharacterNames);
+        _chooseExportPath = chooseExportPath ?? ChooseExportPath;
+        _exporter = exporter ?? _pet.ExportCharacterAsync;
         _pet.RenderOptionsChanged += ApplyRenderOptions;
         InitializeComponent();
         MaxHeight = Math.Max(MinHeight, SystemParameters.WorkArea.Height - 40);
@@ -78,6 +87,7 @@ public partial class CharacterGalleryWindow : Window
     public Task LoadingTask { get; private set; } = Task.CompletedTask;
     public Task PreviewOperation { get; private set; } = Task.CompletedTask;
     public Task ApplyOperation { get; private set; } = Task.CompletedTask;
+    public Task ExportOperation { get; private set; } = Task.CompletedTask;
     public IReadOnlyList<CharacterGalleryItem> AllCharacters => _all;
     public event Action<string>? CharacterApplied;
     private void ApplyRenderOptions(int fps, bool reducedMotion) => _motionPreview?.SetRenderOptions(fps, reducedMotion);
@@ -280,6 +290,7 @@ public partial class CharacterGalleryWindow : Window
         SelectedDetailText.Text = UiText.Get(item?.Detail ?? "친구를 선택해보세요.");
         ApplyButton.IsEnabled = item is { IsAvailable: true } && !_applyBusy;
         PreviewButton.IsEnabled = item is { IsAvailable: true } && !_previewBusy;
+        ExportButton.IsEnabled = item is { IsAvailable: true } && !_exportBusy;
     }
 
     private async void Preview_Click(object sender, RoutedEventArgs e)
@@ -375,6 +386,72 @@ public partial class CharacterGalleryWindow : Window
             _applyBusy = false;
             if (!_closed) UpdateSelection();
         }
+    }
+
+    private string? ChooseExportPath(string name)
+    {
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Title = UiText.Get("캐릭터 ZIP 저장"), Filter = "ZIP (*.zip)|*.zip", DefaultExt = ".zip",
+            FileName = name + ".zip", AddExtension = true, CheckPathExists = true, OverwritePrompt = false,
+        };
+        return dialog.ShowDialog(this) == true ? dialog.FileName : null;
+    }
+
+    private async void Export_Click(object sender, RoutedEventArgs e)
+    {
+        if (_closed || _exportBusy || CharacterCards.SelectedItem is not CharacterGalleryItem { IsAvailable: true } item) return;
+        var destination = _chooseExportPath(item.Name);
+        if (_closed || _exportBusy || destination is null) return;
+        ExportOperation = ExportSelectedAsync(item.Name, destination);
+        await ExportOperation;
+    }
+
+    private async Task ExportSelectedAsync(string name, string destination)
+    {
+        using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
+        _exportCancellation = cancellation;
+        _exportBusy = true;
+        UpdateSelection();
+        CancelExportButton.Visibility = Visibility.Visible;
+        CancelExportButton.IsEnabled = true;
+        SetStatus("{0} ZIP을 내보내고 있어요…", name);
+        var progress = new Progress<CharacterExportProgress>(value =>
+        {
+            if (_closed || cancellation.IsCancellationRequested || !ReferenceEquals(_exportCancellation, cancellation)) return;
+            SetStatus("{0} ZIP 내보내는 중… {1}/{2}", name, value.CompletedFiles, value.TotalFiles);
+        });
+        try
+        {
+            await _exporter(name, destination, cancellation.Token, progress);
+            if (!_closed) SetStatus("캐릭터 ZIP을 저장했어요.");
+        }
+        catch (OperationCanceledException)
+        {
+            if (!_closed) SetStatus("ZIP 내보내기를 취소했어요.");
+        }
+        catch (Exception ex) when (IsCharacterError(ex) || ex is ObjectDisposedException)
+        {
+            if (!_closed) SetStatus("ZIP을 저장하지 못했어요. 새 파일 이름과 캐릭터 그림을 확인해주세요.");
+        }
+        finally
+        {
+            _exportCancellation = null;
+            _exportBusy = false;
+            if (!_closed)
+            {
+                CancelExportButton.Visibility = Visibility.Collapsed;
+                UpdateSelection();
+            }
+        }
+    }
+
+    private void CancelExport_Click(object sender, RoutedEventArgs e)
+    {
+        if (_closed || _exportCancellation is null) return;
+        _exportCancellation?.Cancel();
+        CancelExportButton.IsEnabled = false;
+        SetStatus("ZIP 내보내기를 취소하고 있어요…");
     }
 
     private void Close_Click(object sender, RoutedEventArgs e) => Close();

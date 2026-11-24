@@ -61,6 +61,8 @@
                     <TextBlock x:Name="SelectedDetailText" Text="친구를 선택해보세요." Foreground="#68766A" TextAlignment="Center" TextWrapping="Wrap" Margin="0,7,0,15"/>
                     <Button x:Name="PreviewButton" Content="움직임 미리보기" Padding="8" Click="Preview_Click" IsEnabled="False"/>
                     <Button x:Name="ApplyButton" Content="이 친구와 함께하기" Padding="8" Margin="0,8,0,0" Click="Apply_Click" IsEnabled="False"/>
+                    <Button x:Name="ExportButton" Content="ZIP으로 내보내기" Padding="8" Margin="0,8,0,0" Click="Export_Click" IsEnabled="False"/>
+                    <Button x:Name="CancelExportButton" Content="내보내기 취소" Padding="8" Margin="0,8,0,0" Click="CancelExport_Click" Visibility="Collapsed"/>
                 </StackPanel>
                 </ScrollViewer>
             </Border>

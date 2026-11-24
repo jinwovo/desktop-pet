@@ -326,11 +326,20 @@
     },
     {
       "id": "P025",
-      "title": "Discovery pending: Character authoring and previews (25)",
-      "status": "planned",
+      "title": "Export one validated character ZIP from the gallery with cancellation and no replacement of existing files",
+      "status": "verified",
       "milestone": "1.3.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.Core/CharacterPackExporter.cs",
+        "src/DesktopPet.App/MainWindow.xaml.cs",
+        "src/DesktopPet.App/CharacterGalleryWindow.xaml",
+        "src/DesktopPet.App/CharacterGalleryWindow.xaml.cs",
+        "src/DesktopPet.App/UiText.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.RegressionTests/CharacterPackExportTests.cs",
+        "tests/DesktopPet.UiSmokeTests/CharacterExportUiTests.cs"
+      ]
     },
     {
       "id": "P026",

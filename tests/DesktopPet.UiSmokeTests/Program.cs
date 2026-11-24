@@ -22,6 +22,11 @@ internal static class Program
         MainWindow? pet = null;
         try
         {
+            if (args.Contains("--character-export-only"))
+            {
+                CharacterExportUiTests.Run(folder, args.Contains("--capture"));
+                return 0;
+            }
             if (args.Contains("--character-switch-only"))
             {
                 CharacterSwitchUiTests.Run(folder);
@@ -353,6 +358,7 @@ internal static class Program
             NotificationBatchUiTests.Run(folder);
             GalleryLocaleRegressionTests.Run(folder, args.Contains("--capture"));
             CharacterSwitchUiTests.Run(folder);
+            CharacterExportUiTests.Run(folder, args.Contains("--capture"));
             DiagnosticsUiTests.Run(folder);
             PetRecoveryUiTests.Run(folder);
             ImportCancellationUiTests.Run(folder);
