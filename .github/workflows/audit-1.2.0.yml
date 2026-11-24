@@ -1,0 +1,58 @@
+name: Audit public 1.2.0
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/audit-1.2.0.yml"
+      - "scripts/audit-public-release.ps1"
+      - "tests/public-release-audit-regression.ps1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  audit:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: powershell
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Diagnose original post-publication failure
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $log = Join-Path $env:RUNNER_TEMP 'original-publication-failure.txt'
+          gh run view 44684227455 --repo jinwovo/desktop-pet --job 136116214447 --log-failed 1> $log 2> $null
+          if ($LASTEXITCODE -eq 0) {
+            $lines = @(Get-Content -LiteralPath $log | Where-Object { $_ -match 'could not be confirmed|verification failed|Error:|ErrorRecord|Exception|CategoryInfo|FullyQualifiedErrorId|404|403|Process completed' } | Select-Object -Last 15)
+            foreach ($line in $lines) {
+              $safe = $line.Replace($env:GH_TOKEN, '***').Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+              Write-Host ('::notice::Original publication diagnostic: ' + $safe)
+            }
+          } else { Write-Host '::warning::Original failed log unavailable; asset audit will still run.' }
+          exit 0
+      - name: Check audit guards offline
+        run: |
+          ./tests/public-release-audit-regression.ps1
+      - uses: actions/download-artifact@v4
+        with:
+          name: DesktopPet-public-windows
+          run-id: 44684226605
+          github-token: ${{ github.token }}
+          path: release-files
+      - name: Compare existing public files with verified CI artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./scripts/audit-public-release.ps1 -AuditOneTwo
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DesktopPet-1.2.0-public-audit
+          path: public-release-audit.json
+          if-no-files-found: error
