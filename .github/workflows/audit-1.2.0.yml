@@ -31,12 +31,19 @@ jobs:
           $log = Join-Path $env:RUNNER_TEMP 'original-publication-failure.txt'
           gh run view 44684227455 --repo jinwovo/desktop-pet --job 136116214447 --log-failed 1> $log 2> $null
           if ($LASTEXITCODE -eq 0) {
-            $lines = @(Get-Content -LiteralPath $log | Where-Object { $_ -match 'could not be confirmed|verification failed|Error:|ErrorRecord|Exception|CategoryInfo|FullyQualifiedErrorId|404|403|Process completed' } | Select-Object -Last 15)
+            $lines = @(Get-Content -LiteralPath $log | Select-Object -Last 35)
             foreach ($line in $lines) {
               $safe = $line.Replace($env:GH_TOKEN, '***').Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
               Write-Host ('::notice::Original publication diagnostic: ' + $safe)
             }
           } else { Write-Host '::warning::Original failed log unavailable; asset audit will still run.' }
+          gh run view 45302683266 --repo jinwovo/desktop-pet --job 138138829111 --log-failed 1> $log 2> $null
+          if ($LASTEXITCODE -eq 0) {
+            foreach ($line in @(Get-Content -LiteralPath $log | Select-Object -Last 25)) {
+              $safe = $line.Replace($env:GH_TOKEN, '***').Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+              Write-Host ('::notice::First audit diagnostic: ' + $safe)
+            }
+          }
           exit 0
       - name: Check audit guards offline
         run: |
@@ -50,7 +57,13 @@ jobs:
       - name: Compare existing public files with verified CI artifact
         env:
           GH_TOKEN: ${{ github.token }}
-        run: ./scripts/audit-public-release.ps1 -AuditOneTwo
+        run: |
+          try { ./scripts/audit-public-release.ps1 -AuditOneTwo }
+          catch {
+            $safe = ($_.Exception.Message + ' at ' + $_.InvocationInfo.PositionMessage).Replace($env:GH_TOKEN, '***').Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+            Write-Host ('::error::Public audit failed: ' + $safe)
+            throw
+          }
       - uses: actions/upload-artifact@v4
         with:
           name: DesktopPet-1.2.0-public-audit
