@@ -15,8 +15,12 @@
                 <TextBlock x:Name="StateText" DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="#68738C" />
                 <TextBlock Text="움직임 시험" FontSize="20" FontWeight="SemiBold" Foreground="#25304A" />
             </DockPanel>
-            <TextBlock Text="펫을 잡아 옮기거나 던져보세요. 이 창 안에서만 움직입니다."
-                       Foreground="#68738C" Margin="0,6,0,0" />
+            <DockPanel Margin="0,6,0,0">
+                <Button x:Name="SaveSceneButton" DockPanel.Dock="Right" Content="장면 PNG 저장" Click="SaveScene_Click"
+                        Width="144" Padding="10,5" Margin="12,0,0,0" />
+                <TextBlock Text="펫을 잡아 옮기거나 던져보세요. 이 창 안에서만 움직입니다."
+                           Foreground="#68738C" TextWrapping="Wrap" VerticalAlignment="Center" />
+            </DockPanel>
         </StackPanel>
         <Border Grid.Row="1" CornerRadius="12" BorderBrush="#DCE2ED" BorderThickness="1" Background="#EDF1F8">
             <Canvas x:Name="Scene" ClipToBounds="True" Background="Transparent"

@@ -1,8 +1,10 @@
 using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using DesktopPet.Core;
 
 namespace DesktopPet.App;
@@ -33,10 +35,18 @@ public partial class MotionPreviewWindow : Window
     private bool _playbackPaused;
     private PetState? _requestedReaction;
     private PetState _lastPoseState = PetState.Idle;
+    private readonly Func<string?> _chooseFramePath;
+    private readonly Func<BitmapSource, string, CancellationToken, Task> _frameWriter;
+    private CancellationTokenSource? _frameSaveCancellation;
+    private string _frameSaveStatusKey = "";
+    public Task FrameSaveOperation { get; private set; } = Task.CompletedTask;
 
-    public MotionPreviewWindow(CharacterPresentation presentation, double speedMultiplier, int maximumFps = 60, bool reducedMotion = false)
+    public MotionPreviewWindow(CharacterPresentation presentation, double speedMultiplier, int maximumFps = 60, bool reducedMotion = false,
+        Func<string?>? chooseFramePath = null, Func<BitmapSource, string, CancellationToken, Task>? frameWriter = null)
     {
         _presentation = presentation;
+        _chooseFramePath = chooseFramePath ?? ChooseFramePath;
+        _frameWriter = frameWriter ?? ((source, path, token) => Task.Run(() => MotionFramePngWriter.Save(source, path, token), token));
         _speedMultiplier = speedMultiplier;
         _scale = 96.0 / Math.Max(presentation.Definition.FrameWidth, presentation.Definition.FrameHeight);
         InitializeComponent();
@@ -60,6 +70,7 @@ public partial class MotionPreviewWindow : Window
         Closed += (_, _) =>
         {
             _closed = true;
+            _frameSaveCancellation?.Cancel();
             UiText.LanguageChanged -= RefreshLanguage;
             _poseTransition.Reset();
             MotionRig.SetPresentation(null);
@@ -101,6 +112,7 @@ public partial class MotionPreviewWindow : Window
         PausePlaybackButton.IsEnabled = CanInspect;
         NextFrameButton.IsEnabled = CanInspect && _playbackPaused;
         CryReactionButton.IsEnabled = AngryReactionButton.IsEnabled = CanInspect;
+        SaveSceneButton.IsEnabled = CanInspect && _frameSaveCancellation is null;
     }
 
     private void PausePlayback_Click(object sender, RoutedEventArgs e)
@@ -261,6 +273,87 @@ public partial class MotionPreviewWindow : Window
         Title = UiText.Format("DesktopPet 움직임 시험 · {0}", _presentation.Definition.Name);
         UpdatePlaybackControls();
         UpdateStateText();
+        RefreshFrameSaveStatus();
+    }
+
+    private string? ChooseFramePath()
+    {
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Title = UiText.Get("장면 PNG 저장"), Filter = "PNG (*.png)|*.png",
+            FileName = "scene.png", DefaultExt = ".png", AddExtension = true, OverwritePrompt = false,
+        };
+        return dialog.ShowDialog(this) == true ? dialog.FileName : null;
+    }
+
+    private async void SaveScene_Click(object sender, RoutedEventArgs e)
+    {
+        if (!CanInspect || _frameSaveCancellation is not null) return;
+        try
+        {
+            // This canvas contains only the controlled pet and platforms, never the desktop.
+            // Capture before the modal picker so it saves exactly the clicked frame.
+            var width = (int)Math.Ceiling(Scene.ActualWidth);
+            var height = (int)Math.Ceiling(Scene.ActualHeight);
+            if (width <= 0 || height <= 0) return;
+            var snapshot = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+            snapshot.Render(Scene);
+            snapshot.Freeze();
+            var path = _chooseFramePath();
+            if (path is null || !CanInspect || _frameSaveCancellation is not null) return;
+            FrameSaveOperation = SaveSceneAsync(snapshot, path);
+            await FrameSaveOperation;
+        }
+        catch (Exception ex) when (IsFrameSaveError(ex))
+        {
+            if (!_closed) SetFrameSaveStatus("장면을 저장하지 못했어요. 새 PNG 파일 이름을 선택해주세요.");
+        }
+    }
+
+    private async Task SaveSceneAsync(BitmapSource snapshot, string path)
+    {
+        using var cancellation = new CancellationTokenSource();
+        _frameSaveCancellation = cancellation;
+        SetFrameSaveStatus("장면을 저장하는 중이에요.");
+        UpdatePlaybackControls();
+        try
+        {
+            await _frameWriter(snapshot, path, cancellation.Token);
+            if (!_closed && !cancellation.IsCancellationRequested) SetFrameSaveStatus("장면 PNG를 저장했어요.");
+        }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
+        catch (Exception ex) when (IsFrameSaveError(ex))
+        {
+            if (!_closed) SetFrameSaveStatus("장면을 저장하지 못했어요. 새 PNG 파일 이름을 선택해주세요.");
+        }
+        finally
+        {
+            _frameSaveCancellation = null;
+            if (!_closed) UpdatePlaybackControls();
+        }
+    }
+
+    private static bool IsFrameSaveError(Exception ex) => ex is IOException or UnauthorizedAccessException or ArgumentException
+        or NotSupportedException or InvalidOperationException or System.Security.SecurityException;
+
+    private void SetFrameSaveStatus(string key)
+    {
+        _frameSaveStatusKey = key;
+        RefreshFrameSaveStatus();
+    }
+
+    private void RefreshFrameSaveStatus()
+    {
+        var label = _frameSaveStatusKey switch
+        {
+            "장면을 저장하는 중이에요." => "저장 중…",
+            "장면 PNG를 저장했어요." => "PNG 저장됨",
+            "장면을 저장하지 못했어요. 새 PNG 파일 이름을 선택해주세요." => "PNG 다시 저장",
+            _ => "장면 PNG 저장",
+        };
+        SaveSceneButton.Content = UiText.Get(label);
+        SaveSceneButton.ToolTip = UiText.Get(_frameSaveStatusKey.Length == 0 ? "현재 미리보기 장면만 저장해요." : _frameSaveStatusKey);
+        System.Windows.Automation.AutomationProperties.SetHelpText(SaveSceneButton, (string)SaveSceneButton.ToolTip);
     }
 
     private void UpdateStateText()

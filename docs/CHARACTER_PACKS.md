@@ -86,6 +86,8 @@ Reset preserves the pause while rebuilding the scene. You can prepare a jump/dro
 
 **Cry** and **Angry** start the real reaction timer so you can inspect authored expression frames, tear placement and their transitions. While dragging or falling, the preview keeps the trajectory and queues the newest reaction until landing. The localized header identifies the queued reaction and clears it when consumed; Reset clears pending reactions. Packs without dedicated expression frames retain their normal fallback artwork.
 
+**Save scene PNG** captures that canvas at the moment you click, before the filename dialog opens. It includes the controlled pet, current live-rig pose or raster dissolve, and platforms. It does not capture other windows, the desktop or dialog contents. Transparent canvas areas remain transparent in the PNG. Pause and step to a problem frame before saving it for a bug report. Choose a new `.png` filename: existing files are never replaced. Encoding runs in the background, so playback controls remain available. Closing the preview cancels unfinished saving; an already committed PNG remains saved. The button and its tooltip report saving, success or a retry in the selected UI language.
+
 ## Export a character ZIP (1.3.0 development)
 
 This source-build feature is not included in the 1.2.0 download. Open the gallery, select a character and choose **Export ZIP**. Save to a new `.zip` filename outside the selected character's folder. Existing files and directories are never replaced.

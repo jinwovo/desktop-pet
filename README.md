@@ -228,6 +228,8 @@ The 1.3.0 motion preview also adds **Pause / Resume** and **Next frame**. Inspec
 
 Use **Cry** and **Angry** in that preview to inspect expression frames and tears directly. A request during dragging or a throw waits until landing; the newest request wins, and the header shows what is queued. These controls affect the preview only.
 
+**Save scene PNG** captures the current preview canvas before opening the save dialog. Share an exact walking pose or a paused transition without capturing your desktop. Saving runs in the background and keeps playback/stepping available; existing files are preserved. Choose a new PNG filename to retry a failed save. These additions remain part of the upcoming 1.3.0 release.
+
 Pompompurin, Cinnamoroll and Kuromi were selected from the official [2026 Sanrio ranking](https://corporate.sanrio.co.jp/en/news/20260628_03.html), where they placed first, second and fourth. The artwork here is AI-assisted fan art, not official Sanrio assets. [Creation records](character-packs/fan-art/POPULAR_ASSETS.md) include the prompts and reproducible generator.
 
 ![Nine-character gallery](docs/preview/character-gallery-v060.png)

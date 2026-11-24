@@ -400,11 +400,18 @@
     },
     {
       "id": "P029",
-      "title": "Discovery pending: Character authoring and previews (29)",
-      "status": "planned",
+      "title": "Save the exact preview scene as PNG without blocking playback or overwriting files",
+      "status": "verified",
       "milestone": "1.3.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/MotionFramePngWriter.cs",
+        "src/DesktopPet.App/MotionPreviewWindow.xaml",
+        "src/DesktopPet.App/MotionPreviewWindow.xaml.cs",
+        "src/DesktopPet.App/UiText.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/MotionFrameExportUiTests.cs"
+      ]
     },
     {
       "id": "P030",
