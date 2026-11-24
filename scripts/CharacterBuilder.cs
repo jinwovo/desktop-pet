@@ -940,16 +940,15 @@ public static class CharacterBuilder
 
     /// <summary>
     /// The manga anger mark (💢) over the character's head: four bent spokes around a center.
-    /// Drawn twice — a thick white under-stroke first — so it stays readable on top of the
-    /// character's own linework.
+    /// Drawn twice with a white halo, in clear space beside the head. Placement uses the
+    /// largest pulse envelope so the mark never jumps between animation frames.
     /// </summary>
     public static void DrawAngerMark(Bitmap bmp, int anchorY, int spriteHeight, double pulse)
     {
-        int w = bmp.Width;
-        float bodyTop = anchorY - spriteHeight;
-        float size = (float)(spriteHeight * (0.26 + 0.05 * pulse));
-        float cx = w * 0.74f;
-        float cy = bodyTop + spriteHeight * 0.07f;
+        float cx, cy, maximumSize;
+        if (!TryPlaceAngerMark(bmp, anchorY, spriteHeight, out cx, out cy, out maximumSize)) return;
+        pulse = double.IsNaN(pulse) ? 0 : Math.Max(0, Math.Min(1, pulse));
+        float size = (float)(maximumSize * (0.26 + 0.05 * pulse) / 0.31);
 
         using (var g = Graphics.FromImage(bmp))
         {
@@ -987,6 +986,60 @@ public static class CharacterBuilder
                 }
             }
         }
+    }
+
+    private static bool TryPlaceAngerMark(Bitmap bmp, int anchorY, int spriteHeight,
+        out float cx, out float cy, out float maximumSize)
+    {
+        cx = cy = maximumSize = 0;
+        if (spriteHeight <= 0) return false;
+        int w = bmp.Width, h = bmp.Height, stride = w + 1;
+        var pixels = GetPixels(bmp);
+        var occupied = new int[(w + 1) * (h + 1)];
+        for (int y = 0; y < h; y++)
+        {
+            int row = 0;
+            for (int x = 0; x < w; x++)
+            {
+                if (pixels[(y * w + x) * 4 + 3] > 0) row++;
+                occupied[(y + 1) * stride + x + 1] = occupied[y * stride + x + 1] + row;
+            }
+        }
+
+        double bodyTop = anchorY - (double)spriteHeight;
+        double preferredX = w * 0.74, preferredY = bodyTop + spriteHeight * 0.07;
+        // Keep the search near the head, away from interior facial gaps. Never enlarge
+        // small sprites, and shrink only after every full-size location has been tried.
+        for (int size = (int)Math.Floor(Math.Min(spriteHeight * 0.31, Math.Min(w, h))); size >= 12; size--)
+        {
+            double stroke = Math.Max(2.2, size * 0.18);
+            // The diagonal path, rounded white halo, AA and a separate one-pixel gap.
+            int radius = (int)Math.Ceiling(size * 0.5 / Math.Sqrt(2) + stroke * 1.05 + 2) + 1;
+            int firstX = Math.Max(radius + 1, (int)Math.Ceiling(w * 0.60));
+            int lastX = w - radius - 2;
+            int firstY = radius + 1;
+            int lastY = (int)Math.Min(h - radius - 2, Math.Floor(bodyTop + spriteHeight * 0.14));
+            double bestDistance = double.MaxValue;
+            int bestX = -1, bestY = -1;
+            for (int y = firstY; y <= lastY; y++)
+                for (int x = firstX; x <= lastX; x++)
+                {
+                    int left = x - radius, top = y - radius;
+                    int right = x + radius + 1, bottom = y + radius + 1;
+                    int count = occupied[bottom * stride + right] - occupied[top * stride + right]
+                        - occupied[bottom * stride + left] + occupied[top * stride + left];
+                    if (count != 0) continue;
+                    double dx = x - preferredX, dy = y - preferredY;
+                    double distance = dx * dx + dy * dy;
+                    if (distance >= bestDistance) continue;
+                    bestDistance = distance; bestX = x; bestY = y;
+                }
+            if (bestX < 0) continue;
+            cx = bestX; cy = bestY; maximumSize = size;
+            return true;
+        }
+        // A full or tiny canvas is safer without an ornament than with damaged artwork.
+        return false;
     }
 
     /// <summary>Floating "Zzz" above a sleeping character; <paramref name="drift"/> animates it rising.</summary>

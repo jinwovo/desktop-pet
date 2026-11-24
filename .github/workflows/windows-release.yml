@@ -87,6 +87,8 @@ jobs:
         run: |
           powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File tests/character-builder-regression.ps1
           if ($LASTEXITCODE -ne 0) { throw 'Sprite geometry regression checks failed' }
+          powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File tests/anger-overlay-regression.ps1
+          if ($LASTEXITCODE -ne 0) { throw 'Anger overlay placement checks failed' }
       - name: Directional artwork regression checks
         run: |
           powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File tests/companion-walk-regression.ps1
