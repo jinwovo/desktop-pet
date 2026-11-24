@@ -133,6 +133,10 @@
             <StackPanel>
                 <TextBlock Text="집중 타이머" Style="{StaticResource SectionLabel}" />
                 <TextBlock x:Name="FocusStatusText" FontSize="17" FontWeight="SemiBold" Foreground="#314A3C" />
+                <DockPanel Margin="0,5,0,4">
+                    <Button x:Name="FocusResetCountButton" Content="횟수 초기화" DockPanel.Dock="Right" Padding="8,4" Margin="8,0,0,0" Click="FocusResetCount_Click" />
+                    <TextBlock x:Name="FocusCountText" FontSize="11" Foreground="#777777" VerticalAlignment="Center" TextWrapping="Wrap" />
+                </DockPanel>
                 <TextBlock Text="시간 변경은 다음 시작·다시 시작부터 적용해요. 다음 세션은 직접 시작해요."
                            Margin="0,5,0,10" FontSize="11" Foreground="#777777" TextWrapping="Wrap" />
                 <WrapPanel Margin="0,0,0,10">

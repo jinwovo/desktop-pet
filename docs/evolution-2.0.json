@@ -448,11 +448,21 @@
     },
     {
       "id": "P032",
-      "title": "Discovery pending: Focus and notification workflows (32)",
-      "status": "planned",
+      "title": "Display and reset app-run focus completions without changing the timer or unread receipts",
+      "status": "verified",
       "milestone": "1.4.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.Core/FocusTimer.cs",
+        "src/DesktopPet.App/MainWindow.xaml.cs",
+        "src/DesktopPet.App/SettingsWindow.xaml",
+        "src/DesktopPet.App/SettingsWindow.xaml.cs",
+        "src/DesktopPet.App/PetMenuBuilder.cs",
+        "src/DesktopPet.App/UiText.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.RegressionTests/FocusTimerTests.cs",
+        "tests/DesktopPet.UiSmokeTests/FocusCountUiTests.cs"
+      ]
     },
     {
       "id": "P033",

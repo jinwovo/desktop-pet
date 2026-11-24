@@ -22,6 +22,11 @@ internal static class Program
         MainWindow? pet = null;
         try
         {
+            if (args.Contains("--focus-count-only"))
+            {
+                FocusCountUiTests.Run(folder, args.Contains("--capture"));
+                return 0;
+            }
             if (args.Contains("--focus-extension-only"))
             {
                 FocusExtensionUiTests.Run(folder, args.Contains("--capture"));
@@ -370,6 +375,7 @@ internal static class Program
             VerifyCharacterImport(pet, folder, args.Contains("--capture"));
             FocusTimerUiTests.Run(folder);
             FocusExtensionUiTests.Run(folder, args.Contains("--capture"));
+            FocusCountUiTests.Run(folder, args.Contains("--capture"));
             QuietHoursUiTests.Run(folder);
             RenderOptionsUiTests.Run(folder);
             PreferencesBackupUiTests.Run(folder);

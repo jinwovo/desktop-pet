@@ -5,6 +5,54 @@ public static class FocusTimerTests
 {
     public static IEnumerable<(string Name, Action Run)> Create()
     {
+        yield return ("Focus count reset is idempotent, excludes breaks and starts future completions from zero", () =>
+        {
+            var clock=new Clock();using var timer=Timer(clock);var events=new List<FocusSessionCompletion>();timer.SessionCompleted+=events.Add;
+            Check(!timer.ResetCompletedFocusSessions(),"Empty count reset reported a change");
+            timer.Start();clock.Advance(TimeSpan.FromSeconds(10));timer.Tick();
+            timer.Start(FocusSessionKind.Break);clock.Advance(TimeSpan.FromSeconds(5));timer.Tick();
+            Check(timer.Snapshot.CompletedFocusSessions==1,"Break counted as focus");
+            timer.Start();clock.Advance(TimeSpan.FromSeconds(10));timer.Tick();var before=timer.Snapshot;
+            Check(before.CompletedFocusSessions==2&&timer.ResetCompletedFocusSessions()&&timer.Snapshot==before with{CompletedFocusSessions=0},"Reset changed more than the counter");
+            Check(!timer.ResetCompletedFocusSessions()&&events.Count==3,"Repeated reset emitted an event or reported a change");
+            timer.Start();clock.Advance(TimeSpan.FromSeconds(10));timer.Tick();
+            Check(events.Count==4&&events[^1].CompletedFocusSessions==1,"Future completion did not count from zero");
+        });
+        yield return ("Resetting a running count neither advances elapsed time nor moves the original deadline", () =>
+        {
+            var clock=new Clock();using var timer=Timer(clock);var events=0;timer.SessionCompleted+=_=>events++;
+            timer.Start();clock.Advance(TimeSpan.FromSeconds(10));timer.Tick();timer.Start();clock.Advance(TimeSpan.FromSeconds(3));
+            var before=timer.Snapshot;Check(timer.ResetCompletedFocusSessions()&&timer.Snapshot==before with{CompletedFocusSessions=0},"Reset ticked a running countdown");
+            clock.Advance(TimeSpan.FromSeconds(6));timer.Tick();Check(timer.Snapshot.Remaining==TimeSpan.FromSeconds(1)&&events==1,"Reset changed the checkpoint");
+            clock.Advance(TimeSpan.FromSeconds(1));timer.Tick();Check(events==2&&timer.Snapshot.CompletedFocusSessions==1,"Original deadline or counter was lost");
+        });
+        yield return ("Counter reset leaves a due but unticked completion for the next normal tick", () =>
+        {
+            var clock=new Clock();using var timer=Timer(clock);var events=0;timer.SessionCompleted+=_=>events++;
+            timer.Start();clock.Advance(TimeSpan.FromSeconds(10));timer.Tick();timer.Start();clock.Advance(TimeSpan.FromHours(1));
+            var before=timer.Snapshot;Check(timer.ResetCompletedFocusSessions()&&timer.Snapshot==before with{CompletedFocusSessions=0}&&events==1,"Reset delivered or suppressed a pending completion");
+            timer.Tick();timer.Tick();Check(events==2&&timer.Snapshot.CompletedFocusSessions==1,"Deferred completion was duplicated or lost");
+        });
+        yield return ("Counter reset preserves paused extensions, completion duration and restart defaults", () =>
+        {
+            var clock=new Clock();using var timer=Timer(clock);var events=new List<FocusSessionCompletion>();timer.SessionCompleted+=events.Add;
+            timer.Start();clock.Advance(TimeSpan.FromSeconds(10));timer.Tick();timer.Start();clock.Advance(TimeSpan.FromSeconds(3));timer.Pause();
+            timer.TryExtend(TimeSpan.FromSeconds(5));clock.Advance(TimeSpan.FromHours(2));var before=timer.Snapshot;
+            Check(timer.ResetCompletedFocusSessions()&&timer.Snapshot==before with{CompletedFocusSessions=0},"Reset changed a paused extension");
+            timer.Resume();clock.Advance(TimeSpan.FromSeconds(12));timer.Tick();
+            Check(events.Count==2&&events[^1].Duration==TimeSpan.FromSeconds(15)&&events[^1].CompletedFocusSessions==1,"Reset changed active duration metadata");
+            timer.Restart();Check(timer.Snapshot.Remaining==TimeSpan.FromSeconds(10),"Reset changed the configured default");
+        });
+        yield return ("Reset in a completion callback retains generation safety and disposal rejects later resets", () =>
+        {
+            var clock=new Clock();using var timer=Timer(clock);
+            timer.SessionCompleted+=_=>{timer.ResetCompletedFocusSessions();timer.Start();};timer.Start();clock.Advance(TimeSpan.FromSeconds(10));
+            Check(!timer.TryExtend(TimeSpan.FromSeconds(5))&&timer.Snapshot.Remaining==TimeSpan.FromSeconds(10)&&timer.Snapshot.CompletedFocusSessions==0,
+                "Reset allowed an old extension to target a callback's new session");
+            timer.Dispose();var before=timer.Snapshot;Expect<ObjectDisposedException>(()=>timer.ResetCompletedFocusSessions());
+            Check(timer.Snapshot==before,"Disposed reset changed state");
+            using var fresh=new FocusTimer();Check(fresh.Snapshot.CompletedFocusSessions==0,"A new run inherited old counts");
+        });
         yield return ("Extending an unticked running session accounts for elapsed time and completion duration", () =>
         {
             var clock = new Clock(); using var timer = Timer(clock);

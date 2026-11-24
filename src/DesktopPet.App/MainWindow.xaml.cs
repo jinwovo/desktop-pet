@@ -32,6 +32,7 @@ public partial class MainWindow : Window
     private readonly string _inboxDirectory;
     private string? _lastFocusCaption;
     private FocusTimerStatus? _lastFocusStatus;
+    private int _lastCompletedFocusSessions;
     private IntPtr _hwnd;
     private PlatformLayout _platformLayout = null!;
     private WindowPlatformMonitor? _windowPlatformMonitor;
@@ -621,6 +622,8 @@ public partial class MainWindow : Window
     public bool FocusCanPause => FocusSnapshot.Status is FocusTimerStatus.Running or FocusTimerStatus.Paused;
     public bool FocusCanStop => FocusSnapshot.Status != FocusTimerStatus.Stopped;
     public bool FocusCanExtend => !_disposed && _focusTimer.CanExtend(TimeSpan.FromMinutes(5));
+    public string FocusCountCaption => UiText.Format("완료한 집중 {0}회 · 이번 실행", FocusSnapshot.CompletedFocusSessions);
+    public bool FocusCanResetCount => !_disposed && FocusSnapshot.CompletedFocusSessions > 0;
 
     public event Action? FocusTimerChanged;
 
@@ -663,6 +666,14 @@ public partial class MainWindow : Window
         return extended;
     }
 
+    public bool ResetFocusCount()
+    {
+        if (_disposed) return false;
+        var changed = _focusTimer.ResetCompletedFocusSessions();
+        SynchronizeFocusTimer();
+        return changed;
+    }
+
     private void UpdateFocusTimer()
     {
         if (_disposed) return;
@@ -675,9 +686,11 @@ public partial class MainWindow : Window
         if (FocusSnapshot.Status == FocusTimerStatus.Running) _focusTickTimer.Start();
         else _focusTickTimer.Stop();
         var caption = FocusTimerCaption;
-        if (caption == _lastFocusCaption && FocusSnapshot.Status == _lastFocusStatus) return;
+        if (caption == _lastFocusCaption && FocusSnapshot.Status == _lastFocusStatus
+            && FocusSnapshot.CompletedFocusSessions == _lastCompletedFocusSessions) return;
         _lastFocusCaption = caption;
         _lastFocusStatus = FocusSnapshot.Status;
+        _lastCompletedFocusSessions = FocusSnapshot.CompletedFocusSessions;
         FocusTimerChanged?.Invoke();
     }
 

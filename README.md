@@ -107,6 +107,8 @@ Use the minute fields and **시간 적용** to change durations. Changes preserv
 
 **1.4.0 development preview:** **Add 5 min** in Settings or the tray/pet menu extends only the current running or paused focus/break session. Pause state and default durations stay unchanged; Restart uses the configured default again. An expired session completes once and cannot be revived by a late click. Total active time is capped at 24 hours per session. This feature is not included in the 1.3.0 download.
 
+The same 1.4.0 preview shows **Focus sessions completed** for this app run. **Reset count** in Settings or the tray/pet menu clears only that number; it keeps the current countdown, temporary extensions and unread notifications. Breaks do not increase the count, and the count is not saved between app runs. This is also absent from the 1.3.0 download.
+
 ## Notification controls
 
 - Auto-hide closes a bubble without deleting it; the unread tray entry remains available.

@@ -121,7 +121,7 @@ internal static class FocusExtensionUiTests
         item.HideDropDown();
         return item;
     }
-    private static void SaveCard(SettingsWindow window,string language)
+    internal static void SaveCard(SettingsWindow window,string language,string prefix="focus-extension")
     {
         DependencyObject node=(TextBlock)window.FindName("FocusStatusText");
         while(node is not Border)node=VisualTreeHelper.GetParent(node);
@@ -133,7 +133,7 @@ internal static class FocusExtensionUiTests
         var pixels=new byte[width*height*4];bitmap.CopyPixels(pixels,width*4,0);
         Check(pixels.Where((value,index)=>index%4==3&&value>0).Any(),"Focus card capture is transparent instead of showing the actual controls");
         var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(bitmap));
-        using var output=File.Create(Path.Combine(AppContext.BaseDirectory,"focus-extension-"+language+".png"));encoder.Save(output);
+        using var output=File.Create(Path.Combine(AppContext.BaseDirectory,prefix+"-"+language+".png"));encoder.Save(output);
     }
     private sealed class Clock:TimeProvider
     {

@@ -21,15 +21,22 @@ internal static class PetMenuBuilder
         var focusMenu = new WinForms.ToolStripMenuItem(UiText.Get("집중 타이머"));
         var focusStatus = focusMenu.DropDownItems.Add(petWindow.FocusTimerCaption);
         focusStatus.Enabled = false;
+        var focusCount = focusMenu.DropDownItems.Add(petWindow.FocusCountCaption);
+        focusCount.Enabled = false;
         var focusStart = focusMenu.DropDownItems.Add(UiText.Get("집중 시작"), null, (_, _) => petWindow.StartFocusTimer());
         var focusPause = focusMenu.DropDownItems.Add(UiText.Get("일시정지"), null, (_, _) => petWindow.PauseOrResumeFocusTimer());
         var focusExtend = focusMenu.DropDownItems.Add(UiText.Get("5분 추가"), null, (_, _) => petWindow.ExtendFocusTimer());
         focusExtend.ToolTipText = UiText.Get("이번 세션에만 5분을 추가해요. 기본 시간은 바뀌지 않아요.");
         var focusRestart = focusMenu.DropDownItems.Add(UiText.Get("다시 시작"), null, (_, _) => petWindow.RestartFocusTimer());
         var focusStop = focusMenu.DropDownItems.Add(UiText.Get("종료"), null, (_, _) => petWindow.StopFocusTimer());
+        var focusResetCount = focusMenu.DropDownItems.Add(UiText.Get("횟수 초기화"), null, (_, _) => petWindow.ResetFocusCount());
         focusMenu.DropDownOpening += (_, _) =>
         {
             focusStatus.Text = petWindow.FocusTimerCaption;
+            focusCount.Text = petWindow.FocusCountCaption;
+            focusResetCount.Text = UiText.Get("횟수 초기화");
+            focusResetCount.ToolTipText = UiText.Get("앱을 닫으면 사라지는 횟수예요. 초기화해도 타이머와 알림은 유지해요.");
+            focusResetCount.Enabled = petWindow.FocusCanResetCount;
             focusStart.Text = petWindow.FocusStartCaption;
             focusStart.Enabled = petWindow.FocusCanStart;
             focusPause.Text = petWindow.FocusSnapshot.Status == FocusTimerStatus.Paused ? UiText.Get("계속") : UiText.Get("일시정지");

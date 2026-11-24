@@ -109,6 +109,15 @@ public sealed class FocusTimer : IDisposable
         _remaining = _focusDuration;
     }
 
+    /// <summary>Clears this app run's focus count without advancing or changing the current session.</summary>
+    public bool ResetCompletedFocusSessions()
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (_completedFocusSessions == 0) return false;
+        _completedFocusSessions = 0;
+        return true;
+    }
+
     public void Tick()
     {
         if (_disposed || _status != FocusTimerStatus.Running) return;

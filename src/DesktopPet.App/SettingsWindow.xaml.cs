@@ -688,6 +688,10 @@ public partial class SettingsWindow : Window
     {
         if (_closed) return;
         FocusStatusText.Text = _pet.FocusTimerCaption;
+        FocusCountText.Text = _pet.FocusCountCaption;
+        FocusResetCountButton.IsEnabled = _pet.FocusCanResetCount;
+        FocusResetCountButton.Content = UiText.Get("횟수 초기화");
+        FocusResetCountButton.ToolTip = UiText.Get("앱을 닫으면 사라지는 횟수예요. 초기화해도 타이머와 알림은 유지해요.");
         FocusStartButton.Content = _pet.FocusStartCaption;
         FocusStartButton.IsEnabled = _pet.FocusCanStart;
         FocusPauseButton.Content = _pet.FocusSnapshot.Status == FocusTimerStatus.Paused ? UiText.Get("계속") : UiText.Get("일시정지");
@@ -714,6 +718,10 @@ public partial class SettingsWindow : Window
     private void FocusExtend_Click(object sender, RoutedEventArgs e)
     {
         if (!_closed) _pet.ExtendFocusTimer();
+    }
+    private void FocusResetCount_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_closed) _pet.ResetFocusCount();
     }
     private void FocusRestart_Click(object sender, RoutedEventArgs e) => _pet.RestartFocusTimer();
     private void FocusStop_Click(object sender, RoutedEventArgs e) => _pet.StopFocusTimer();
