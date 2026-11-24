@@ -22,6 +22,11 @@ internal static class Program
         MainWindow? pet = null;
         try
         {
+            if (args.Contains("--motion-reactions-only"))
+            {
+                MotionReactionUiTests.Run(folder, args.Contains("--capture"));
+                return 0;
+            }
             if (args.Contains("--motion-playback-only"))
             {
                 MotionPlaybackUiTests.Run(folder, args.Contains("--capture"));
@@ -355,6 +360,7 @@ internal static class Program
             LocalizationUiTests.Run(folder);
             EvolutionMotionUiTests.Run(folder);
             MotionPlaybackUiTests.Run(folder, args.Contains("--capture"));
+            MotionReactionUiTests.Run(folder, args.Contains("--capture"));
             SpeechBubbleLocalizationTests.Run();
             SpeechBubbleMotionTests.Run(folder);
             SpeechBubbleSourceTests.Run();

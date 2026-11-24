@@ -42,6 +42,8 @@ P025 adds gallery **Export ZIP** and **Cancel export**. A private, fully validat
 
 P026 adds motion-preview **Pause / Resume** and **Next frame** for character authors. The simulation advances by exactly 1/30, 1/60 or 1/120 second per manual frame and drives actual gait pixels. Controllable raster-dissolve clocks freeze too, advance by manual intervals and release the old sprite when complete. Tests cover stale render callbacks, current frame-cap changes, real pixels, jump/drop commands, locale changes, hidden/minimized windows, reset, resume, closed callbacks and reduced motion. Existing nine-character UI checks pass, including automatic pose dissolves and preview collection. KO/EN/zh-CN captures retain the original window size. P026 remains 1.3.0 development work.
 
+P027 exposes **Cry / Angry** in the same motion scene, using the real `PetBrain.StartEmote` path. Authors can pause and step through expression frames directly. Queued reactions retain drag offsets and the physical trajectory, identify the pending reaction in KO/EN/zh-CN, then play the newest request after landing with its own timer. Tests compare a reaction-free control trajectory and actual authored PNG/pixel changes for all nine installed curated characters; the complete UI suite passes. An actual WPF emotion overview supports visual review. This patch changes preview controls, not authored artwork, and remains 1.3.0 development work.
+
 The [1.2.0 release audit](RELEASE_AUDIT_1_2.md) records the original post-publication API rate-limit failure and the successful read-only comparison of all four public files.
 
 | Verified patch threshold | Planned release | Main review area |

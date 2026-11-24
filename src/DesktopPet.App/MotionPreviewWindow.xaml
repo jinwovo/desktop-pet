@@ -42,6 +42,8 @@
                 <Button x:Name="DropButton" Content="위에서 놓기" Click="DropButton_Click" Padding="12,6" />
                 <Button x:Name="PausePlaybackButton" Content="일시정지" Click="PausePlayback_Click" Padding="12,6" Margin="8,0,8,0" />
                 <Button x:Name="NextFrameButton" Content="다음 프레임" Click="NextFrame_Click" Padding="12,6" IsEnabled="False" />
+                <Button x:Name="CryReactionButton" Content="울기" Click="CryReaction_Click" Padding="12,6" Margin="8,0,8,0" />
+                <Button x:Name="AngryReactionButton" Content="화내기" Click="AngryReaction_Click" Padding="12,6" />
         </WrapPanel>
     </Grid>
 </Window>

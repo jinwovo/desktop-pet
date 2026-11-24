@@ -84,6 +84,8 @@ Open **Animation preview** from a gallery card, or the motion preview from Setti
 
 Reset preserves the pause while rebuilding the scene. You can prepare a jump/drop or move the pet, then step through its trajectory. A paused window stays paused after hiding/minimizing, and changing the UI language keeps the inspected pose. Reduced motion still applies. The preview uses its own scene and does not pause or modify the desktop pet.
 
+**Cry** and **Angry** start the real reaction timer so you can inspect authored expression frames, tear placement and their transitions. While dragging or falling, the preview keeps the trajectory and queues the newest reaction until landing. The localized header identifies the queued reaction and clears it when consumed; Reset clears pending reactions. Packs without dedicated expression frames retain their normal fallback artwork.
+
 ## Export a character ZIP (1.3.0 development)
 
 This source-build feature is not included in the 1.2.0 download. Open the gallery, select a character and choose **Export ZIP**. Save to a new `.zip` filename outside the selected character's folder. Existing files and directories are never replaced.

@@ -31,6 +31,7 @@ public partial class MotionPreviewWindow : Window
     private bool _reducedMotion;
     private bool _closed;
     private bool _playbackPaused;
+    private PetState? _requestedReaction;
     private PetState _lastPoseState = PetState.Idle;
 
     public MotionPreviewWindow(CharacterPresentation presentation, double speedMultiplier, int maximumFps = 60, bool reducedMotion = false)
@@ -99,6 +100,7 @@ public partial class MotionPreviewWindow : Window
         PausePlaybackButton.Content = UiText.Get(_playbackPaused ? "계속" : "일시정지");
         PausePlaybackButton.IsEnabled = CanInspect;
         NextFrameButton.IsEnabled = CanInspect && _playbackPaused;
+        CryReactionButton.IsEnabled = AngryReactionButton.IsEnabled = CanInspect;
     }
 
     private void PausePlayback_Click(object sender, RoutedEventArgs e)
@@ -129,6 +131,7 @@ public partial class MotionPreviewWindow : Window
 
     private void ResetScene()
     {
+        _requestedReaction = null;
         _poseTransition.Reset();
         _lastPoseState = PetState.Idle;
         _dragging = false;
@@ -279,6 +282,9 @@ public partial class MotionPreviewWindow : Window
             PetState.LookAtCursor => "바라보는 중",
             _ => "쉬는 중"
         });
+        if (_requestedReaction is { } pending && state is PetState.Dragged or PetState.Falling)
+            StateText.Text = UiText.Format("{0} · 착지 후 {1}", StateText.Text, UiText.Get(pending == PetState.Cry ? "울기" : "화내기"));
+        else _requestedReaction = null;
         if (_playbackPaused) StateText.Text = UiText.Format("{0} · 일시정지", StateText.Text);
     }
 
@@ -332,6 +338,18 @@ public partial class MotionPreviewWindow : Window
     {
         _speedMultiplier = double.IsFinite(multiplier) ? Math.Clamp(multiplier, 0.25, 3) : 1;
         if (_brain is not null) _brain.WalkSpeedPxPerSec = _presentation.Definition.WalkSpeedPxPerSec * _speedMultiplier;
+    }
+
+    private void CryReaction_Click(object sender, RoutedEventArgs e) => RequestReaction(PetState.Cry);
+    private void AngryReaction_Click(object sender, RoutedEventArgs e) => RequestReaction(PetState.Angry);
+
+    private void RequestReaction(PetState state)
+    {
+        if (!CanInspect) return;
+        var deferred = _brain.State is PetState.Dragged or PetState.Falling;
+        _brain.StartEmote(state);
+        _requestedReaction = deferred ? state : null;
+        RenderActor(0);
     }
 
     private void ResetButton_Click(object sender, RoutedEventArgs e) => ResetScene();

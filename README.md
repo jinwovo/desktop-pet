@@ -226,6 +226,8 @@ Open Settings → **갤러리 · 검색** (Gallery / search). Type a Korean or E
 
 The 1.3.0 motion preview also adds **Pause / Resume** and **Next frame**. Inspect walking, falling and pose blends one frame at a time at the selected 30/60/120 FPS cap. Hiding or minimizing preserves the pause; Reset starts the scene again while staying paused. The desktop pet keeps its own simulation.
 
+Use **Cry** and **Angry** in that preview to inspect expression frames and tears directly. A request during dragging or a throw waits until landing; the newest request wins, and the header shows what is queued. These controls affect the preview only.
+
 Pompompurin, Cinnamoroll and Kuromi were selected from the official [2026 Sanrio ranking](https://corporate.sanrio.co.jp/en/news/20260628_03.html), where they placed first, second and fourth. The artwork here is AI-assisted fan art, not official Sanrio assets. [Creation records](character-packs/fan-art/POPULAR_ASSETS.md) include the prompts and reproducible generator.
 
 ![Nine-character gallery](docs/preview/character-gallery-v060.png)
