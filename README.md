@@ -232,6 +232,8 @@ Use **Cry** and **Angry** in that preview to inspect expression frames and tears
 
 Enable **Frame guides** to compare the dashed frame boundary, declared baseline and anchor cross with the displayed artwork. Guides follow the pet without changing its motion and appear in scene PNGs while enabled. They start off in each new preview.
 
+![Motion preview with paused frame inspection, declared anchor guides and scene PNG saving](docs/preview/motion-inspector-1.3.en.png)
+
 Pompompurin, Cinnamoroll and Kuromi were selected from the official [2026 Sanrio ranking](https://corporate.sanrio.co.jp/en/news/20260628_03.html), where they placed first, second and fourth. The artwork here is AI-assisted fan art, not official Sanrio assets. [Creation records](character-packs/fan-art/POPULAR_ASSETS.md) include the prompts and reproducible generator.
 
 ![Nine-character gallery](docs/preview/character-gallery-v060.png)

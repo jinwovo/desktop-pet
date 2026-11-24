@@ -30,6 +30,8 @@ P020 marks the current unread snapshot read from either action menu. Receipt IO 
 
 ## Milestones
 
+[1.3.0 is publicly available](https://github.com/jinwovo/desktop-pet/releases/tag/v1.3.0) with 30 verified product patches. The [1.3.0 release audit](RELEASE_AUDIT_1_3.md) records its exact source, successful tag workflow, actual download hashes, archive contents and isolated-runtime startup.
+
 P021: closing a gallery motion preview removes the gallery's reference to that window. Weak-reference tests demonstrate that its decoded presentation becomes collectible while the gallery remains open, and reopening still works. This does not claim a particular working-set reduction or change the immutable 1.2.0 build.
 
 P022 moves directory discovery and catalog JSON reads off WPF's UI thread. A gated worker test reproduces the original failure, verifies input/search while blocked, refreshes to a newer snapshot and closes during a late failure. The full nine-character UI suite and 227 core checks pass. Included in 1.3.0; the immutable 1.2.0 files remain unchanged.

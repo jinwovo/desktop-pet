@@ -221,6 +221,8 @@ GIF 根据实际移动记录生成，并非帧率基准测试。桌面宠物、�
 
 启用 **辅助线** 可将虚线帧边界、声明的基线和十字锚点与图像对照。辅助线随角色移动，不改变动作；启用时也会包含在场景 PNG 中。每次新开预览时默认关闭。
 
+![支持暂停逐帧、锚点辅助线和场景 PNG 保存的动作预览](docs/preview/motion-inspector-1.3.zh-CN.png)
+
 本次新增的布丁狗（Pompompurin）、大耳狗（Cinnamoroll）和酷洛米（Kuromi）分别位列[2026 年三丽鸥角色大赏官方结果](https://corporate.sanrio.co.jp/en/news/20260628_03.html)的第 1、2、4 名。本仓库提供的是 AI 辅助创作的同人图片，并非三丽鸥官方素材。[制作记录](character-packs/fan-art/POPULAR_ASSETS.md)包含提示词及可复现的生成流程。
 
 ![布丁狗、大耳狗和酷洛米的动作与图层预览](character-packs/fan-art/popular-characters-preview.png)

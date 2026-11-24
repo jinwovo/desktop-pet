@@ -25,10 +25,13 @@ function Get-DesktopPetPublicSourceFiles {
         'docs\DISTRIBUTION.md', 'docs\PUBLIC_ASSET_PROVENANCE.md', 'docs\CHARACTER_PACKS.md', 'docs\PUBLIC_RELEASE.md', 'docs\REFERENCE_REVIEW.ko.md', 'docs\NVIDIA_WORK.md',
         'docs\RELEASE_1_0.md',
         'docs\ROADMAP_2_0.md', 'docs\evolution-2.0.json',
+        'docs\RELEASE_AUDIT_1_2.md', 'docs\RELEASE_AUDIT_1_3.md',
         'tests\test_nvidia_work.py',
         'docs\preview\public-characters.png', 'docs\preview\public-walk.gif', 'docs\preview\public-walk.html',
         'docs\preview\public-settings.png', 'docs\preview\live-rig-v8.png',
         'docs\preview\character-gallery-v060.png',
+        'docs\preview\motion-inspector-1.3.en.png', 'docs\preview\motion-inspector-1.3.ko.png',
+        'docs\preview\motion-inspector-1.3.zh-CN.png',
         'images\companion-master-v1.png', 'images\companion-walk-master-v2.png', 'images\rig-companion-v7.png',
         'images\public-nimbus-master-v1.png', 'images\public-ember-master-v1.png'
         'Assets\Characters\Nimbus\.desktop-pet-public-generated', 'Assets\Characters\Ember\.desktop-pet-public-generated'

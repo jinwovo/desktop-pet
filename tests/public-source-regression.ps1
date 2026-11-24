@@ -29,6 +29,9 @@ foreach ($character in $catalog.characters) {
     Write-SourceFixture $fixture ($prefix+'\private-unreferenced.png') 'PRIVATE_EXPORT_CANARY'
 }
 Write-SourceFixture $fixture 'character-packs\fan-art\catalog.json' ([IO.File]::ReadAllText($catalogPath))
+$releaseEvidence = @('docs\RELEASE_AUDIT_1_2.md','docs\RELEASE_AUDIT_1_3.md',
+    'docs\preview\motion-inspector-1.3.en.png','docs\preview\motion-inspector-1.3.ko.png','docs\preview\motion-inspector-1.3.zh-CN.png')
+foreach ($relative in $releaseEvidence) { Write-SourceFixture $fixture $relative 'reviewed public release evidence' }
 foreach ($relative in 'character-packs\fan-art\POPULAR_ASSETS.md','character-packs\fan-art\popular-characters-preview.png',
     'character-packs\fan-art\masters\popular-pompompurin-v1.png',
     'character-packs\fan-art\masters\popular-cinnamoroll-v1.png',
@@ -42,6 +45,7 @@ foreach ($relative in '.claude\settings.json','.codex\auth.json','.env','src\Des
     Write-SourceFixture $fixture $relative 'PRIVATE_EXPORT_CANARY'
 }
 $selected = @(Get-DesktopPetPublicSourceFiles $fixture)
+foreach ($relative in $releaseEvidence) { Assert-Source ($selected -contains $relative) 'Linked public release evidence was omitted.' }
 Assert-Source ($selected -contains 'src\DesktopPet.Core\Example.cs') 'Public code was omitted.'
 Assert-Source ($selected -contains 'character-packs\fan-art\치이카와\idle.png') 'Explicitly selected optional pack was omitted.'
 foreach ($character in $catalog.characters) { Assert-Source ($selected -contains ('character-packs\fan-art\'+$character.name+'\idle.png')) 'A curated optional pack was omitted.' }

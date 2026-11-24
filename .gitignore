@@ -48,6 +48,9 @@ images/*.tmp
 !/docs/preview/public-settings.png
 !/docs/preview/live-rig-v8.png
 !/docs/preview/character-gallery-v060.png
+!/docs/preview/motion-inspector-1.3.en.png
+!/docs/preview/motion-inspector-1.3.ko.png
+!/docs/preview/motion-inspector-1.3.zh-CN.png
 /docs/*_PASS.md
 /docs/ASSET_PROVENANCE.md
 /docs/PROJECT_REVIEW.md

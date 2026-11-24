@@ -224,6 +224,8 @@ GIF는 실제 이동 기록으로 만든 미리보기이며 FPS 벤치마크가 
 
 **기준선**을 켜면 점선 프레임 경계, 선언된 발 높이와 기준점 십자를 그림과 비교할 수 있습니다. 움직임을 바꾸지 않고 캐릭터를 따라가며, 켜져 있을 때는 장면 PNG에도 표시됩니다. 새 미리보기에서는 기본으로 꺼져 있습니다.
 
+![일시정지·프레임 이동·기준선·장면 PNG 저장을 지원하는 움직임 시험](docs/preview/motion-inspector-1.3.ko.png)
+
 폼폼푸린·시나모롤·쿠로미는 [2026 산리오 캐릭터 대상 공식 결과](https://corporate.sanrio.co.jp/en/news/20260628_03.html)의 1위·2위·4위 캐릭터를 골라 추가했습니다. 이 저장소의 그림은 AI를 보조 도구로 사용한 팬아트입니다. 산리오 공식 이미지가 아니며, [제작 기록](character-packs/fan-art/POPULAR_ASSETS.md)에서 프롬프트와 재현 가능한 생성 과정을 확인할 수 있습니다.
 
 ![폼폼푸린·시나모롤·쿠로미의 동작과 리그 미리보기](character-packs/fan-art/popular-characters-preview.png)
