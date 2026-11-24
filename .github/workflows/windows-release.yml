@@ -77,6 +77,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Evolution publication guard checks failed' }
           powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File tests/evolution-recovery-regression.ps1
           if ($LASTEXITCODE -ne 0) { throw 'Evolution recovery checks failed' }
+          powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File tests/public-release-audit-regression.ps1
+          if ($LASTEXITCODE -ne 0) { throw 'Public release audit guard checks failed' }
       - name: Installer regression checks
         run: |
           powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File tests/install-regression.ps1

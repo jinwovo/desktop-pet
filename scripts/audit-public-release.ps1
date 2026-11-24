@@ -62,9 +62,14 @@ function Invoke-DesktopPetOneTwoReadOnlyAudit {
         'User-Agent'='DesktopPet-read-only-release-audit'; 'Cache-Control'='no-cache' }
     $anonymous = @{ Accept='application/vnd.github+json'; 'User-Agent'='DesktopPet-public-release-audit'; 'Cache-Control'='no-cache' }
     $stamp = [Guid]::NewGuid().ToString('N')
-    $run = Invoke-RestMethod -Uri ($api + '/actions/runs/44684226605?audit=' + $stamp) -Headers $headers
-    if ($run.head_sha -cne $expectedCommit -or $run.path -cne '.github/workflows/windows-release.yml' -or
-        $run.status -cne 'completed' -or $run.conclusion -cne 'success') { throw 'Trusted source CI run mismatch.' }
+    $run = Invoke-RestMethod -Uri ($api + '/actions/runs/44684227455?audit=' + $stamp) -Headers $headers
+    if ($run.head_sha -cne $expectedCommit -or $run.path -cne '.github/workflows/draft-release.yml' -or
+        $run.status -cne 'completed' -or $run.event -cne 'push' -or $run.head_branch -cne 'v1.2.0') { throw 'Trusted source CI run mismatch.' }
+    # The release workflow downloads its own verify-job artifact, not a separate main build.
+    # ZIP timestamps can differ between independent builds of the same source commit.
+    $job = Invoke-RestMethod -Uri ($api + '/actions/jobs/136114607232?audit=' + $stamp) -Headers $headers
+    if ([string]$job.run_id -cne '44684227455' -or $job.name -cne 'verify / verify-and-package' -or
+        $job.status -cne 'completed' -or $job.conclusion -cne 'success') { throw 'Original release verification job did not succeed.' }
     $releaseUrl = $api + '/releases/tags/v1.2.0?audit='
     $release = Invoke-RestMethod -Uri ($releaseUrl + $stamp) -Headers $anonymous
     if ([string]$release.id -cne '452325501' -or $release.tag_name -cne 'v1.2.0' -or
@@ -91,13 +96,13 @@ function Invoke-DesktopPetOneTwoReadOnlyAudit {
             $_.size -eq $copy.Size -and $_.state -ceq 'uploaded' })
         if ($same.Count -ne 1) { throw 'Public asset identity changed during audit.' }
     }
-    $evidence = [pscustomobject]@{ Version='1.2.0'; SourceCommit=$expectedCommit; SourceRunId='44684226605';
+    $evidence = [pscustomobject]@{ Version='1.2.0'; SourceCommit=$expectedCommit; SourceRunId='44684227455'; SourceVerificationJobId='136114607232';
         ReleaseId=$release.id; Public=$true; Assets=$copies; VerifiedUtc=[DateTime]::UtcNow.ToString('o') }
     $evidence | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $root 'public-release-audit.json') -Encoding UTF8
     foreach ($copy in $copies) { Write-Host ('::notice::Verified public asset: ' + $copy.Name + ' SHA256=' + $copy.Sha256) }
     if ($env:GITHUB_STEP_SUMMARY) {
         @('Verified existing public 1.2.0 without modifying its tag, release or files.',
-          ('Source: `' + $expectedCommit + '`; trusted Windows run: `44684226605`.'),
+          ('Source: `' + $expectedCommit + '`; trusted release verification run: `44684227455`.'),
           '', '| Public file | Bytes | SHA256 |', '| --- | ---: | --- |') +
             @($copies | ForEach-Object { '| ' + $_.Name + ' | ' + $_.Size + ' | ' + $_.Sha256 + ' |' }) |
             Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY

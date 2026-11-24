@@ -160,10 +160,44 @@ function Assert-DesktopPetEvolutionChecksums {
     }
 }
 
+function Wait-DesktopPetPublicRelease {
+    param([Parameter(Mandatory=$true)][string]$Version,
+          [Parameter(Mandatory=$true)][ValidatePattern('^[1-9][0-9]*$')][string]$ReleaseId,
+          [Parameter(Mandatory=$true)][scriptblock]$Fetch,
+          [scriptblock]$Wait = { param($seconds) Start-Sleep -Seconds $seconds },
+          [ValidateRange(1,5)][int]$Attempts = 5)
+    $null = Get-DesktopPetEvolutionThreshold $Version
+    $reason = 'release state did not match'
+    for ($attempt = 1; $attempt -le $Attempts; $attempt++) {
+        $confirmed = $true
+        $publicResult = $null
+        foreach ($anonymous in @($false, $true)) {
+            try {
+                $observed = & $Fetch $anonymous
+                if ([string]$observed.id -cne $ReleaseId -or $observed.tag_name -cne ('v' + $Version) -or
+                    $observed.draft -isnot [bool] -or $observed.draft -or
+                    $observed.prerelease -isnot [bool] -or $observed.prerelease) {
+                    $confirmed = $false
+                    $reason = 'release state did not match'
+                }
+                if ($anonymous) { $publicResult = $observed }
+            } catch {
+                $confirmed = $false
+                # HTTP exception text may contain request details. Do not print credentials or URLs.
+                $reason = 'a release read was temporarily unavailable'
+            }
+        }
+        if ($confirmed) { return $publicResult }
+        if ($attempt -lt $Attempts) { $null = & $Wait ([int][Math]::Min([Math]::Pow(2, $attempt), 16)) }
+    }
+    throw ("Published release confirmation failed after $Attempts read attempts: $reason.")
+}
+
 function Publish-DesktopPetEvolutionRelease {
     param([Parameter(Mandatory=$true)][string]$Version,
           [Parameter(Mandatory=$true)][string]$RepositoryRoot)
     $ErrorActionPreference = 'Stop'
+    $ProgressPreference = 'SilentlyContinue'
     $null = Get-DesktopPetEvolutionThreshold $Version
     if ($env:GITHUB_ACTIONS -cne 'true' -or $env:GITHUB_REPOSITORY -cne 'jinwovo/desktop-pet' -or
         $env:GITHUB_REF -cne ('refs/tags/v' + $Version) -or [string]::IsNullOrWhiteSpace($env:GITHUB_TOKEN) -or
@@ -228,14 +262,15 @@ function Publish-DesktopPetEvolutionRelease {
         }
         $body = @{ draft=$false; prerelease=$false; make_latest='true' } | ConvertTo-Json -Compress
         $null = Invoke-RestMethod -Uri ($api + '/releases/' + $release.id) -Method Patch -Headers $headers -ContentType 'application/json' -Body $body
-        $published = Invoke-RestMethod -Uri ($api + '/releases/' + $release.id) -Headers $headers
-        if ($published.id -ne $release.id -or $published.tag_name -cne ('v' + $Version) -or
-            $published.draft -isnot [bool] -or $published.draft -or $published.prerelease -isnot [bool] -or $published.prerelease) {
-            throw 'Published release state could not be confirmed.'
+        $public = Wait-DesktopPetPublicRelease -Version $Version -ReleaseId ([string]$release.id) -Fetch {
+            param($anonymous)
+            $readHeaders = if ($anonymous) {
+                @{ Accept='application/vnd.github+json'; 'User-Agent'='DesktopPet-evolution-public-read-verification' }
+            } else { $headers.Clone() }
+            $readHeaders['Cache-Control'] = 'no-cache'
+            $resource = if ($anonymous) { '/releases/tags/v' + $Version } else { '/releases/' + $release.id }
+            Invoke-RestMethod -Uri ($api + $resource + '?confirmation=' + [Guid]::NewGuid().ToString('N')) -Headers $readHeaders
         }
-        $public = Invoke-RestMethod -Uri ($api + '/releases/tags/v' + $Version) -Headers @{
-            Accept='application/vnd.github+json'; 'User-Agent'='DesktopPet-evolution-public-read-verification' }
-        if ($public.id -ne $release.id -or $public.draft -or $public.prerelease) { throw 'Anonymous publication verification failed.' }
         [pscustomobject]@{ Version=$Version; ReleaseId=$public.id; Published=$true; Url=$public.html_url }
     }
     finally {

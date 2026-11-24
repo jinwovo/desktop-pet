@@ -31,19 +31,16 @@ jobs:
           $log = Join-Path $env:RUNNER_TEMP 'original-publication-failure.txt'
           gh run view 44684227455 --repo jinwovo/desktop-pet --job 136116214447 --log-failed 1> $log 2> $null
           if ($LASTEXITCODE -eq 0) {
-            $lines = @(Get-Content -LiteralPath $log | Select-Object -Last 35)
-            foreach ($line in $lines) {
-              $safe = $line.Replace($env:GH_TOKEN, '***').Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
-              Write-Host ('::notice::Original publication diagnostic: ' + $safe)
+            $lines = @(Get-Content -LiteralPath $log)
+            $failureLine = @($lines | Select-String -Pattern 'FullyQualifiedErrorId.*WebCmdletWebResponseException' | Select-Object -First 1)
+            if ($failureLine.Count) {
+              $end = $failureLine[0].LineNumber - 1
+              $begin = [Math]::Max(0, $end - 18)
+              $detail = $lines[$begin..$end] -join "`n"
+              $safe = $detail.Replace($env:GH_TOKEN, '***').Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+              Write-Host ('::notice::Original publication failure context: ' + $safe)
             }
           } else { Write-Host '::warning::Original failed log unavailable; asset audit will still run.' }
-          gh run view 45302683266 --repo jinwovo/desktop-pet --job 138138829111 --log-failed 1> $log 2> $null
-          if ($LASTEXITCODE -eq 0) {
-            foreach ($line in @(Get-Content -LiteralPath $log | Select-Object -Last 25)) {
-              $safe = $line.Replace($env:GH_TOKEN, '***').Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
-              Write-Host ('::notice::First audit diagnostic: ' + $safe)
-            }
-          }
           exit 0
       - name: Check audit guards offline
         run: |
@@ -51,7 +48,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: DesktopPet-public-windows
-          run-id: 44684226605
+          run-id: 44684227455
           github-token: ${{ github.token }}
           path: release-files
       - name: Compare existing public files with verified CI artifact
