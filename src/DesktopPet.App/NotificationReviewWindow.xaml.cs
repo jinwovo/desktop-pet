@@ -4,18 +4,36 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Threading;
 
 public sealed partial class NotificationReviewWindow : Window
 {
     private readonly MainWindow _pet;
     private IReadOnlyList<SavedNotificationItem> _allItems = Array.Empty<SavedNotificationItem>();
+    private IReadOnlyList<SavedNotificationItem> _visibleItems = Array.Empty<SavedNotificationItem>();
+    private string _searchText = string.Empty;
+    private SourceChoice _sourceFilter = SourceChoice.All;
     private bool _refreshing;
+    private bool _filtering = true;
     private bool _closed;
+    private bool _sourceLabelsDirty = true;
     private DispatcherOperation? _pendingRefresh;
 
     public IReadOnlyList<SavedNotificationItem> AllItems => _allItems;
+    public IReadOnlyList<SavedNotificationItem> VisibleItems => _visibleItems;
+
+    private enum SourceChoice
+    {
+        All,
+        Claude,
+        Codex,
+        FocusTimer,
+        Test,
+        Other
+    }
 
     public NotificationReviewWindow(MainWindow pet)
     {
@@ -27,6 +45,10 @@ public sealed partial class NotificationReviewWindow : Window
         UiText.LanguageChanged += OnLanguageChanged;
 
         Closed += OnClosed;
+
+        RefreshSourceChoices();
+        _filtering = false;
+
         RefreshSnapshot();
     }
 
@@ -39,7 +61,32 @@ public sealed partial class NotificationReviewWindow : Window
     private void OnLanguageChanged()
     {
         if (_closed) return;
+        _sourceLabelsDirty = true;
         CoalesceRefresh();
+    }
+
+    private void RefreshSourceChoices()
+    {
+        var wasFiltering = _filtering;
+        _filtering = true;
+        try
+        {
+            var choices = new[]
+            {
+                new SourceChoiceItem(SourceChoice.All, UiText.Get("전체 출처")),
+                new SourceChoiceItem(SourceChoice.Claude, "Claude"),
+                new SourceChoiceItem(SourceChoice.Codex, "Codex"),
+                new SourceChoiceItem(SourceChoice.FocusTimer, UiText.Get("집중 타이머")),
+                new SourceChoiceItem(SourceChoice.Test, UiText.Get("테스트 알림")),
+                new SourceChoiceItem(SourceChoice.Other, UiText.Get("기타"))
+            };
+            SourceFilterCombo.ItemsSource = choices;
+            SourceFilterCombo.SelectedItem = choices.Single(choice => choice.Choice == _sourceFilter);
+            AutomationProperties.SetName(SearchBox, UiText.Get("알림 검색"));
+            AutomationProperties.SetName(SourceFilterCombo, UiText.Get("전체 출처"));
+            _sourceLabelsDirty = false;
+        }
+        finally { _filtering = wasFiltering; }
     }
 
     private void CoalesceRefresh()
@@ -56,19 +103,27 @@ public sealed partial class NotificationReviewWindow : Window
     private void RefreshSnapshot()
     {
         if (_closed) return;
+        if (_sourceLabelsDirty) RefreshSourceChoices();
+        _allItems = _pet.GetPendingNotificationsSnapshot();
+        Refilter();
+    }
+
+    private void Refilter()
+    {
         var oldSelected = NotificationItems.SelectedItem as SavedNotificationItem;
         var oldReceipt = oldSelected?.Receipt;
         _refreshing = true;
         try
         {
-            _allItems = _pet.GetPendingNotificationsSnapshot();
-            NotificationItems.ItemsSource = _allItems;
+            ApplyFilters();
+            NotificationItems.ItemsSource = _visibleItems;
+
             SavedNotificationItem? match = null;
             if (oldReceipt != null)
             {
-                match = _allItems.FirstOrDefault(i => ReferenceEquals(i.Receipt, oldReceipt));
+                match = _visibleItems.FirstOrDefault(i => ReferenceEquals(i.Receipt, oldReceipt));
             }
-            NotificationItems.SelectedItem = match ?? _allItems.FirstOrDefault();
+            NotificationItems.SelectedItem = match ?? _visibleItems.FirstOrDefault();
         }
         finally
         {
@@ -79,9 +134,98 @@ public sealed partial class NotificationReviewWindow : Window
         RenderCount();
     }
 
+    private void Filter_Changed(object sender, TextChangedEventArgs e)
+    {
+        if (_filtering || _closed) return;
+        _searchText = SearchBox.Text.Trim();
+        Refilter();
+    }
+
+    private void SourceFilter_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (_filtering || _closed) return;
+        if (SourceFilterCombo.SelectedItem is SourceChoiceItem item)
+        {
+            _sourceFilter = item.Choice;
+        }
+        Refilter();
+    }
+
+    private void ClearFilters_Click(object sender, RoutedEventArgs e)
+    {
+        if (_closed) return;
+        _filtering = true;
+        try
+        {
+            SearchBox.Text = string.Empty;
+            SourceFilterCombo.SelectedIndex = 0;
+        }
+        finally
+        {
+            _filtering = false;
+        }
+
+        _searchText = string.Empty;
+        _sourceFilter = SourceChoice.All;
+        Refilter();
+    }
+
+    private void ApplyFilters()
+    {
+        var query = _searchText;
+        var source = _sourceFilter;
+
+        IEnumerable<SavedNotificationItem> filtered = _allItems;
+
+        if (query.Length > 0)
+        {
+            filtered = filtered.Where(i =>
+                ContainsOrdinalIgnoreCase(i.Title, query) ||
+                ContainsOrdinalIgnoreCase(i.Message, query) ||
+                ContainsOrdinalIgnoreCase(i.Source, query) ||
+                ContainsOrdinalIgnoreCase(i.SourceLabel, query));
+        }
+
+        if (source != SourceChoice.All)
+        {
+            filtered = filtered.Where(i => ClassifySource(i.Source) == source);
+        }
+
+        _visibleItems = filtered.ToList().AsReadOnly();
+    }
+
+    private static bool ContainsOrdinalIgnoreCase(string? haystack, string needle)
+    {
+        if (haystack == null) return false;
+        return haystack.IndexOf(needle, StringComparison.OrdinalIgnoreCase) >= 0;
+    }
+
+    private static SourceChoice ClassifySource(string? source)
+    {
+        var raw = source?.Trim().ToLowerInvariant();
+        return raw switch
+        {
+            "claude" => SourceChoice.Claude,
+            "codex" => SourceChoice.Codex,
+            "focus-timer" => SourceChoice.FocusTimer,
+            "test" => SourceChoice.Test,
+            "" or null => SourceChoice.Other,
+            _ => SourceChoice.Other
+        };
+    }
+
     private void RenderCount()
     {
-        CountText.Text = UiText.Format("보관된 알림 {0}개", _allItems.Count);
+        if (_searchText.Length == 0 && _sourceFilter == SourceChoice.All)
+        {
+            CountText.Text = UiText.Format("보관된 알림 {0}개", _allItems.Count);
+        }
+        else
+        {
+            CountText.Text = UiText.Format("알림 {0} / {1}개 표시", _visibleItems.Count, _allItems.Count);
+        }
+
+        ClearFiltersButton.IsEnabled = SearchBox.Text.Length > 0 || _sourceFilter != SourceChoice.All;
     }
 
     private void RenderDetails()
@@ -89,7 +233,9 @@ public sealed partial class NotificationReviewWindow : Window
         var item = NotificationItems.SelectedItem as SavedNotificationItem;
         if (item == null)
         {
-            NotificationDetails.Text = UiText.Get("보관된 알림이 없어요.");
+            NotificationDetails.Text = _allItems.Count == 0 ? UiText.Get("보관된 알림이 없어요.") :
+                _visibleItems.Count == 0 ? UiText.Get("검색 결과가 없어요.") :
+                UiText.Get("알림을 선택하면 내용을 볼 수 있어요.");
             return;
         }
 
@@ -114,6 +260,30 @@ public sealed partial class NotificationReviewWindow : Window
         Close();
     }
 
+    private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (_closed) return;
+        if (e.Key == Key.Escape && ClearFiltersButton.IsEnabled)
+        {
+            ClearFilters_Click(sender, e);
+            e.Handled = true;
+        }
+    }
+
+    private void Find_CanExecute(object sender, CanExecuteRoutedEventArgs e)
+    {
+        e.CanExecute = !_closed;
+        e.Handled = true;
+    }
+
+    private void Find_Executed(object sender, ExecutedRoutedEventArgs e)
+    {
+        if (_closed) return;
+        SearchBox.Focus();
+        SearchBox.SelectAll();
+        e.Handled = true;
+    }
+
     private void OnClosed(object? sender, EventArgs e)
     {
         _closed = true;
@@ -127,5 +297,19 @@ public sealed partial class NotificationReviewWindow : Window
         _pet.PendingNotificationCountChanged -= OnPetCountChanged;
         UiText.LanguageChanged -= OnLanguageChanged;
         Closed -= OnClosed;
+    }
+
+    private sealed class SourceChoiceItem
+    {
+        public SourceChoice Choice { get; }
+        public string Label { get; }
+
+        public SourceChoiceItem(SourceChoice choice, string label)
+        {
+            Choice = choice;
+            Label = label;
+        }
+
+        public override string ToString() => Label;
     }
 }

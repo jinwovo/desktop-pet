@@ -66,6 +66,8 @@ P035 adds 25/5 and 50/10 quick-fill controls. Tests prove that they only prepare
 
 P036 adds an independent read-only saved-notification browser through both shared menus. Real receipt files remain unchanged while browsing, and original user titles/messages survive KO/EN/zh-CN relabeling. Stable receipt identity keeps selection through arrivals and language changes. A hundred-arrival fixture proves one queued refresh and virtualized offscreen rows; language changes share that pending refresh. External explicit acknowledgement updates the open list, while closing aborts queued work, detaches subscriptions and clears Main's reference. Native captures verify all three locales. This is 1.4.0 development work, absent from the immutable 1.3.0 download.
 
+P037 adds literal case-insensitive title/body/source search combined with fixed source categories. Native tests cover metacharacters, multilingual text, normalized sources, raw whitespace drafts, selection preservation, incoming matching/nonmatching receipts, localized source labels/counts/accessibility names, Ctrl+F, Escape and closed callbacks. An actual deselection fixture reproduces the previous false no-match hint before verifying separate empty/no-match/select-a-row messages. Minimum-size captures prove finite title width, visible ellipsis and complete selectable details in KO/EN/zh-CN. Filters do not acknowledge receipts or change pet preferences. This remains 1.4.0 development work.
+
 | Verified patch threshold | Planned release | Main review area |
 | --- | --- | --- |
 | 10 | 1.1.0 | Motion and runtime defects |

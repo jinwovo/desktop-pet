@@ -522,11 +522,18 @@
     },
     {
       "id": "P037",
-      "title": "Discovery pending: Focus and notification workflows (37)",
-      "status": "planned",
+      "title": "Search and filter saved notifications while preserving unread receipts and localized selection",
+      "status": "verified",
       "milestone": "1.4.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/NotificationReviewWindow.xaml",
+        "src/DesktopPet.App/NotificationReviewWindow.xaml.cs",
+        "src/DesktopPet.App/UiText.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/NotificationSearchUiTests.cs",
+        "tests/DesktopPet.UiSmokeTests/NotificationReviewUiTests.cs"
+      ]
     },
     {
       "id": "P038",
