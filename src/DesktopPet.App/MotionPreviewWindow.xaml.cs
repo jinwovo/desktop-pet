@@ -60,6 +60,7 @@ public partial class MotionPreviewWindow : Window
         PreviousActor.Height = Actor.Height;
         MotionRig.Width = ActorInput.Width = Actor.Width;
         MotionRig.Height = ActorInput.Height = Actor.Height;
+        InitializeFrameGuides();
         Loaded += (_, _) =>
         {
             ResetScene();
@@ -113,6 +114,32 @@ public partial class MotionPreviewWindow : Window
         NextFrameButton.IsEnabled = CanInspect && _playbackPaused;
         CryReactionButton.IsEnabled = AngryReactionButton.IsEnabled = CanInspect;
         SaveSceneButton.IsEnabled = CanInspect && _frameSaveCancellation is null;
+        FrameGuidesToggle.IsEnabled = CanInspect;
+        if (CanInspect) UpdateFrameGuides();
+    }
+
+    private void InitializeFrameGuides()
+    {
+        FrameGuides.Width = Actor.Width; FrameGuides.Height = Actor.Height;
+        FrameBoundary.Width = Math.Max(0, Actor.Width - 1); FrameBoundary.Height = Math.Max(0, Actor.Height - 1);
+        Canvas.SetLeft(FrameBoundary, 0.5); Canvas.SetTop(FrameBoundary, 0.5);
+        var x = _presentation.Definition.AnchorX * _scale;
+        var y = _presentation.Definition.AnchorY * _scale;
+        FrameBaseline.X1 = 0; FrameBaseline.X2 = Actor.Width; FrameBaseline.Y1 = FrameBaseline.Y2 = y;
+        AnchorHorizontal.X1 = x - 4; AnchorHorizontal.X2 = x + 4; AnchorHorizontal.Y1 = AnchorHorizontal.Y2 = y;
+        AnchorVertical.X1 = AnchorVertical.X2 = x; AnchorVertical.Y1 = y - 4; AnchorVertical.Y2 = y + 4;
+    }
+
+    private void FrameGuides_Changed(object sender, RoutedEventArgs e)
+    {
+        if (CanInspect) UpdateFrameGuides();
+    }
+
+    private void UpdateFrameGuides()
+    {
+        FrameGuides.Visibility = FrameGuidesToggle.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+        if (FrameGuidesToggle.IsChecked != true) return;
+        Canvas.SetLeft(FrameGuides, _brain.X); Canvas.SetTop(FrameGuides, _brain.Y);
     }
 
     private void PausePlayback_Click(object sender, RoutedEventArgs e)
@@ -211,6 +238,7 @@ public partial class MotionPreviewWindow : Window
         Canvas.SetTop(MotionRig, _brain.Y);
         Canvas.SetLeft(ActorInput, _brain.X);
         Canvas.SetTop(ActorInput, _brain.Y);
+        if (FrameGuidesToggle.IsChecked == true) UpdateFrameGuides();
         var right = _cursorGaze.Update(_cursor.X, _brain.X + Actor.Width / 2, 8 * _scale);
         var displayWalkPose = _walkAppearance.DisplayWalkPose;
         var directional = !displayWalkPose && _brain.State == PetState.LookAtCursor &&
@@ -274,6 +302,8 @@ public partial class MotionPreviewWindow : Window
         UpdatePlaybackControls();
         UpdateStateText();
         RefreshFrameSaveStatus();
+        FrameGuidesToggle.Content = UiText.Get("기준선");
+        FrameGuidesToggle.ToolTip = UiText.Get("점선은 프레임, 십자는 선언된 기준점입니다.");
     }
 
     private string? ChooseFramePath()

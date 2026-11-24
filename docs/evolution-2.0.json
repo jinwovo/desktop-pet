@@ -415,11 +415,18 @@
     },
     {
       "id": "P030",
-      "title": "Discovery pending: Character authoring and previews (30)",
-      "status": "planned",
+      "title": "Inspect frame boundaries and declared anchors with optional motion-neutral guides",
+      "status": "verified",
       "milestone": "1.3.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/MotionPreviewWindow.xaml",
+        "src/DesktopPet.App/MotionPreviewWindow.xaml.cs",
+        "src/DesktopPet.App/UiText.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/MotionGuideUiTests.cs",
+        "tests/DesktopPet.UiSmokeTests/MotionFrameExportUiTests.cs"
+      ]
     },
     {
       "id": "P031",

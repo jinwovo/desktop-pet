@@ -22,6 +22,11 @@ internal static class Program
         MainWindow? pet = null;
         try
         {
+            if (args.Contains("--motion-guides-only"))
+            {
+                MotionGuideUiTests.Run(folder, args.Contains("--capture"));
+                return 0;
+            }
             if (args.Contains("--motion-frame-export-only"))
             {
                 MotionFrameExportUiTests.Run(folder, args.Contains("--capture"));
@@ -367,6 +372,7 @@ internal static class Program
             MotionPlaybackUiTests.Run(folder, args.Contains("--capture"));
             MotionReactionUiTests.Run(folder, args.Contains("--capture"));
             MotionFrameExportUiTests.Run(folder, args.Contains("--capture"));
+            MotionGuideUiTests.Run(folder, args.Contains("--capture"));
             SpeechBubbleLocalizationTests.Run();
             SpeechBubbleMotionTests.Run(folder);
             SpeechBubbleSourceTests.Run();

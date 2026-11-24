@@ -16,7 +16,7 @@ A quiet desktop companion for AI work, focused sessions, and a less empty taskba
 
 [2.0 roadmap and 100-patch progress](docs/ROADMAP_2_0.md)
 
-1.2.0 brings the evolution total to 20 verified improvements. Its ten new patches add roaming pause, landing-safe reactions, pet right-click actions, copyable notifications, bulk read, safer gallery previews and multilingual motion controls.
+1.3.0 brings the evolution total to 30 verified improvements. This milestone adds responsive character loading, gallery refresh and ZIP export, pause/step and reaction inspection, scene PNGs and frame guides, and anger glyphs that preserve character silhouettes.
 
 DesktopPet is a Windows desktop pet with gentle completion notifications for local Claude Code and Codex, a 25/5 focus timer, and importable character packs. Its live walking renderer moves cached body and foot layers continuously, using actual travel distance to keep a planted foot from sliding.
 
@@ -173,7 +173,7 @@ The suites use fixture directories and do not register hooks in your real assist
 To create a public Windows x64 package:
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 1.2.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 1.3.0
 ```
 
 The output is a self-contained ZIP and a SHA256 sidecar under `artifacts/releases/`. Missing runtime packs cause a build failure; the script does not silently change deployment type. The [Windows workflow](.github/workflows/windows-release.yml) is configured to run checks and create artifacts; its presence does not imply a successful remote build or a published release.
@@ -222,13 +222,15 @@ Importing through Settings refreshes an already-open gallery while keeping its s
 
 Open Settings → **갤러리 · 검색** (Gallery / search). Type a Korean or English name, narrow the collection, and select a card. **움직임 미리보기** opens a separate motion preview; **이 친구와 함께하기** applies the selection. Searching and previewing do not change your active pet. Only card thumbnails are decoded for the grid; a motion preview loads the selected character.
 
-**1.3.0 development preview:** select a card and choose **Export ZIP** to share a character pack. Choose a new ZIP filename outside the character folder; existing files are kept. Export validates a snapshot and includes only `character.json` and its referenced PNGs. You can cancel or close the gallery while it works; exporting never changes the active pet. Recipients use the normal ZIP import. This feature is not in the 1.2.0 download. See the [pack guide](docs/CHARACTER_PACKS.md#export-a-character-zip-130-development).
+**Character export (1.3.0):** select a card and choose **Export ZIP** to share a character pack. Choose a new ZIP filename outside the character folder; existing files are kept. Export validates a snapshot and includes only `character.json` and its referenced PNGs. You can cancel or close the gallery while it works; exporting never changes the active pet. Recipients use the normal ZIP import. See the [pack guide](docs/CHARACTER_PACKS.md#export-a-character-zip).
 
 The 1.3.0 motion preview also adds **Pause / Resume** and **Next frame**. Inspect walking, falling and pose blends one frame at a time at the selected 30/60/120 FPS cap. Hiding or minimizing preserves the pause; Reset starts the scene again while staying paused. The desktop pet keeps its own simulation.
 
 Use **Cry** and **Angry** in that preview to inspect expression frames and tears directly. A request during dragging or a throw waits until landing; the newest request wins, and the header shows what is queued. These controls affect the preview only.
 
-**Save scene PNG** captures the current preview canvas before opening the save dialog. Share an exact walking pose or a paused transition without capturing your desktop. Saving runs in the background and keeps playback/stepping available; existing files are preserved. Choose a new PNG filename to retry a failed save. These additions remain part of the upcoming 1.3.0 release.
+**Save scene PNG** captures the current preview canvas before opening the save dialog. Share an exact walking pose or a paused transition without capturing your desktop. Saving runs in the background and keeps playback/stepping available; existing files are preserved. Choose a new PNG filename to retry a failed save.
+
+Enable **Frame guides** to compare the dashed frame boundary, declared baseline and anchor cross with the displayed artwork. Guides follow the pet without changing its motion and appear in scene PNGs while enabled. They start off in each new preview.
 
 Pompompurin, Cinnamoroll and Kuromi were selected from the official [2026 Sanrio ranking](https://corporate.sanrio.co.jp/en/news/20260628_03.html), where they placed first, second and fourth. The artwork here is AI-assisted fan art, not official Sanrio assets. [Creation records](character-packs/fan-art/POPULAR_ASSETS.md) include the prompts and reproducible generator.
 

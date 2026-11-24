@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased (1.3.0 development)
+## 1.3.0 — evolution patches P021–P030
 
 - P021: release the gallery's reference to a closed motion preview so its decoded presentation can be collected while the gallery stays open. Keep replacement-preview ownership intact and allow reopening normally.
 - P022: discover character directories and read gallery aliases on the existing background worker. Keep input/search responsive during slow discovery, cancel superseded/closed requests and discard late results without overwriting the current catalog.
@@ -11,6 +11,7 @@
 - P027: preview Cry/Angry from dedicated motion-scene controls and inspect their real frames while paused. Preserve drag offsets and throw trajectories; show localized queued-reaction feedback and play the latest request after landing. Reset clears pending feedback and inactive controls cannot affect the scene. Verify actual expression pixels for all nine curated characters.
 - P028: place the procedural anger glyph in clear space around the head instead of covering leaves, ears or hats. Use a pulse-independent placement envelope, shrink only as needed and omit the ornament when no safe space exists. Regenerate only twelve anger frames for Companion, Nimbus, Ember, Pompompurin, Cinnamoroll and Kuromi; preserve masters, gait, manifests and other character art.
 - P029: save the exact motion-preview scene as a PNG, including live rig poses, raster blends, facing transforms and platforms. Snapshot before the filename picker, encode off the UI thread, preserve existing files and cancel unfinished work when closing. Keep playback/stepping available and localize saving/success/retry feedback in KO/EN/zh-CN. The image contains only the controlled preview canvas.
+- P030: add optional preview frame/anchor guides for artwork alignment. Retain cached vector shapes, preserve non-square proportions and declared anchor coordinates, follow the pet without advancing its gait, and include enabled guides in scene PNGs. Keep drag/throw/queued reactions intact; reset retains the toggle and new previews start with guides off. Localize labels/tooltips and disable inactive controls.
 
 ## 1.2.0 — evolution patches P011–P020
 

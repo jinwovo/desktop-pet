@@ -78,9 +78,9 @@ The bundled public characters are complete examples. In addition to their fallba
 
 Merge these fields into a complete manifest; this fragment is not a standalone pack. Every part is a full-size transparent canvas aligned to the same neutral body/foot coordinates. The runtime translates the near foot, far foot and body independently. Supply side/quarter fallback cycles of matching length; distance is measured in unscaled sprite pixels. Resting art stays separate. Do not bake movement into a full-body layer and expect the rig to remove it.
 
-## Inspect a pose frame by frame (1.3.0 development)
+## Inspect a pose frame by frame
 
-Open **Animation preview** from a gallery card, or the motion preview from Settings. **Pause** freezes the simulated pet, gait and PNG pose-dissolve clocks. **Next frame** advances exactly one interval of the configured 30/60/120 FPS cap; **Resume** continues from that point without replaying time spent paused. This source-build feature is not in the 1.2.0 download.
+Open **Animation preview** from a gallery card, or the motion preview from Settings. **Pause** freezes the simulated pet, gait and PNG pose-dissolve clocks. **Next frame** advances exactly one interval of the configured 30/60/120 FPS cap; **Resume** continues from that point without replaying time spent paused.
 
 Reset preserves the pause while rebuilding the scene. You can prepare a jump/drop or move the pet, then step through its trajectory. A paused window stays paused after hiding/minimizing, and changing the UI language keeps the inspected pose. Reduced motion still applies. The preview uses its own scene and does not pause or modify the desktop pet.
 
@@ -88,9 +88,11 @@ Reset preserves the pause while rebuilding the scene. You can prepare a jump/dro
 
 **Save scene PNG** captures that canvas at the moment you click, before the filename dialog opens. It includes the controlled pet, current live-rig pose or raster dissolve, and platforms. It does not capture other windows, the desktop or dialog contents. Transparent canvas areas remain transparent in the PNG. Pause and step to a problem frame before saving it for a bug report. Choose a new `.png` filename: existing files are never replaced. Encoding runs in the background, so playback controls remain available. Closing the preview cancels unfinished saving; an already committed PNG remains saved. The button and its tooltip report saving, success or a retry in the selected UI language.
 
-## Export a character ZIP (1.3.0 development)
+**Frame guides** adds a dashed frame boundary, the declared `anchor.y` baseline and a cross at `(anchor.x, anchor.y)` in unmirrored frame coordinates. These are metadata guides, not detected joints or automatic corrections. They preserve non-square frame proportions, follow the pet through walking/dragging/falling and remain available during pause/step. Reset keeps the toggle; a new preview starts with it off. Guides do not alter artwork, motion, preferences or the desktop pet. Enabled guides appear in saved scene PNGs so authors can show an alignment problem.
 
-This source-build feature is not included in the 1.2.0 download. Open the gallery, select a character and choose **Export ZIP**. Save to a new `.zip` filename outside the selected character's folder. Existing files and directories are never replaced.
+## Export a character ZIP
+
+Open the gallery, select a character and choose **Export ZIP**. Save to a new `.zip` filename outside the selected character's folder. Existing files and directories are never replaced.
 
 The exporter copies the selected manifest and declared PNGs into private staging, validates the complete image set, and creates a ZIP with one character folder. Extra files such as local `.env`, preference files and unrelated images are excluded. The manifest, nested frame paths and behavior profile are preserved. The original character folder and the active pet/preferences remain unchanged.
 

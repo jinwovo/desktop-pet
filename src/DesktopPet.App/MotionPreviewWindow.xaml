@@ -18,6 +18,8 @@
             <DockPanel Margin="0,6,0,0">
                 <Button x:Name="SaveSceneButton" DockPanel.Dock="Right" Content="장면 PNG 저장" Click="SaveScene_Click"
                         Width="144" Padding="10,5" Margin="12,0,0,0" />
+                <CheckBox x:Name="FrameGuidesToggle" DockPanel.Dock="Right" Width="98" Content="기준선"
+                          VerticalAlignment="Center" Margin="8,0,0,0" Checked="FrameGuides_Changed" Unchecked="FrameGuides_Changed" />
                 <TextBlock Text="펫을 잡아 옮기거나 던져보세요. 이 창 안에서만 움직입니다."
                            Foreground="#68738C" TextWrapping="Wrap" VerticalAlignment="Center" />
             </DockPanel>
@@ -35,6 +37,12 @@
                        RenderOptions.BitmapScalingMode="HighQuality" Cursor="Hand">
                     <Image.RenderTransform><ScaleTransform x:Name="ActorFlip" /></Image.RenderTransform>
                 </Image>
+                <Canvas x:Name="FrameGuides" Visibility="Collapsed" IsHitTestVisible="False">
+                    <Rectangle x:Name="FrameBoundary" Stroke="#3B82F6" StrokeThickness="1" StrokeDashArray="3,3" />
+                    <Line x:Name="FrameBaseline" Stroke="#12806A" StrokeThickness="1" />
+                    <Line x:Name="AnchorHorizontal" Stroke="#7C3AED" StrokeThickness="1.5" />
+                    <Line x:Name="AnchorVertical" Stroke="#7C3AED" StrokeThickness="1.5" />
+                </Canvas>
                 <Border x:Name="ActorInput" Background="Transparent" Cursor="Hand"
                         MouseLeftButtonDown="Actor_MouseLeftButtonDown" MouseLeftButtonUp="Actor_MouseLeftButtonUp"
                         LostMouseCapture="Actor_LostMouseCapture" />

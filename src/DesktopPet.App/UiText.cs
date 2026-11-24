@@ -132,6 +132,8 @@ public static class UiText
         ["일시정지"] = ("Pause", "暂停"),
         ["다음 프레임"] = ("Next frame", "下一帧"),
         ["장면 PNG 저장"] = ("Save scene PNG", "保存场景 PNG"),
+        ["기준선"] = ("Frame guides", "辅助线"),
+        ["점선은 프레임, 십자는 선언된 기준점입니다."] = ("Dashed outline: frame. Cross: declared anchor in frame coordinates.", "虚线表示帧边界，十字表示帧坐标中的声明锚点。"),
         ["현재 미리보기 장면만 저장해요."] = ("Save only the current preview scene.", "仅保存当前预览场景。"),
         ["저장 중…"] = ("Saving…", "正在保存…"),
         ["PNG 저장됨"] = ("PNG saved", "PNG 已保存"),
