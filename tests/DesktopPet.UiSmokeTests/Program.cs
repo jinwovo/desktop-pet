@@ -22,6 +22,11 @@ internal static class Program
         MainWindow? pet = null;
         try
         {
+            if (args.Contains("--character-switch-only"))
+            {
+                CharacterSwitchUiTests.Run(folder);
+                return 0;
+            }
             if (args.Contains("--rig-only"))
             {
                 GroundedRigVisualRegressionTests.Run(MainWindow.CharactersRoot, capture: args.Contains("--capture"));
@@ -347,6 +352,7 @@ internal static class Program
             PetContextMenuUiTests.Run(folder, args.Contains("--capture"));
             NotificationBatchUiTests.Run(folder);
             GalleryLocaleRegressionTests.Run(folder, args.Contains("--capture"));
+            CharacterSwitchUiTests.Run(folder);
             DiagnosticsUiTests.Run(folder);
             PetRecoveryUiTests.Run(folder);
             ImportCancellationUiTests.Run(folder);

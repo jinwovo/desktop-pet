@@ -22,6 +22,9 @@ public partial class SettingsWindow : Window
     private Task _characterImportOperation = Task.CompletedTask;
     private CancellationTokenSource? _characterImportCancellation;
     private IProgress<CharacterImportProgress>? _characterImportProgress;
+    private CancellationTokenSource? _characterSelectionCancellation;
+    private long _characterSelectionRevision;
+    public Task CharacterSelectionOperation { get; private set; } = Task.CompletedTask;
     private CharacterPresentation? _previewPresentation;
     private MotionPreviewWindow? _motionPreview;
     private readonly Stopwatch _previewClock = Stopwatch.StartNew();
@@ -61,6 +64,8 @@ public partial class SettingsWindow : Window
         Closed += (_, _) =>
         {
             _closed = true;
+            ++_characterSelectionRevision;
+            _characterSelectionCancellation?.Cancel();
             _characterImportCancellation?.Cancel();
             _pet.FocusTimerChanged -= RenderFocusTimer;
             _pet.RenderOptionsChanged -= ApplyRenderOptions;
@@ -109,8 +114,10 @@ public partial class SettingsWindow : Window
         };
         PreviewStateCombo.SelectedValue = previewState;
 
-        CharacterCombo.ItemsSource = _pet.AvailableCharacterNames;
-        CharacterCombo.SelectedItem = _pet.CurrentCharacterName;
+        var pendingCharacter = _characterSelectionCancellation is { IsCancellationRequested: false }
+            ? CharacterCombo.SelectedItem as string : null;
+        if (!preservePreview) CharacterCombo.ItemsSource = _pet.AvailableCharacterNames;
+        CharacterCombo.SelectedItem = pendingCharacter ?? _pet.CurrentCharacterName;
 
         ScaleSlider.Value = _pet.CurrentScaleMultiplier;
         SpeedSlider.Value = _pet.CurrentWalkSpeedMultiplier;
@@ -168,6 +175,8 @@ public partial class SettingsWindow : Window
     {
         if (_closed) return;
         LoadFromPet(preservePreview: true);
+        if (_characterSelectionCancellation is { IsCancellationRequested: false })
+            CharacterHint.Text = UiText.Get("캐릭터를 불러오고 있어요…");
         RenderFocusTimer();
     }
 
@@ -204,8 +213,12 @@ public partial class SettingsWindow : Window
 
         try
         {
+            // The active character is already fully decoded and frozen. Reuse it instead of
+            // opening every PNG again on the UI thread after an asynchronous switch.
+            var current = _pet.CurrentPresentation;
+            if (ReferenceEquals(_previewPresentation, current)) { UpdateCharacterHint(); return; }
             _poseTransition.Reset();
-            _previewPresentation = CharacterPresentation.Load(_pet.ResolveCharacterFolder(name));
+            _previewPresentation = current;
             PreviewRig.SetPresentation(_previewPresentation);
             PreviewRig.Visibility = Visibility.Collapsed;
             PreviewImage.Visibility = Visibility.Visible;
@@ -321,22 +334,48 @@ public partial class SettingsWindow : Window
         _lastPreviewState = state;
     }
 
-    private void CharacterCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void CharacterCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (_loading || CharacterCombo.SelectedItem is not string name)
+        if (_closed || _loading || _characterImportBusy || CharacterCombo.SelectedItem is not string name)
         {
             return;
         }
 
-        try { _pet.SwitchCharacter(name); _motionPreview?.Close(); }
+        CharacterSelectionOperation = SelectCharacterAsync(name);
+        await CharacterSelectionOperation;
+    }
+
+    private async Task SelectCharacterAsync(string name)
+    {
+        _characterSelectionCancellation?.Cancel();
+        using var cancellation = new CancellationTokenSource();
+        _characterSelectionCancellation = cancellation;
+        var revision = ++_characterSelectionRevision;
+        CharacterHint.Text = UiText.Get("캐릭터를 불러오고 있어요…");
+        try
+        {
+            var applied = await _pet.SwitchCharacterAsync(name, cancellation.Token);
+            if (_closed || cancellation.IsCancellationRequested || revision != _characterSelectionRevision) return;
+            if (applied) _motionPreview?.Close();
+            _loading = true;
+            try { CharacterCombo.SelectedItem = _pet.CurrentCharacterName; }
+            finally { _loading = false; }
+            UpdatePreview();
+        }
+        catch (OperationCanceledException) { }
         catch (Exception ex) when (ex is InvalidDataException or IOException or UnauthorizedAccessException)
         {
+            if (_closed || cancellation.IsCancellationRequested || revision != _characterSelectionRevision) return;
             System.Windows.MessageBox.Show(this, ex.Message, "캐릭터를 변경할 수 없습니다", MessageBoxButton.OK, MessageBoxImage.Warning);
             _loading = true;
-            CharacterCombo.SelectedItem = _pet.CurrentCharacterName;
-            _loading = false;
+            try { CharacterCombo.SelectedItem = _pet.CurrentCharacterName; }
+            finally { _loading = false; }
+            UpdatePreview();
         }
-        UpdatePreview();
+        finally
+        {
+            if (ReferenceEquals(_characterSelectionCancellation, cancellation)) _characterSelectionCancellation = null;
+        }
     }
 
     private void ScaleSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -422,7 +461,14 @@ public partial class SettingsWindow : Window
     private async Task RunCharacterImportAsync(Func<Task<string?>> import)
     {
         if (_characterImportBusy || _closed) return;
+        ++_characterSelectionRevision;
+        _characterSelectionCancellation?.Cancel();
+        _loading = true;
+        try { CharacterCombo.SelectedItem = _pet.CurrentCharacterName; }
+        finally { _loading = false; }
+        UpdatePreview();
         _characterImportBusy = true;
+        var selectionRevision = _pet.CharacterSelectionRevision;
         using var cancellation = new CancellationTokenSource();
         _characterImportCancellation = cancellation;
         _characterImportProgress = new Progress<CharacterImportProgress>(value =>
@@ -454,16 +500,20 @@ public partial class SettingsWindow : Window
             }
             _characterGallery?.RefreshCharacters();
             _motionPreview?.Close();
+            var names = await Task.Run(() => _pet.AvailableCharacterNames);
+            if (_closed) return;
+            var applied = !cancellation.IsCancellationRequested && selectionRevision == _pet.CharacterSelectionRevision &&
+                await _pet.SwitchCharacterAsync(name, cancellation.Token);
+            if (_closed) return;
             _loading = true;
             try
             {
-                CharacterCombo.ItemsSource = _pet.AvailableCharacterNames;
-                if (!cancellation.IsCancellationRequested) _pet.SwitchCharacter(name);
+                CharacterCombo.ItemsSource = names;
                 CharacterCombo.SelectedItem = _pet.CurrentCharacterName;
             }
             finally { _loading = false; }
             UpdatePreview();
-            CharacterImportStatusText.Text = cancellation.IsCancellationRequested
+            CharacterImportStatusText.Text = !applied
                 ? UiText.Get("설치는 이미 완료됐어요. 현재 친구는 바꾸지 않았습니다.") : UiText.Get("새 캐릭터를 추가했어요.");
         }
         catch (OperationCanceledException)
@@ -618,10 +668,14 @@ public partial class SettingsWindow : Window
         _characterGallery = new CharacterGalleryWindow(_pet) { Owner = this };
         _characterGallery.CharacterApplied += name =>
         {
+            if (_closed || _characterGallery is null) return;
             _loading = true;
-            CharacterCombo.ItemsSource = _pet.AvailableCharacterNames;
-            CharacterCombo.SelectedItem = name;
-            _loading = false;
+            try
+            {
+                CharacterCombo.ItemsSource = _characterGallery.AllCharacters.Select(item => item.Name).ToArray();
+                CharacterCombo.SelectedItem = name;
+            }
+            finally { _loading = false; }
             UpdatePreview();
         };
         _characterGallery.Closed += (_, _) => _characterGallery = null;

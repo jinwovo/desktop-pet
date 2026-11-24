@@ -16,6 +16,10 @@ public partial class MainWindow : Window
 {
     private readonly Dictionary<string, BitmapImage> _frameCache = new();
     private readonly CharacterLibrary _characterLibrary;
+    private readonly Func<string, CancellationToken, CharacterPresentation> _characterLoader;
+    private CharacterPresentation? _currentPresentation;
+    private CancellationTokenSource? _characterSwitchCancellation;
+    private long _characterSwitchRevision;
     private readonly FocusTimer _focusTimer;
     private readonly TimeProvider _quietClock;
     private readonly Func<IReadOnlyList<DesktopRect>>? _workAreasProvider;
@@ -86,10 +90,12 @@ public partial class MainWindow : Window
     public MainWindow() : this(null) { }
 
     public MainWindow(CharacterLibrary? characterLibrary, FocusTimer? focusTimer = null, string? inboxDirectory = null, TimeProvider? quietClock = null,
-        Func<IReadOnlyList<DesktopRect>>? workAreasProvider = null)
+        Func<IReadOnlyList<DesktopRect>>? workAreasProvider = null,
+        Func<string, CancellationToken, CharacterPresentation>? characterLoader = null)
     {
         _characterLibrary = characterLibrary ?? new CharacterLibrary(CharactersRoot, Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DesktopPet", "Characters"));
+        _characterLoader = characterLoader ?? ((folder, token) => CharacterPresentation.Load(folder, cancellationToken: token));
         _focusTimer = focusTimer ?? new FocusTimer();
         _quietClock = quietClock ?? TimeProvider.System;
         _workAreasProvider = workAreasProvider;
@@ -209,6 +215,7 @@ public partial class MainWindow : Window
 
     private void ApplyPresentation(CharacterPresentation presentation)
     {
+        _currentPresentation = presentation;
         _poseTransition.Reset();
         _character = presentation.Definition;
         if (_brain is not null) _brain.BehaviorProfile = _character.BehaviorProfile;
@@ -250,14 +257,65 @@ public partial class MainWindow : Window
     /// <summary>Swaps the active character at runtime (called from the tray menu).</summary>
     public void SwitchCharacter(string name)
     {
+        Dispatcher.VerifyAccess();
+        if (_disposed) return;
+        CancelCharacterSwitch();
         if (!AvailableCharacterNames.Contains(name, StringComparer.OrdinalIgnoreCase))
             throw new InvalidDataException("캐릭터 목록에서 선택해주세요.");
-        var presentation = CharacterPresentation.Load(ResolveCharacterFolder(name));
+        var presentation = _characterLoader(ResolveCharacterFolder(name), CancellationToken.None);
         ApplyPresentation(presentation);
         ApplyCurrentCharacterSizing();
 
         _settings.CharacterName = name;
         ScheduleSettingsSave();
+    }
+
+    public CharacterPresentation CurrentPresentation => _currentPresentation ?? throw new InvalidOperationException("The pet is not initialized.");
+    internal long CharacterSelectionRevision => _characterSwitchRevision;
+
+    private void CancelCharacterSwitch()
+    {
+        ++_characterSwitchRevision;
+        var previous = _characterSwitchCancellation;
+        _characterSwitchCancellation = null;
+        // The async owner disposes this source after its worker exits.
+        previous?.Cancel();
+    }
+
+    /// <summary>Prepare frozen images off-thread; only the latest live request can apply them.</summary>
+    public async Task<bool> SwitchCharacterAsync(string name, CancellationToken cancellationToken = default)
+    {
+        Dispatcher.VerifyAccess();
+        if (_disposed) return false;
+        cancellationToken.ThrowIfCancellationRequested();
+        CancelCharacterSwitch();
+        using var request = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        _characterSwitchCancellation = request;
+        var token = request.Token;
+        var revision = _characterSwitchRevision;
+        try
+        {
+            var presentation = await Task.Run(() =>
+            {
+                token.ThrowIfCancellationRequested();
+                if (!_characterLibrary.GetNames().Contains(name, StringComparer.OrdinalIgnoreCase))
+                    throw new InvalidDataException("캐릭터 목록에서 선택해주세요.");
+                return _characterLoader(_characterLibrary.Resolve(name), token);
+            }, token);
+            if (token.IsCancellationRequested || _disposed || revision != _characterSwitchRevision) return false;
+            ApplyPresentation(presentation);
+            ApplyCurrentCharacterSizing();
+            _settings.CharacterName = name;
+            ScheduleSettingsSave();
+            return true;
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { return false; }
+        catch (Exception ex) when ((_disposed || token.IsCancellationRequested || revision != _characterSwitchRevision) &&
+            ex is InvalidDataException or IOException or UnauthorizedAccessException) { return false; }
+        finally
+        {
+            if (ReferenceEquals(_characterSwitchCancellation, request)) _characterSwitchCancellation = null;
+        }
     }
 
     public void SetScaleMultiplier(double multiplier)
@@ -1068,6 +1126,7 @@ public partial class MainWindow : Window
     {
         if (_disposed) return;
         _disposed = true;
+        CancelCharacterSwitch();
         _attentionTimer.Stop();
         _windowPlatformMonitor?.Dispose();
         _focusTickTimer.Stop();

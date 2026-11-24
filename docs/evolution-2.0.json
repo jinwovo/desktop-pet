@@ -309,11 +309,20 @@
     },
     {
       "id": "P024",
-      "title": "Discovery pending: Character authoring and previews (24)",
-      "status": "planned",
+      "title": "Prepare character changes asynchronously and share frozen images while preserving the newest user selection",
+      "status": "verified",
       "milestone": "1.3.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/MainWindow.xaml.cs",
+        "src/DesktopPet.App/SettingsWindow.xaml.cs",
+        "src/DesktopPet.App/CharacterGalleryWindow.xaml.cs",
+        "src/DesktopPet.App/UiText.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/CharacterSwitchUiTests.cs",
+        "tests/DesktopPet.UiSmokeTests/CharacterGalleryRegressionTests.cs",
+        "tests/DesktopPet.UiSmokeTests/GalleryLocaleRegressionTests.cs"
+      ]
     },
     {
       "id": "P025",

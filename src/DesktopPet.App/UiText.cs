@@ -61,6 +61,7 @@ public static class UiText
         ["클릭해서 확인"] = ("Click to acknowledge", "点击确认"),
         ["클릭해서 확인 · 대기 {0}건"] = ("Click to acknowledge · {0} pending", "点击确认 · 待处理 {0} 条"),
         ["친구들을 불러오고 있어요…"] = ("Loading companions…", "正在加载伙伴…"),
+        ["캐릭터를 불러오고 있어요…"] = ("Loading character…", "正在加载角色…"),
         ["{0}종 중 {1}종"] = ("Showing {1} of {0} characters", "显示 {0} 个角色中的 {1} 个"),
         ["현재 친구: {0}"] = ("Current companion: {0}", "当前伙伴：{0}"),
         ["선택형 팬아트 팩"] = ("Optional fan-art pack", "可选同人角色包"),

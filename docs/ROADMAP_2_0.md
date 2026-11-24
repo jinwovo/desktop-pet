@@ -36,6 +36,8 @@ P022 moves directory discovery and catalog JSON reads off WPF's UI thread. A gat
 
 P023 adds a localized **Refresh (F5)** action. External character additions/removals and temporary scan errors can be resolved without reopening the gallery. Filters, selection and the current pet/preferences remain intact; repeated F5 is ignored while loading, and an older request cannot enable the button while its successor is busy. Routed keyboard/button tests, gated workers and KO/EN/zh-CN minimum-size captures pass. P021-P023 remain unreleased until the 1.3.0 milestone reaches 30 verified patches.
 
+P024 moves character discovery and full image decoding to a background task for Settings selection, gallery application and post-import activation. The pet and Settings share the same frozen presentation; an exclusive PNG lock verifies that the preview does not reopen its files. Current scale/simulation stay live while loading. Gated tests cover rapid selections, stale success/failure, cancellation, disposal, locale changes while pending, closed owners, a newer gallery choice during import and a cancelled import after a pending selection. Full nine-character UI checks pass. P021-P024 remain development changes for 1.3.0.
+
 The [1.2.0 release audit](RELEASE_AUDIT_1_2.md) records the original post-publication API rate-limit failure and the successful read-only comparison of all four public files.
 
 | Verified patch threshold | Planned release | Main review area |

@@ -385,6 +385,7 @@ internal static class GalleryLocaleRegressionTests
             cards.SelectedItem = gallery.AllCharacters.Single(item => item.Name == "사용자 Locale");
             Check(tokens[0].IsCancellationRequested && preview.IsEnabled, "Changing selection did not cancel obsolete decoding or allow a new preview");
             apply.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Wait(gallery.ApplyOperation);
             var appliedStatus = status.Text;
             Start(1);
             foreach (var language in new[] { "ko", "en", "zh-CN" })
@@ -410,6 +411,7 @@ internal static class GalleryLocaleRegressionTests
             search.Text = "";
             cards.SelectedItem = gallery.AllCharacters.Single(item => item.Name == "Companion");
             Start(3); apply.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Wait(gallery.ApplyOperation);
             var sameCardStatus = status.Text;
             Check(tokens[3].IsCancellationRequested && preview.IsEnabled, "Applying a card retained its pending preview operation");
             release[3].Set(); Wait(operations[3]);

@@ -33,6 +33,7 @@ public partial class CharacterGalleryWindow : Window
     private IReadOnlyList<CharacterGalleryItem> _all = Array.Empty<CharacterGalleryItem>();
     private bool _closed, _started, _filtering, _previewBusy;
     private bool _catalogLoading, _catalogFailed;
+    private bool _applyBusy;
     private string _statusKey = "";
     private object[] _statusArguments = [];
     private MotionPreviewWindow? _motionPreview;
@@ -76,6 +77,7 @@ public partial class CharacterGalleryWindow : Window
 
     public Task LoadingTask { get; private set; } = Task.CompletedTask;
     public Task PreviewOperation { get; private set; } = Task.CompletedTask;
+    public Task ApplyOperation { get; private set; } = Task.CompletedTask;
     public IReadOnlyList<CharacterGalleryItem> AllCharacters => _all;
     public event Action<string>? CharacterApplied;
     private void ApplyRenderOptions(int fps, bool reducedMotion) => _motionPreview?.SetRenderOptions(fps, reducedMotion);
@@ -276,7 +278,7 @@ public partial class CharacterGalleryWindow : Window
         PreviewImage.Source = item?.Thumbnail;
         SelectedNameText.Text = item?.Name ?? "";
         SelectedDetailText.Text = UiText.Get(item?.Detail ?? "친구를 선택해보세요.");
-        ApplyButton.IsEnabled = item is { IsAvailable: true };
+        ApplyButton.IsEnabled = item is { IsAvailable: true } && !_applyBusy;
         PreviewButton.IsEnabled = item is { IsAvailable: true } && !_previewBusy;
     }
 
@@ -341,18 +343,38 @@ public partial class CharacterGalleryWindow : Window
         }
     }
 
-    private void Apply_Click(object sender, RoutedEventArgs e)
+    private async void Apply_Click(object sender, RoutedEventArgs e)
     {
-        if (_closed || CharacterCards.SelectedItem is not CharacterGalleryItem { IsAvailable: true } item) return;
+        if (_closed || _applyBusy) return;
+        ApplyOperation = ApplySelectedAsync();
+        await ApplyOperation;
+    }
+
+    private async Task ApplySelectedAsync()
+    {
+        if (_closed || _applyBusy || CharacterCards.SelectedItem is not CharacterGalleryItem { IsAvailable: true } item) return;
+        _applyBusy = true;
         CancelPreview();
         UpdateSelection();
+        SetStatus("캐릭터를 불러오고 있어요…");
         try
         {
-            _pet.SwitchCharacter(item.Name);
+            var applied = await _pet.SwitchCharacterAsync(item.Name, _lifetime.Token);
+            if (_closed) return;
+            if (!applied) { SetStatus("현재 친구: {0}", _pet.CurrentCharacterName); return; }
             CharacterApplied?.Invoke(item.Name);
             SetStatus("{0} 적용했어요.", item.Name);
         }
-        catch (Exception ex) when (IsCharacterError(ex)) { SetStatus("적용하지 못했어요. 현재 친구는 그대로예요."); }
+        catch (OperationCanceledException) { }
+        catch (Exception ex) when (IsCharacterError(ex))
+        {
+            if (!_closed) SetStatus("적용하지 못했어요. 현재 친구는 그대로예요.");
+        }
+        finally
+        {
+            _applyBusy = false;
+            if (!_closed) UpdateSelection();
+        }
     }
 
     private void Close_Click(object sender, RoutedEventArgs e) => Close();

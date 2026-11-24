@@ -300,7 +300,11 @@ internal static class CharacterGalleryRegressionTests
     }
 
     private static HashSet<string> Names(ListBox cards) => cards.Items.Cast<CharacterGalleryItem>().Select(item => item.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
-    private static void Click(Window window, string name) => ((Button)window.FindName(name)).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+    private static void Click(Window window, string name)
+    {
+        ((Button)window.FindName(name)).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        if (window is CharacterGalleryWindow gallery && name == "ApplyButton") Wait(gallery.ApplyOperation);
+    }
     private static void Wait(Task task)
     {
         var timeout = Stopwatch.StartNew();
