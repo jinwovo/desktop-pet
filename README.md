@@ -109,6 +109,8 @@ Use the minute fields and **시간 적용** to change durations. Changes preserv
 
 The same 1.4.0 preview shows **Focus sessions completed** for this app run. **Reset count** in Settings or the tray/pet menu clears only that number; it keeps the current countdown, temporary extensions and unread notifications. Breaks do not increase the count, and the count is not saved between app runs. This is also absent from the 1.3.0 download.
 
+Also in 1.4.0 development, switching Settings language keeps unapplied timer and quiet-hour inputs, including the schedule checkbox. Apply remains explicit; a valid backup restore replaces these drafts with its restored values.
+
 ## Notification controls
 
 - Auto-hide closes a bubble without deleting it; the unread tray entry remains available.

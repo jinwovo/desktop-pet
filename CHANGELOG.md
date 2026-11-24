@@ -4,6 +4,7 @@
 
 - P031: add **Add 5 min** to Settings and the shared tray/pet focus menu. Extend only the current focus or break, retain pause state and saved defaults, and report added active time at completion. Enforce a 24-hour total session cap, complete expired sessions once, and keep an old request from extending a new session started by a completion callback. Localize controls/tooltips in KO/EN/zh-CN and ignore closed/disposed callbacks.
 - P032: show completed focus sessions for this app run in Settings and the shared menu. Reset only the counter without ticking or stopping the timer, changing extensions/defaults or acknowledging unread notifications. Refresh immediately when only the count changes, exclude breaks, localize the count/reset controls and ignore closed/disposed callbacks. The count is not persisted.
+- P033: preserve unapplied focus/break minutes, quiet-hour text and the pending schedule-enable choice when switching Settings language. Keep valid, partial, invalid and whitespace drafts intact until Apply. Explicit valid backup restores still replace drafts with restored preferences; rejected restores and closed language callbacks leave them intact.
 
 ## 1.3.0 — evolution patches P021–P030
 

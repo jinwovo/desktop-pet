@@ -22,6 +22,11 @@ internal static class Program
         MainWindow? pet = null;
         try
         {
+            if (args.Contains("--settings-drafts-only"))
+            {
+                SettingsDraftLocaleUiTests.Run(folder);
+                return 0;
+            }
             if (args.Contains("--focus-count-only"))
             {
                 FocusCountUiTests.Run(folder, args.Contains("--capture"));
@@ -376,6 +381,7 @@ internal static class Program
             FocusTimerUiTests.Run(folder);
             FocusExtensionUiTests.Run(folder, args.Contains("--capture"));
             FocusCountUiTests.Run(folder, args.Contains("--capture"));
+            SettingsDraftLocaleUiTests.Run(folder);
             QuietHoursUiTests.Run(folder);
             RenderOptionsUiTests.Run(folder);
             PreferencesBackupUiTests.Run(folder);

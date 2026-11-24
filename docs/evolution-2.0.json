@@ -466,11 +466,15 @@
     },
     {
       "id": "P033",
-      "title": "Discovery pending: Focus and notification workflows (33)",
-      "status": "planned",
+      "title": "Preserve unapplied timer and quiet-hour drafts when switching Settings language",
+      "status": "verified",
       "milestone": "1.4.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/SettingsWindow.xaml.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/SettingsDraftLocaleUiTests.cs"
+      ]
     },
     {
       "id": "P034",

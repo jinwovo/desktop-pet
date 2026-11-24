@@ -58,6 +58,8 @@ P031 begins 1.4.0 development with **Add 5 min** in Settings and the shared tray
 
 P032 displays the app-run completed-focus count in Settings and the shared tray/pet menu. Resetting it changes no timer fields, emits no completion, preserves unread receipt bytes and does not persist statistics. The UI event cache includes the count, so a count-only reset immediately refreshes the label; reverting to the original caption/status-only cache reproduces a stale-count failure, and restoring the fix passes. Five new core regression groups cover breaks, idempotence, unticked deadlines/checkpoints, paused extensions/defaults, generation callbacks and disposal. Actual WPF/native-menu tests cover localization, count-only event delivery, both menu commands, saved preferences, receipts and closed/disposed callbacks. All 251 core checks and the full nine-character UI suite pass; KO/EN/zh-CN focus-card captures were inspected. P032 remains 1.4.0 development work.
 
+P033 repairs locale-refresh draft loss in Settings. Real language selection originally overwrote unapplied focus/break minutes, quiet-hour text and the pending schedule checkbox with stored values. The locale handler now preserves all five raw editor values around its existing preview refresh. Tests reproduce both original failures, then verify valid/partial/invalid/whitespace edits across KO/EN/zh-CN, explicit Apply, unchanged active countdown, authoritative valid backup restore, rejected backup and closed callbacks. This is a 1.4.0 development fix; the immutable 1.3.0 download is unchanged.
+
 | Verified patch threshold | Planned release | Main review area |
 | --- | --- | --- |
 | 10 | 1.1.0 | Motion and runtime defects |

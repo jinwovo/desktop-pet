@@ -174,7 +174,17 @@ public partial class SettingsWindow : Window
     private void RefreshLanguage()
     {
         if (_closed) return;
+        var focusDraft = FocusMinutesBox.Text;
+        var breakDraft = BreakMinutesBox.Text;
+        var quietStartDraft = QuietStartBox.Text;
+        var quietEndDraft = QuietEndBox.Text;
+        var quietEnabledDraft = QuietHoursCheck.IsChecked;
         LoadFromPet(preservePreview: true);
+        FocusMinutesBox.Text = focusDraft;
+        BreakMinutesBox.Text = breakDraft;
+        QuietStartBox.Text = quietStartDraft;
+        QuietEndBox.Text = quietEndDraft;
+        QuietHoursCheck.IsChecked = quietEnabledDraft;
         if (_characterSelectionCancellation is { IsCancellationRequested: false })
             CharacterHint.Text = UiText.Get("캐릭터를 불러오고 있어요…");
         RenderFocusTimer();
