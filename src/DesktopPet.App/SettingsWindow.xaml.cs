@@ -18,6 +18,9 @@ public partial class SettingsWindow : Window
     private readonly MainWindow _pet;
     private bool _loading = true;
     private bool _closed;
+    private const string QuietHoursHelpKey = "로컬 시간 HH:mm. 자정을 넘길 수 있고 같은 시간은 예약하지 않아요.";
+    private string _focusDurationStatusKey = "";
+    private string _quietHoursStatusKey = QuietHoursHelpKey;
     private bool _characterImportBusy;
     private Task _characterImportOperation = Task.CompletedTask;
     private CancellationTokenSource? _characterImportCancellation;
@@ -103,6 +106,11 @@ public partial class SettingsWindow : Window
 
     private void LoadFromPet(bool preservePreview = false)
     {
+        if (!preservePreview)
+        {
+            _focusDurationStatusKey = "";
+            _quietHoursStatusKey = QuietHoursHelpKey;
+        }
         var previewState = preservePreview && PreviewStateCombo.SelectedValue is PetState selected ? selected : PetState.Idle;
         _loading = true;
         LanguageCombo.SelectedValue = _pet.UiLanguagePreference;
@@ -143,6 +151,7 @@ public partial class SettingsWindow : Window
         UpdateValueLabels();
         if (preservePreview && _previewPresentation is not null) UpdateCharacterHint();
         else UpdatePreview();
+        RenderDurationFeedback();
     }
 
     private void LoadMonitorChoices()
@@ -185,6 +194,7 @@ public partial class SettingsWindow : Window
         QuietStartBox.Text = quietStartDraft;
         QuietEndBox.Text = quietEndDraft;
         QuietHoursCheck.IsChecked = quietEnabledDraft;
+        RenderDurationFeedback();
         if (_characterSelectionCancellation is { IsCancellationRequested: false })
             CharacterHint.Text = UiText.Get("캐릭터를 불러오고 있어요…");
         RenderFocusTimer();
@@ -194,6 +204,13 @@ public partial class SettingsWindow : Window
     {
         ScaleValue.Text = $"{ScaleSlider.Value * 100:F0}%";
         SpeedValue.Text = $"{SpeedSlider.Value:0.##}x";
+    }
+
+    private void RenderDurationFeedback()
+    {
+        if (_closed) return;
+        FocusDurationStatus.Text = UiText.Get(_focusDurationStatusKey);
+        QuietHoursStatus.Text = UiText.Get(_quietHoursStatusKey);
     }
 
     private void ApplyRenderOptions(int maximumFps, bool reducedMotion)
@@ -584,13 +601,16 @@ public partial class SettingsWindow : Window
 
     private void QuietHoursApply_Click(object sender, RoutedEventArgs e)
     {
+        if (_closed) return;
         if (!QuietHours.TryParse(QuietStartBox.Text, out var start) || !QuietHours.TryParse(QuietEndBox.Text, out var end))
         {
-            QuietHoursStatus.Text = UiText.Get("00:00~23:59 사이 HH:mm 형식으로 입력해주세요.");
+            _quietHoursStatusKey = "00:00~23:59 사이 HH:mm 형식으로 입력해주세요.";
+            RenderDurationFeedback();
             return;
         }
         _pet.SetQuietHours(QuietHoursCheck.IsChecked == true, start, end);
-        QuietHoursStatus.Text = start == end ? UiText.Get("같은 시작·종료 시간은 예약을 활성화하지 않아요.") : UiText.Get("예약을 적용했어요. 미확인 알림은 계속 보관합니다.");
+        _quietHoursStatusKey = start == end ? "같은 시작·종료 시간은 예약을 활성화하지 않아요." : "예약을 적용했어요. 미확인 알림은 계속 보관합니다.";
+        RenderDurationFeedback();
     }
 
     private void AssistantConnections_Click(object sender, RoutedEventArgs e)
@@ -715,14 +735,17 @@ public partial class SettingsWindow : Window
     private void FocusStart_Click(object sender, RoutedEventArgs e) => _pet.StartFocusTimer();
     private void FocusDurationApply_Click(object sender, RoutedEventArgs e)
     {
+        if (_closed) return;
         if (!int.TryParse(FocusMinutesBox.Text, out var focus) || !int.TryParse(BreakMinutesBox.Text, out var rest) ||
             focus is < 1 or > 180 || rest is < 1 or > 60)
         {
-            FocusDurationStatus.Text = UiText.Get("집중 1~180분, 휴식 1~60분을 입력해주세요.");
+            _focusDurationStatusKey = "집중 1~180분, 휴식 1~60분을 입력해주세요.";
+            RenderDurationFeedback();
             return;
         }
         _pet.SetFocusDurations(focus, rest);
-        FocusDurationStatus.Text = UiText.Get("다음 시작·다시 시작부터 적용해요. 진행 중인 시간은 유지합니다.");
+        _focusDurationStatusKey = "다음 시작·다시 시작부터 적용해요. 진행 중인 시간은 유지합니다.";
+        RenderDurationFeedback();
     }
     private void FocusPause_Click(object sender, RoutedEventArgs e) => _pet.PauseOrResumeFocusTimer();
     private void FocusExtend_Click(object sender, RoutedEventArgs e)

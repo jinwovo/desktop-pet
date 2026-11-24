@@ -60,6 +60,8 @@ P032 displays the app-run completed-focus count in Settings and the shared tray/
 
 P033 repairs locale-refresh draft loss in Settings. Real language selection originally overwrote unapplied focus/break minutes, quiet-hour text and the pending schedule checkbox with stored values. The locale handler now preserves all five raw editor values around its existing preview refresh. Tests reproduce both original failures, then verify valid/partial/invalid/whitespace edits across KO/EN/zh-CN, explicit Apply, unchanged active countdown, authoritative valid backup restore, rejected backup and closed callbacks. This is a 1.4.0 development fix; the immutable 1.3.0 download is unchanged.
 
+P034 preserves timer/schedule feedback across locale changes. Actual WPF tests reproduce the original loss of validation messages, then check localized errors, successful Apply, equal-time warnings, active-session preservation and closed callbacks across KO/EN/zh-CN. Resource keys retain the latest result while the generic translator refreshes static labels. Authoritative validated restores clear stale feedback; rejected restores keep it. Native focus-card captures confirm readable localized feedback. This remains 1.4.0 development work.
+
 | Verified patch threshold | Planned release | Main review area |
 | --- | --- | --- |
 | 10 | 1.1.0 | Motion and runtime defects |

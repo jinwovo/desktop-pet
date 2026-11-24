@@ -478,11 +478,15 @@
     },
     {
       "id": "P034",
-      "title": "Discovery pending: Focus and notification workflows (34)",
-      "status": "planned",
+      "title": "Preserve and localize timer validation and Apply feedback across language changes",
+      "status": "verified",
       "milestone": "1.4.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/SettingsWindow.xaml.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/SettingsFeedbackUiTests.cs"
+      ]
     },
     {
       "id": "P035",
