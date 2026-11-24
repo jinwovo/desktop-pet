@@ -344,6 +344,7 @@ public partial class MainWindow : Window
     /// <returns>True if an unavailable backed-up character was kept as the current character.</returns>
     public bool RestorePreferencesJson(string json)
     {
+        Dispatcher.VerifyAccess();
         ObjectDisposedException.ThrowIf(_disposed, this);
         var candidate = PetSettingsBackup.ReadJson(json, _settings);
         var missing = !AvailableCharacterNames.Contains(candidate.CharacterName, StringComparer.OrdinalIgnoreCase);
@@ -351,6 +352,7 @@ public partial class MainWindow : Window
         var presentation = candidate.CharacterName.Equals(CurrentCharacterName, StringComparison.OrdinalIgnoreCase)
             ? null : CharacterPresentation.Load(ResolveCharacterFolder(candidate.CharacterName));
         // All untrusted JSON and replacement artwork are validated before changing live state.
+        CancelCharacterSwitch();
         _settings = candidate;
         if (presentation is not null) ApplyPresentation(presentation);
         _settings.CharacterName = CurrentCharacterName;

@@ -114,7 +114,7 @@ public partial class SettingsWindow : Window
         };
         PreviewStateCombo.SelectedValue = previewState;
 
-        var pendingCharacter = _characterSelectionCancellation is { IsCancellationRequested: false }
+        var pendingCharacter = preservePreview && _characterSelectionCancellation is { IsCancellationRequested: false }
             ? CharacterCombo.SelectedItem as string : null;
         if (!preservePreview) CharacterCombo.ItemsSource = _pet.AvailableCharacterNames;
         CharacterCombo.SelectedItem = pendingCharacter ?? _pet.CurrentCharacterName;
@@ -650,6 +650,8 @@ public partial class SettingsWindow : Window
         try
         {
             var missing = _pet.RestorePreferencesJson(PetSettingsBackup.ReadFile(path));
+            ++_characterSelectionRevision;
+            _characterSelectionCancellation?.Cancel();
             LoadFromPet();
             RenderFocusTimer();
             PreferencesTransferStatus.Text = missing ? UiText.Get("설정을 복원했어요. 설치되지 않은 캐릭터 대신 현재 친구를 유지합니다.") : UiText.Get("설정을 복원했어요. AI 연결과 진행 중인 집중 시간은 유지합니다.");

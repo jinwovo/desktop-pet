@@ -12,9 +12,9 @@ internal static class CharacterSwitchUiTests
     public static void Run(string root)
     {
         var uiThread = Environment.CurrentManagedThreadId;
-        var entered = Enumerable.Range(0, 8).Select(_ => new ManualResetEventSlim()).ToArray();
-        var release = Enumerable.Range(0, 8).Select(_ => new ManualResetEventSlim()).ToArray();
-        var tokens = new CancellationToken[8];
+        var entered = Enumerable.Range(0, 10).Select(_ => new ManualResetEventSlim()).ToArray();
+        var release = Enumerable.Range(0, 10).Select(_ => new ManualResetEventSlim()).ToArray();
+        var tokens = new CancellationToken[10];
         var decoderThread = 0;
         var calls = 0;
         var operations = new List<Task>();
@@ -25,7 +25,7 @@ internal static class CharacterSwitchUiTests
                 decoderThread = Environment.CurrentManagedThreadId;
                 tokens[call] = token;
                 entered[call].Set();
-                if (call is 1 or 4 or 5 or 7 && decoderThread != uiThread && !release[call].Wait(TimeSpan.FromSeconds(15)))
+                if (call is 1 or 4 or 5 or 7 or 8 && decoderThread != uiThread && !release[call].Wait(TimeSpan.FromSeconds(15)))
                     throw new TimeoutException("Character decoder was never released");
                 if (call == 3 || call == 1 && decoderThread != uiThread) throw new IOException("Controlled character decoder failure");
                 // Model a decoder finishing even after its cancellation request.
@@ -90,15 +90,28 @@ internal static class CharacterSwitchUiTests
             Check(!superseded.Result && tokens[5].IsCancellationRequested && ReferenceEquals(synchronous, pet.CurrentPresentation),
                 "Synchronous selection failed to supersede pending asynchronous preparation");
 
+            var restoring = pet.SwitchCharacterAsync("Nimbus");
+            operations.Add(restoring); Until(() => entered[7].IsSet);
+            try { pet.RestorePreferencesJson("{}"); throw new Exception("Invalid backup accepted"); }
+            catch (InvalidDataException) { }
+            Check(!tokens[7].IsCancellationRequested, "Rejected backup cancelled an otherwise valid selection");
+            pet.RestorePreferencesJson(PetSettingsBackup.WriteJson(new PetSettings { CharacterName="Ember", ScaleMultiplier=1.25, Visible=false, QuietMode=true }));
+            var restoredPreferences = JsonSerializer.Serialize(Get(pet, "_settings"));
+            release[7].Set(); Wait(restoring);
+            Check(!restoring.Result && tokens[7].IsCancellationRequested && pet.CurrentCharacterName == "Ember" &&
+                pet.CurrentScaleMultiplier == 1.25 && restoredPreferences == JsonSerializer.Serialize(Get(pet, "_settings")),
+                "A pending character decode overrode a newer validated preference restore");
+            Console.WriteLine("PASS Validated preference restore supersedes pending selection; rejected backups leave the active request intact");
+
             var closing = pet.SwitchCharacterAsync("Nimbus");
-            operations.Add(closing); Until(() => entered[7].IsSet);
+            operations.Add(closing); Until(() => entered[8].IsSet);
             timer.Stop(); Set(pet, "_settingsDirty", false);
             pet.DisposeResources();
-            release[7].Set(); Wait(closing);
-            Check(!closing.Result && tokens[7].IsCancellationRequested && ReferenceEquals(synchronous, pet.CurrentPresentation) &&
+            release[8].Set(); Wait(closing);
+            Check(!closing.Result && tokens[8].IsCancellationRequested && ReferenceEquals(synchronous, pet.CurrentPresentation) &&
                 !(bool)Get(pet, "_settingsDirty")!, "Disposal allowed a late character apply or preference write");
             var afterDisposal = pet.SwitchCharacterAsync("Ember"); Wait(afterDisposal);
-            Check(!afterDisposal.Result && calls == 7, "Disposed pet started new decoding work");
+            Check(!afterDisposal.Result && calls == 8, "Disposed pet started new decoding work");
             Console.WriteLine("PASS Explicit synchronous selection supersedes old work; disposal cancels pending decoding and prevents late application");
         }
         finally
@@ -114,6 +127,7 @@ internal static class CharacterSwitchUiTests
 
     private static void VerifyImportCancelsPendingSelection(string root)
     {
+        var priorLanguage = UiText.Language;
         using var entered = new ManualResetEventSlim();
         using var release = new ManualResetEventSlim();
         CancellationToken decoderToken = default;
@@ -139,11 +153,24 @@ internal static class CharacterSwitchUiTests
             var combo = (ComboBox)settings.FindName("CharacterCombo");
             combo.SelectedItem = "Nimbus";
             selection = settings.CharacterSelectionOperation; Until(() => entered.IsSet);
+            var backup = Path.Combine(root, "switch-ui-restore.json");
+            PetSettingsBackup.SaveFile(backup, new PetSettings { CharacterName="Ember", Visible=false, QuietMode=true, Language="en" });
+            Invoke(settings, "RestorePreferencesFromFile", backup);
+            Check(decoderToken.IsCancellationRequested && combo.SelectedItem is "Ember" && pet.CurrentCharacterName == "Ember" &&
+                ReferenceEquals(pet.CurrentPresentation, Get(settings, "_previewPresentation")),
+                "Backup restore kept a superseded pending character in the Settings combo or preview");
+            release.Set(); Wait(selection);
+            Check(combo.SelectedItem is "Ember" && pet.CurrentCharacterName == "Ember", "Late Settings selection undid a restored character");
+            Console.WriteLine("PASS Restoring a backup immediately synchronizes Settings selection and cached preview while an older decoder is still blocked");
+            Set(pet, "_settingsDirty", false);
+            entered.Reset(); release.Reset();
+            combo.SelectedItem = "Nimbus";
+            selection = settings.CharacterSelectionOperation; Until(() => entered.IsSet);
             import = (Task)typeof(SettingsWindow).GetMethod("RunCharacterImportAsync", BindingFlags.Instance | BindingFlags.NonPublic)!
                 .Invoke(settings, new object[] { new Func<Task<string?>>(() => pending.Task) })!;
-            Check(decoderToken.IsCancellationRequested && combo.SelectedItem is "Companion", "Starting an import left an obsolete selection pending in the combo");
+            Check(decoderToken.IsCancellationRequested && combo.SelectedItem is "Ember", "Starting an import left an obsolete selection pending in the combo");
             pending.SetResult(null); release.Set(); Wait(import); Wait(selection);
-            Check(pet.CurrentCharacterName == "Companion" && combo.SelectedItem is "Companion" && combo.IsEnabled &&
+            Check(pet.CurrentCharacterName == "Ember" && combo.SelectedItem is "Ember" && combo.IsEnabled &&
                 !(bool)Get(pet, "_settingsDirty")! && ReferenceEquals(pet.CurrentPresentation, Get(settings, "_previewPresentation")),
                 "Cancelling an import revived a previous selection or left a mismatched preview/preferences");
             Console.WriteLine("PASS Starting then cancelling import cancels an older pending selection and keeps combo, preview, pet and preferences consistent");
@@ -154,6 +181,7 @@ internal static class CharacterSwitchUiTests
             if (selection is not null) { try { Wait(selection); } catch { } }
             if (import is not null) { try { Wait(import); } catch { } }
             timer.Stop(); Set(pet, "_settingsDirty", false); pet.DisposeResources(); pet.Close();
+            UiText.SetLanguage(priorLanguage);
         }
     }
 
