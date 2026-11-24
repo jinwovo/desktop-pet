@@ -490,11 +490,18 @@
     },
     {
       "id": "P035",
-      "title": "Discovery pending: Focus and notification workflows (35)",
-      "status": "planned",
+      "title": "Prepare 25/5 or 50/10 duration drafts without changing active timers or defaults",
+      "status": "verified",
       "milestone": "1.4.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/SettingsWindow.xaml",
+        "src/DesktopPet.App/SettingsWindow.xaml.cs",
+        "src/DesktopPet.App/UiText.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/FocusPresetUiTests.cs",
+        "tests/DesktopPet.UiSmokeTests/EvolutionMotionUiTests.cs"
+      ]
     },
     {
       "id": "P036",

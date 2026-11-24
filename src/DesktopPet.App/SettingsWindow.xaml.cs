@@ -58,6 +58,7 @@ public partial class SettingsWindow : Window
         LoadFromPet();
         RenderFocusTimer();
         _pet.FocusTimerChanged += RenderFocusTimer;
+        RefreshDurationPresetTooltips();
         _pet.RenderOptionsChanged += ApplyRenderOptions;
         ApplyRenderOptions(_pet.MaximumFps, _pet.ReducedMotion);
         _previewTimer.Tick += (_, _) => { if (IsPreviewActive && !NeedsLiveRendering) RenderPreview(); };
@@ -198,6 +199,7 @@ public partial class SettingsWindow : Window
         if (_characterSelectionCancellation is { IsCancellationRequested: false })
             CharacterHint.Text = UiText.Get("캐릭터를 불러오고 있어요…");
         RenderFocusTimer();
+        RefreshDurationPresetTooltips();
     }
 
     private void UpdateValueLabels()
@@ -733,6 +735,23 @@ public partial class SettingsWindow : Window
     }
 
     private void FocusStart_Click(object sender, RoutedEventArgs e) => _pet.StartFocusTimer();
+    private void Preset25_Click(object sender, RoutedEventArgs e) => FillDurationDraft("25", "5");
+    private void Preset50_Click(object sender, RoutedEventArgs e) => FillDurationDraft("50", "10");
+
+    private void FillDurationDraft(string focus, string rest)
+    {
+        if (_closed) return;
+        FocusMinutesBox.Text = focus;
+        BreakMinutesBox.Text = rest;
+        _focusDurationStatusKey = "입력칸만 채웠어요. 시간 적용을 눌러 반영하세요.";
+        RenderDurationFeedback();
+    }
+
+    private void RefreshDurationPresetTooltips()
+    {
+        FocusPreset25Button.ToolTip = FocusPreset50Button.ToolTip = UiText.Get("입력칸만 채웁니다. 현재 타이머와 기본 시간은 바뀌지 않아요.");
+    }
+
     private void FocusDurationApply_Click(object sender, RoutedEventArgs e)
     {
         if (_closed) return;

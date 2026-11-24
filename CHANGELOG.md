@@ -6,6 +6,7 @@
 - P032: show completed focus sessions for this app run in Settings and the shared menu. Reset only the counter without ticking or stopping the timer, changing extensions/defaults or acknowledging unread notifications. Refresh immediately when only the count changes, exclude breaks, localize the count/reset controls and ignore closed/disposed callbacks. The count is not persisted.
 - P033: preserve unapplied focus/break minutes, quiet-hour text and the pending schedule-enable choice when switching Settings language. Keep valid, partial, invalid and whitespace drafts intact until Apply. Explicit valid backup restores still replace drafts with restored preferences; rejected restores and closed language callbacks leave them intact.
 - P034: retain timer/schedule validation and Apply feedback as resource keys so language changes translate the latest result instead of clearing it. Keep error, success and equal-range messages independent. Validated restores clear stale feedback; rejected restores retain it, and closed Apply callbacks cannot modify preferences.
+- P035: add 25/5 and 50/10 duration quick-fill buttons. Change only the editable draft, show a localized Apply reminder and leave saved defaults, active/paused sessions and temporary extensions unchanged until explicit Apply. Preserve drafts through language changes, replace stale validation with draft feedback and ignore closed callbacks.
 
 ## 1.3.0 — evolution patches P021–P030
 

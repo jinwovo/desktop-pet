@@ -111,6 +111,8 @@ The same 1.4.0 preview shows **Focus sessions completed** for this app run. **Re
 
 Also in 1.4.0 development, switching Settings language keeps unapplied timer and quiet-hour inputs, including the schedule checkbox, and translates the latest validation/Apply feedback. Apply remains explicit; a valid backup restore replaces these drafts with its restored values and clears stale feedback.
 
+The 1.4.0 preview also offers **25 / 5** and **50 / 10** quick-fill buttons. They fill focus/break minute fields only; use **Apply time** to change future defaults. A running or paused session and any added time stay intact.
+
 ## Notification controls
 
 - Auto-hide closes a bubble without deleting it; the unread tray entry remains available.

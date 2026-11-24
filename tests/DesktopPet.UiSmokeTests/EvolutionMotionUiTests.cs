@@ -40,6 +40,10 @@ internal static class EvolutionMotionUiTests
             motion.Show();
             DrainDispatcher();
 
+            // Showing a preview can already start its automatic walk before the gaze probe.
+            // Exercise that starting condition deterministically instead of depending on timing.
+            Invoke((PetBrain)Get(motion, "_brain")!, "ChangeState", PetState.Walk);
+            Invoke(motion, "RenderActor", 0d);
             VerifyGazeSourceStability(motion, presentation);
             VerifySettingsSettling(settings);
             VerifyPreviewLifecycle(settings, motion);
@@ -63,6 +67,8 @@ internal static class EvolutionMotionUiTests
 
     private static void VerifyGazeSourceStability(MotionPreviewWindow motion, CharacterPresentation presentation)
     {
+        // This probe checks resting gaze; walk-to-rest settling is exercised separately.
+        Invoke(motion, "ResetScene");
         var brain = (PetBrain)Get(motion, "_brain")!;
         var actor = (Image)motion.FindName("Actor");
         var gaze = (CursorGazeController)Get(motion, "_cursorGaze")!;

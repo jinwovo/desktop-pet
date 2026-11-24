@@ -146,6 +146,11 @@
                     <TextBox x:Name="BreakMinutesBox" Width="42" Margin="6,0,6,0" VerticalContentAlignment="Center"/>
                     <Button x:Name="FocusDurationApplyButton" Content="시간 적용" Padding="8,4" Click="FocusDurationApply_Click"/>
                 </WrapPanel>
+                <WrapPanel Margin="0,0,0,6">
+                    <TextBlock Text="빠른 입력 · 집중/휴식(분)" FontSize="11" Foreground="#777777" VerticalAlignment="Center" Margin="0,0,6,0" />
+                    <Button x:Name="FocusPreset25Button" Content="25 / 5" Padding="8,4" Click="Preset25_Click" />
+                    <Button x:Name="FocusPreset50Button" Content="50 / 10" Padding="8,4" Margin="6,0,0,0" Click="Preset50_Click" />
+                </WrapPanel>
                 <TextBlock x:Name="FocusDurationStatus" FontSize="11" Foreground="#777777" TextWrapping="Wrap" Margin="0,0,0,6"/>
                 <WrapPanel>
                     <Button x:Name="FocusStartButton" Content="집중 시작" Padding="10,5" Click="FocusStart_Click" />

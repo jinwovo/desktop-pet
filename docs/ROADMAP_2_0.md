@@ -62,6 +62,8 @@ P033 repairs locale-refresh draft loss in Settings. Real language selection orig
 
 P034 preserves timer/schedule feedback across locale changes. Actual WPF tests reproduce the original loss of validation messages, then check localized errors, successful Apply, equal-time warnings, active-session preservation and closed callbacks across KO/EN/zh-CN. Resource keys retain the latest result while the generic translator refreshes static labels. Authoritative validated restores clear stale feedback; rejected restores keep it. Native focus-card captures confirm readable localized feedback. This remains 1.4.0 development work.
 
+P035 adds 25/5 and 50/10 quick-fill controls. Tests prove that they only prepare a draft across stopped/running/paused timers, do not schedule a save, preserve temporary extensions and require explicit Apply/restart for configured defaults. KO/EN/zh-CN feedback/tooltips and closed callbacks are covered. The full suite exposed an older gaze-fixture dependency on whether automatic walking had started: a deterministic pre-walk reproduces it, and resetting only the resting-gaze fixture fixes its precondition without changing production settling or weakening assertions. That test repair is part of validation, not another product patch. P035 remains 1.4.0 development work.
+
 | Verified patch threshold | Planned release | Main review area |
 | --- | --- | --- |
 | 10 | 1.1.0 | Motion and runtime defects |
