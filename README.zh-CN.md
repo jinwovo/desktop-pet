@@ -213,6 +213,8 @@ GIF 根据实际移动记录生成，并非帧率基准测试。桌面宠物、�
 
 **1.3.0 开发预览：**选择卡片后点击 **导出 ZIP** 即可分享角色包。请选择角色文件夹外的新 ZIP 文件名，已有文件不会被覆盖。导出会先验证副本，仅保存 `character.json` 及其引用的 PNG；可点击 **取消导出** 或关闭画廊中止。当前宠物保持不变，接收者通过普通 ZIP 导入安装。1.2.0 下载尚不包含此功能，详见[角色包指南](docs/CHARACTER_PACKS.md#export-a-character-zip-130-development)。
 
+1.3.0 动作预览还新增 **暂停 / 继续** 和 **下一帧**。按所选 30/60/120 FPS 逐帧查看行走、下落和姿态过渡。隐藏或最小化后仍保持暂停；暂停时点击 **重置** 会重新布置场景并保持暂停。桌面宠物仍独立运行。
+
 本次新增的布丁狗（Pompompurin）、大耳狗（Cinnamoroll）和酷洛米（Kuromi）分别位列[2026 年三丽鸥角色大赏官方结果](https://corporate.sanrio.co.jp/en/news/20260628_03.html)的第 1、2、4 名。本仓库提供的是 AI 辅助创作的同人图片，并非三丽鸥官方素材。[制作记录](character-packs/fan-art/POPULAR_ASSETS.md)包含提示词及可复现的生成流程。
 
 ![布丁狗、大耳狗和酷洛米的动作与图层预览](character-packs/fan-art/popular-characters-preview.png)

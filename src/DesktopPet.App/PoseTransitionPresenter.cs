@@ -7,8 +7,9 @@ using Point = System.Windows.Point;
 namespace DesktopPet.App;
 
 /// <summary>
-/// Dissolves only changes of pose group or facing, while ordinary gait frames remain immediate.
-/// A separate inert image holds the previous source and flip; neither sprite is squeezed to turn.
+/// Dissolves changes of pose group/facing while ordinary gait frames remain immediate.
+/// A separate inert image holds the previous source and flip; neither sprite is squeezed.
+/// Optional controllable clocks let the motion inspector pause and step the same dissolve.
 /// </summary>
 public sealed class PoseTransitionPresenter
 {
@@ -20,6 +21,11 @@ public sealed class PoseTransitionPresenter
     private object? _poseGroup;
     private double _lastFlip = 1;
     private long _generation;
+
+    private AnimationClock? _incomingClock;
+    private AnimationClock? _outgoingClock;
+    private bool _paused;
+    private TimeSpan _pausedTransitionTime;
 
     public PoseTransitionPresenter(Image image, Image previous, ScaleTransform? flip = null)
     {
@@ -37,7 +43,7 @@ public sealed class PoseTransitionPresenter
 
     public bool IsTransitioning => _previous.Source is not null;
 
-    /// <param name="poseGroup">The resolved frame collection; reuse the same instance for one pose/view.</param>
+    /// <param name="poseGroup">Reuse the same frame collection instance for one pose/view.</param>
     public void SetFrame(ImageSource source, double flipX, object poseGroup, bool allowTransition = true)
     {
         var poseChanged = !ReferenceEquals(_poseGroup, poseGroup) || _lastFlip != flipX;
@@ -59,21 +65,76 @@ public sealed class PoseTransitionPresenter
         var generation = _generation;
         var incoming = new DoubleAnimation(0, 1, TransitionDuration) { FillBehavior = FillBehavior.Stop };
         var outgoing = new DoubleAnimation(1, 0, TransitionDuration) { FillBehavior = FillBehavior.Stop };
-        outgoing.Completed += (_, _) =>
+        _incomingClock = (AnimationClock)incoming.CreateClock(true);
+        _outgoingClock = (AnimationClock)outgoing.CreateClock(true);
+        if (_paused)
+        {
+            _incomingClock.Controller?.Pause();
+            _outgoingClock.Controller?.Pause();
+            _pausedTransitionTime = TimeSpan.Zero;
+        }
+        _outgoingClock.Completed += (_, _) =>
         {
             if (_generation != generation) return;
-            // Release the previous bitmap and animation clocks as soon as the small dissolve ends.
             Reset();
             _poseGroup = poseGroup;
         };
-        _image.BeginAnimation(UIElement.OpacityProperty, incoming);
-        _previous.BeginAnimation(UIElement.OpacityProperty, outgoing);
+        _image.ApplyAnimationClock(UIElement.OpacityProperty, _incomingClock);
+        _previous.ApplyAnimationClock(UIElement.OpacityProperty, _outgoingClock);
     }
 
-    /// <summary>Stop clocks and release the previous pose on close, hide, reset or character change.</summary>
+    /// <summary>Freeze existing and newly created dissolves until resumed or manually advanced.</summary>
+    public void SetPaused(bool paused)
+    {
+        if (_paused == paused) return;
+        _paused = paused;
+        if (paused)
+        {
+            _pausedTransitionTime = _incomingClock?.CurrentTime ?? TimeSpan.Zero;
+            _incomingClock?.Controller?.Pause();
+            _outgoingClock?.Controller?.Pause();
+        }
+        else
+        {
+            _pausedTransitionTime = TimeSpan.Zero;
+            _incomingClock?.Controller?.Resume();
+            _outgoingClock?.Controller?.Resume();
+        }
+    }
+
+    /// <summary>Advance an inspected dissolve independently of the wall clock.</summary>
+    public void AdvancePaused(TimeSpan dt)
+    {
+        if (!_paused || dt <= TimeSpan.Zero) return;
+        if (_incomingClock is null || _outgoingClock is null) return;
+
+        // Pause is applied by WPF's timing engine. Begin from the visible clock if it
+        // reached a newer tick, while retaining manual progress between repeated clicks.
+        if (_incomingClock.CurrentTime is { } observed && observed > _pausedTransitionTime)
+            _pausedTransitionTime = observed;
+
+        if (dt >= TransitionDuration - _pausedTransitionTime)
+        {
+            var poseGroup = _poseGroup;
+            Reset();
+            _poseGroup = poseGroup;
+            return;
+        }
+
+        _pausedTransitionTime += dt;
+        _incomingClock.Controller?.SeekAlignedToLastTick(_pausedTransitionTime, TimeSeekOrigin.BeginTime);
+        _outgoingClock.Controller?.SeekAlignedToLastTick(_pausedTransitionTime, TimeSeekOrigin.BeginTime);
+    }
+
+    /// <summary>Remove animation roots and the previous pose, retaining the inspector's pause mode.</summary>
     public void Reset()
     {
         _generation++;
+        _incomingClock?.Controller?.Remove();
+        _outgoingClock?.Controller?.Remove();
+        _incomingClock = null;
+        _outgoingClock = null;
+
         _image.BeginAnimation(UIElement.OpacityProperty, null);
         _image.Opacity = 1;
         _previous.BeginAnimation(UIElement.OpacityProperty, null);

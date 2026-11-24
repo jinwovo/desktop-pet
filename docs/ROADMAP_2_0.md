@@ -40,6 +40,8 @@ P024 moves character discovery and full image decoding to a background task for 
 
 P025 adds gallery **Export ZIP** and **Cancel export**. A private, fully validated snapshot contains only the character manifest and declared PNGs, including fallback frames. Publication uses a new destination filename; existing files and a destination created during compression remain intact. Core checks cover round-trip import, byte preservation, progress/cancellation, snapshot consistency, path/link rejection and cleanup. Real WPF checks export/re-import decoded images, reject corrupt walking art, preserve pet/preferences, localize progress and cancel closed-window work. All 238 core checks and the nine-character UI suite pass locally. P025 is part of 1.3.0 development, not the immutable 1.2.0 release.
 
+P026 adds motion-preview **Pause / Resume** and **Next frame** for character authors. The simulation advances by exactly 1/30, 1/60 or 1/120 second per manual frame and drives actual gait pixels. Controllable raster-dissolve clocks freeze too, advance by manual intervals and release the old sprite when complete. Tests cover stale render callbacks, current frame-cap changes, real pixels, jump/drop commands, locale changes, hidden/minimized windows, reset, resume, closed callbacks and reduced motion. Existing nine-character UI checks pass, including automatic pose dissolves and preview collection. KO/EN/zh-CN captures retain the original window size. P026 remains 1.3.0 development work.
+
 The [1.2.0 release audit](RELEASE_AUDIT_1_2.md) records the original post-publication API rate-limit failure and the successful read-only comparison of all four public files.
 
 | Verified patch threshold | Planned release | Main review area |

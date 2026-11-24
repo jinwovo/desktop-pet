@@ -78,6 +78,12 @@ The bundled public characters are complete examples. In addition to their fallba
 
 Merge these fields into a complete manifest; this fragment is not a standalone pack. Every part is a full-size transparent canvas aligned to the same neutral body/foot coordinates. The runtime translates the near foot, far foot and body independently. Supply side/quarter fallback cycles of matching length; distance is measured in unscaled sprite pixels. Resting art stays separate. Do not bake movement into a full-body layer and expect the rig to remove it.
 
+## Inspect a pose frame by frame (1.3.0 development)
+
+Open **Animation preview** from a gallery card, or the motion preview from Settings. **Pause** freezes the simulated pet, gait and PNG pose-dissolve clocks. **Next frame** advances exactly one interval of the configured 30/60/120 FPS cap; **Resume** continues from that point without replaying time spent paused. This source-build feature is not in the 1.2.0 download.
+
+Reset preserves the pause while rebuilding the scene. You can prepare a jump/drop or move the pet, then step through its trajectory. A paused window stays paused after hiding/minimizing, and changing the UI language keeps the inspected pose. Reduced motion still applies. The preview uses its own scene and does not pause or modify the desktop pet.
+
 ## Export a character ZIP (1.3.0 development)
 
 This source-build feature is not included in the 1.2.0 download. Open the gallery, select a character and choose **Export ZIP**. Save to a new `.zip` filename outside the selected character's folder. Existing files and directories are never replaced.

@@ -224,6 +224,8 @@ Open Settings → **갤러리 · 검색** (Gallery / search). Type a Korean or E
 
 **1.3.0 development preview:** select a card and choose **Export ZIP** to share a character pack. Choose a new ZIP filename outside the character folder; existing files are kept. Export validates a snapshot and includes only `character.json` and its referenced PNGs. You can cancel or close the gallery while it works; exporting never changes the active pet. Recipients use the normal ZIP import. This feature is not in the 1.2.0 download. See the [pack guide](docs/CHARACTER_PACKS.md#export-a-character-zip-130-development).
 
+The 1.3.0 motion preview also adds **Pause / Resume** and **Next frame**. Inspect walking, falling and pose blends one frame at a time at the selected 30/60/120 FPS cap. Hiding or minimizing preserves the pause; Reset starts the scene again while staying paused. The desktop pet keeps its own simulation.
+
 Pompompurin, Cinnamoroll and Kuromi were selected from the official [2026 Sanrio ranking](https://corporate.sanrio.co.jp/en/news/20260628_03.html), where they placed first, second and fourth. The artwork here is AI-assisted fan art, not official Sanrio assets. [Creation records](character-packs/fan-art/POPULAR_ASSETS.md) include the prompts and reproducible generator.
 
 ![Nine-character gallery](docs/preview/character-gallery-v060.png)

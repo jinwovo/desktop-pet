@@ -30,6 +30,7 @@ public partial class MotionPreviewWindow : Window
     private readonly FramePacer _framePacer = new();
     private bool _reducedMotion;
     private bool _closed;
+    private bool _playbackPaused;
     private PetState _lastPoseState = PetState.Idle;
 
     public MotionPreviewWindow(CharacterPresentation presentation, double speedMultiplier, int maximumFps = 60, bool reducedMotion = false)
@@ -65,6 +66,7 @@ public partial class MotionPreviewWindow : Window
             IsAnimating = false;
             _dragging = false;
             ActorInput.ReleaseMouseCapture();
+            UpdatePlaybackControls();
         };
         UiText.Attach(this);
         Loaded += (_, _) => RefreshLanguage();
@@ -74,7 +76,8 @@ public partial class MotionPreviewWindow : Window
 
     private void UpdateAnimationState()
     {
-        var active = !_closed && IsLoaded && IsVisible && WindowState != WindowState.Minimized;
+        UpdatePlaybackControls();
+        var active = CanInspect && !_playbackPaused;
         if (active == IsAnimating) return;
         if (active)
         {
@@ -84,16 +87,43 @@ public partial class MotionPreviewWindow : Window
         else
         {
             CompositionTarget.Rendering -= OnRendering;
-            _poseTransition.Reset();
+            if (!_playbackPaused) _poseTransition.Reset();
         }
         IsAnimating = active;
+    }
+
+    private bool CanInspect => !_closed && _brain is not null && IsLoaded && IsVisible && WindowState != WindowState.Minimized;
+
+    private void UpdatePlaybackControls()
+    {
+        PausePlaybackButton.Content = UiText.Get(_playbackPaused ? "계속" : "일시정지");
+        PausePlaybackButton.IsEnabled = CanInspect;
+        NextFrameButton.IsEnabled = CanInspect && _playbackPaused;
+    }
+
+    private void PausePlayback_Click(object sender, RoutedEventArgs e)
+    {
+        if (!CanInspect) return;
+        _playbackPaused = !_playbackPaused;
+        _poseTransition.SetPaused(_playbackPaused);
+        UpdateAnimationState();
+        UpdateStateText();
+    }
+
+    private void NextFrame_Click(object sender, RoutedEventArgs e)
+    {
+        if (!CanInspect || !_playbackPaused) return;
+        var dt = 1d / _framePacer.MaximumFps;
+        _brain.Tick(dt, _cursor);
+        _poseTransition.AdvancePaused(TimeSpan.FromSeconds(dt));
+        RenderActor(dt);
     }
 
     public void SetRenderOptions(int maximumFps, bool reducedMotion)
     {
         _framePacer.MaximumFps = maximumFps;
         _reducedMotion = reducedMotion;
-        _poseTransition.Reset();
+        if (!_playbackPaused || reducedMotion) _poseTransition.Reset();
         if (_brain is not null) _brain.HopBetweenPlatforms = !reducedMotion;
     }
 
@@ -226,6 +256,7 @@ public partial class MotionPreviewWindow : Window
     {
         if (_closed) return;
         Title = UiText.Format("DesktopPet 움직임 시험 · {0}", _presentation.Definition.Name);
+        UpdatePlaybackControls();
         UpdateStateText();
     }
 
@@ -248,6 +279,7 @@ public partial class MotionPreviewWindow : Window
             PetState.LookAtCursor => "바라보는 중",
             _ => "쉬는 중"
         });
+        if (_playbackPaused) StateText.Text = UiText.Format("{0} · 일시정지", StateText.Text);
     }
 
     private void Actor_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -285,6 +317,7 @@ public partial class MotionPreviewWindow : Window
         ActorInput.ReleaseMouseCapture();
         var velocity = _velocity.ReleaseVelocity;
         _brain.EndDrag(velocity.X, velocity.Y);
+        if (_playbackPaused) RenderActor(0);
     }
 
     private void Actor_LostMouseCapture(object sender, System.Windows.Input.MouseEventArgs e)
@@ -292,6 +325,7 @@ public partial class MotionPreviewWindow : Window
         if (!_dragging) return;
         _dragging = false;
         _brain.EndDrag();
+        if (_playbackPaused && CanInspect) RenderActor(0);
     }
 
     public void SetSpeedMultiplier(double multiplier)
@@ -307,6 +341,7 @@ public partial class MotionPreviewWindow : Window
         ActorInput.ReleaseMouseCapture();
         _brain.BeginDrag(new PetPoint(_brain.X, _brain.Y));
         _brain.EndDrag(220, -430);
+        if (_playbackPaused) RenderActor(0);
     }
 
     private void DropButton_Click(object sender, RoutedEventArgs e)
@@ -316,5 +351,6 @@ public partial class MotionPreviewWindow : Window
         _brain.BeginDrag(new PetPoint(_brain.X, _brain.Y));
         _brain.UpdateDrag(new PetPoint(_brain.X, 8));
         _brain.EndDrag();
+        if (_playbackPaused) RenderActor(0);
     }
 }

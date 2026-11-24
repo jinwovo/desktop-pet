@@ -343,11 +343,19 @@
     },
     {
       "id": "P026",
-      "title": "Discovery pending: Character authoring and previews (26)",
-      "status": "planned",
+      "title": "Pause motion preview and inspect live-rig, physics and raster pose transitions one selected-FPS frame at a time",
+      "status": "verified",
       "milestone": "1.3.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/MotionPreviewWindow.xaml",
+        "src/DesktopPet.App/MotionPreviewWindow.xaml.cs",
+        "src/DesktopPet.App/PoseTransitionPresenter.cs",
+        "src/DesktopPet.App/UiText.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/MotionPlaybackUiTests.cs",
+        "tests/DesktopPet.UiSmokeTests/EvolutionMotionUiTests.cs"
+      ]
     },
     {
       "id": "P027",

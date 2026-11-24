@@ -11,7 +11,10 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <StackPanel Margin="0,0,0,12">
-            <TextBlock Text="움직임 시험" FontSize="20" FontWeight="SemiBold" Foreground="#25304A" />
+            <DockPanel>
+                <TextBlock x:Name="StateText" DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="#68738C" />
+                <TextBlock Text="움직임 시험" FontSize="20" FontWeight="SemiBold" Foreground="#25304A" />
+            </DockPanel>
             <TextBlock Text="펫을 잡아 옮기거나 던져보세요. 이 창 안에서만 움직입니다."
                        Foreground="#68738C" Margin="0,6,0,0" />
         </StackPanel>
@@ -33,13 +36,12 @@
                         LostMouseCapture="Actor_LostMouseCapture" />
             </Canvas>
         </Border>
-        <DockPanel Grid.Row="2" Margin="0,12,0,0">
-            <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+        <WrapPanel Grid.Row="2" Margin="0,12,0,0">
                 <Button x:Name="ResetSceneButton" Content="처음으로" Click="ResetButton_Click" Padding="12,6" Margin="0,0,8,0" />
                 <Button x:Name="JumpButton" Content="점프" Click="JumpButton_Click" Padding="12,6" Margin="0,0,8,0" />
                 <Button x:Name="DropButton" Content="위에서 놓기" Click="DropButton_Click" Padding="12,6" />
-            </StackPanel>
-            <TextBlock x:Name="StateText" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="#68738C" />
-        </DockPanel>
+                <Button x:Name="PausePlaybackButton" Content="일시정지" Click="PausePlayback_Click" Padding="12,6" Margin="8,0,8,0" />
+                <Button x:Name="NextFrameButton" Content="다음 프레임" Click="NextFrame_Click" Padding="12,6" IsEnabled="False" />
+        </WrapPanel>
     </Grid>
 </Window>
