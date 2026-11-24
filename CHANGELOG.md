@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased (1.4.0 development)
+
+- P031: add **Add 5 min** to Settings and the shared tray/pet focus menu. Extend only the current focus or break, retain pause state and saved defaults, and report added active time at completion. Enforce a 24-hour total session cap, complete expired sessions once, and keep an old request from extending a new session started by a completion callback. Localize controls/tooltips in KO/EN/zh-CN and ignore closed/disposed callbacks.
+
 ## 1.3.0 — evolution patches P021–P030
 
 - P021: release the gallery's reference to a closed motion preview so its decoded presentation can be collected while the gallery stays open. Keep replacement-preview ownership intact and allow reopening normally.

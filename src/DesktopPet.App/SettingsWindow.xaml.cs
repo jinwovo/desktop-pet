@@ -692,6 +692,9 @@ public partial class SettingsWindow : Window
         FocusStartButton.IsEnabled = _pet.FocusCanStart;
         FocusPauseButton.Content = _pet.FocusSnapshot.Status == FocusTimerStatus.Paused ? UiText.Get("계속") : UiText.Get("일시정지");
         FocusPauseButton.IsEnabled = _pet.FocusCanPause;
+        FocusExtendButton.IsEnabled = _pet.FocusCanExtend;
+        FocusExtendButton.Content = UiText.Get("5분 추가");
+        FocusExtendButton.ToolTip = UiText.Get("이번 세션에만 5분을 추가해요. 기본 시간은 바뀌지 않아요.");
         FocusRestartButton.IsEnabled = FocusStopButton.IsEnabled = _pet.FocusCanStop;
     }
 
@@ -708,6 +711,10 @@ public partial class SettingsWindow : Window
         FocusDurationStatus.Text = UiText.Get("다음 시작·다시 시작부터 적용해요. 진행 중인 시간은 유지합니다.");
     }
     private void FocusPause_Click(object sender, RoutedEventArgs e) => _pet.PauseOrResumeFocusTimer();
+    private void FocusExtend_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_closed) _pet.ExtendFocusTimer();
+    }
     private void FocusRestart_Click(object sender, RoutedEventArgs e) => _pet.RestartFocusTimer();
     private void FocusStop_Click(object sender, RoutedEventArgs e) => _pet.StopFocusTimer();
     private void TestNotification_Click(object sender, RoutedEventArgs e) => _pet.SendTestNotification();

@@ -54,6 +54,8 @@ P030 adds optional **Frame guides** for the frame boundary, declared baseline an
 
 The [1.2.0 release audit](RELEASE_AUDIT_1_2.md) records the original post-publication API rate-limit failure and the successful read-only comparison of all four public files.
 
+P031 begins 1.4.0 development with **Add 5 min** in Settings and the shared tray/pet focus menu. It extends only the current running/paused focus or break and its completion duration; saved defaults and pause state stay intact. Elapsed time is reconciled before extending, expired sessions complete once, and a completion callback's new session cannot inherit the older command. Eight core regression groups cover exact 24-hour limits, invalid intervals, eligibility purity, delayed ticks, callback restart/disposal and future defaults. Real WPF/native-menu tests cover commands, stale deadline clicks, localized cached menus, temporary-duration restart, close/disposal and durable receipts; the complete nine-character UI suite and all 246 core checks pass. KO/EN/zh-CN focus-card captures were visually inspected. P031 remains unreleased until the 40-patch 1.4.0 milestone.
+
 | Verified patch threshold | Planned release | Main review area |
 | --- | --- | --- |
 | 10 | 1.1.0 | Motion and runtime defects |

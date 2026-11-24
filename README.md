@@ -105,6 +105,8 @@ In Settings, open **Focus timer** (`집중 타이머`):
 
 Use the minute fields and **시간 적용** to change durations. Changes preserve an active/paused countdown and apply on the next start or explicit restart. The timer does not automatically chain sessions or restore an active countdown after the app closes. Its completion uses the same local notification inbox, hidden-pet rules, and Do not disturb setting. Tray controls are also available.
 
+**1.4.0 development preview:** **Add 5 min** in Settings or the tray/pet menu extends only the current running or paused focus/break session. Pause state and default durations stay unchanged; Restart uses the configured default again. An expired session completes once and cannot be revived by a late click. Total active time is capped at 24 hours per session. This feature is not included in the 1.3.0 download.
+
 ## Notification controls
 
 - Auto-hide closes a bubble without deleting it; the unread tray entry remains available.

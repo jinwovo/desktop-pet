@@ -146,6 +146,8 @@
                 <WrapPanel>
                     <Button x:Name="FocusStartButton" Content="집중 시작" Padding="10,5" Click="FocusStart_Click" />
                     <Button x:Name="FocusPauseButton" Content="일시정지" Padding="10,5" Margin="6,0,0,0" Click="FocusPause_Click" />
+                    <Button x:Name="FocusExtendButton" Content="5분 추가" Padding="10,5" Margin="6,0,0,0" Click="FocusExtend_Click"
+                            ToolTip="이번 세션에만 5분을 추가해요. 기본 시간은 바뀌지 않아요." />
                     <Button x:Name="FocusRestartButton" Content="다시 시작" Padding="10,5" Margin="6,0,0,0" Click="FocusRestart_Click" />
                     <Button x:Name="FocusStopButton" Content="종료" Padding="10,5" Margin="6,0,0,0" Click="FocusStop_Click" />
                 </WrapPanel>

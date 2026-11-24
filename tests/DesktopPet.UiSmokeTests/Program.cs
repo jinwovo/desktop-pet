@@ -22,6 +22,11 @@ internal static class Program
         MainWindow? pet = null;
         try
         {
+            if (args.Contains("--focus-extension-only"))
+            {
+                FocusExtensionUiTests.Run(folder, args.Contains("--capture"));
+                return 0;
+            }
             if (args.Contains("--motion-guides-only"))
             {
                 MotionGuideUiTests.Run(folder, args.Contains("--capture"));
@@ -364,6 +369,7 @@ internal static class Program
             VerifyConnections(folder, pet, args.Contains("--capture"));
             VerifyCharacterImport(pet, folder, args.Contains("--capture"));
             FocusTimerUiTests.Run(folder);
+            FocusExtensionUiTests.Run(folder, args.Contains("--capture"));
             QuietHoursUiTests.Run(folder);
             RenderOptionsUiTests.Run(folder);
             PreferencesBackupUiTests.Run(folder);

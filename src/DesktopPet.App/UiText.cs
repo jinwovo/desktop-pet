@@ -123,6 +123,8 @@ public static class UiText
         ["크기"] = ("Size", "大小"),
         ["걷기 속도"] = ("Speed", "行走速度"),
         ["집중 타이머"] = ("Focus timer", "专注计时器"),
+        ["5분 추가"] = ("Add 5 min", "增加 5 分钟"),
+        ["이번 세션에만 5분을 추가해요. 기본 시간은 바뀌지 않아요."] = ("Add 5 minutes to this session only. Default durations stay unchanged.", "仅为当前阶段增加 5 分钟，不更改默认时长。"),
         ["시간 변경은 다음 시작·다시 시작부터 적용해요. 다음 세션은 직접 시작해요."] = ("Duration changes apply on the next start or restart. Start each session manually.", "新时长在下次开始或重启时生效。请手动开始每个阶段。"),
         ["집중(분)"] = ("Focus (min)", "专注（分钟）"),
         ["휴식(분)"] = ("Break (min)", "休息（分钟）"),

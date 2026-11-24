@@ -620,6 +620,7 @@ public partial class MainWindow : Window
     public bool FocusCanStart => FocusSnapshot.Status is FocusTimerStatus.Stopped or FocusTimerStatus.Completed;
     public bool FocusCanPause => FocusSnapshot.Status is FocusTimerStatus.Running or FocusTimerStatus.Paused;
     public bool FocusCanStop => FocusSnapshot.Status != FocusTimerStatus.Stopped;
+    public bool FocusCanExtend => !_disposed && _focusTimer.CanExtend(TimeSpan.FromMinutes(5));
 
     public event Action? FocusTimerChanged;
 
@@ -652,6 +653,14 @@ public partial class MainWindow : Window
         if (_disposed) return;
         _focusTimer.Stop();
         SynchronizeFocusTimer();
+    }
+
+    public bool ExtendFocusTimer()
+    {
+        if (_disposed) return false;
+        var extended = _focusTimer.TryExtend(TimeSpan.FromMinutes(5));
+        SynchronizeFocusTimer();
+        return extended;
     }
 
     private void UpdateFocusTimer()

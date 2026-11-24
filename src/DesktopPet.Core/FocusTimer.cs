@@ -22,6 +22,7 @@ public sealed class FocusTimer : IDisposable
     private long _checkpoint;
     private int _completedFocusSessions;
     private bool _disposed;
+    private long _generation;
 
     public FocusTimer(TimeProvider? clock = null, TimeSpan? focusDuration = null, TimeSpan? breakDuration = null)
     {
@@ -55,6 +56,28 @@ public sealed class FocusTimer : IDisposable
         _remaining = _sessionDuration = Duration(session);
         _checkpoint = _clock.GetTimestamp();
         _status = FocusTimerStatus.Running;
+        _generation++;
+    }
+
+    /// <summary>Checks cached state without advancing time or emitting a completion.</summary>
+    public bool CanExtend(TimeSpan extra) => !_disposed && extra > TimeSpan.Zero && extra <= TimeSpan.FromDays(1)
+        && _status is FocusTimerStatus.Running or FocusTimerStatus.Paused
+        && _sessionDuration <= TimeSpan.FromDays(1) - extra;
+
+    /// <summary>Adds active time to this session only, without reviving a completed session.</summary>
+    public bool TryExtend(TimeSpan additional)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        ValidateDuration(additional, nameof(additional));
+        if (_status is not (FocusTimerStatus.Running or FocusTimerStatus.Paused)) return false;
+        var generation = _generation;
+        Tick();
+        // Completion callbacks can start another session. The original command must not
+        // extend that new session, even when it has the same kind and duration.
+        if (generation != _generation || !CanExtend(additional)) return false;
+        _remaining += additional;
+        _sessionDuration += additional;
+        return true;
     }
 
     public void Pause()

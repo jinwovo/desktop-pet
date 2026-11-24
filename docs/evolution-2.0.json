@@ -430,11 +430,21 @@
     },
     {
       "id": "P031",
-      "title": "Discovery pending: Focus and notification workflows (31)",
-      "status": "planned",
+      "title": "Add five minutes to the current focus or break without changing defaults or reviving expired sessions",
+      "status": "verified",
       "milestone": "1.4.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.Core/FocusTimer.cs",
+        "src/DesktopPet.App/MainWindow.xaml.cs",
+        "src/DesktopPet.App/SettingsWindow.xaml",
+        "src/DesktopPet.App/SettingsWindow.xaml.cs",
+        "src/DesktopPet.App/PetMenuBuilder.cs",
+        "src/DesktopPet.App/UiText.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.RegressionTests/FocusTimerTests.cs",
+        "tests/DesktopPet.UiSmokeTests/FocusExtensionUiTests.cs"
+      ]
     },
     {
       "id": "P032",

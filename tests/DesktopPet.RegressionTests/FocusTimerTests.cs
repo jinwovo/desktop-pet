@@ -5,6 +5,94 @@ public static class FocusTimerTests
 {
     public static IEnumerable<(string Name, Action Run)> Create()
     {
+        yield return ("Extending an unticked running session accounts for elapsed time and completion duration", () =>
+        {
+            var clock = new Clock(); using var timer = Timer(clock);
+            var completed = new List<FocusSessionCompletion>(); timer.SessionCompleted += completed.Add;
+            timer.Start(); clock.Advance(TimeSpan.FromSeconds(3));
+            Check(timer.TryExtend(TimeSpan.FromSeconds(5)) && timer.Snapshot.Remaining == TimeSpan.FromSeconds(12), "Extension ignored elapsed time");
+            Check(timer.Snapshot.Status == FocusTimerStatus.Running && timer.Snapshot.CompletedFocusSessions == 0, "Extension changed status/statistics");
+            clock.Advance(TimeSpan.FromSeconds(12)); timer.Tick(); timer.Tick();
+            Check(completed.Count == 1 && completed[0].Duration == TimeSpan.FromSeconds(15) && completed[0].CompletedFocusSessions == 1,
+                "Completion lost added active time or fired more than once");
+            Check(!timer.TryExtend(TimeSpan.FromSeconds(1)), "Completed session was revived");
+        });
+        yield return ("Paused focus and break extensions exclude paused wall time and preserve session kind", () =>
+        {
+            foreach (var kind in new[] { FocusSessionKind.Focus, FocusSessionKind.Break })
+            {
+                var clock = new Clock(); using var timer = Timer(clock);
+                FocusSessionCompletion? completed = null; timer.SessionCompleted += value => completed = value;
+                timer.Start(kind); clock.Advance(TimeSpan.FromSeconds(3)); timer.Pause();
+                var left = timer.Snapshot.Remaining; clock.Advance(TimeSpan.FromHours(2));
+                Check(timer.TryExtend(TimeSpan.FromSeconds(5)) && timer.Snapshot.Remaining == left + TimeSpan.FromSeconds(5)
+                    && timer.Snapshot.Status == FocusTimerStatus.Paused && timer.Snapshot.Session == kind, "Paused extension consumed time or changed state");
+                timer.Resume(); clock.Advance(left + TimeSpan.FromSeconds(5)); timer.Tick();
+                Check(completed is { } actual && actual.Session == kind && actual.Duration == TimeSpan.FromSeconds(kind == FocusSessionKind.Focus ? 15 : 10),
+                    "Paused/break extension reported the wrong duration");
+            }
+        });
+        yield return ("Extension eligibility is pure and invalid intervals cannot trigger due completions", () =>
+        {
+            var clock = new Clock(); using var timer = Timer(clock); var events = 0; timer.SessionCompleted += _ => events++;
+            Check(!timer.CanExtend(TimeSpan.FromSeconds(1)) && !timer.TryExtend(TimeSpan.FromSeconds(1)), "Stopped timer accepts extension");
+            timer.Start(); clock.Advance(TimeSpan.FromSeconds(3));
+            Check(timer.CanExtend(TimeSpan.FromSeconds(5)) && timer.Snapshot.Remaining == TimeSpan.FromSeconds(10), "Eligibility ticks the clock");
+            clock.Advance(TimeSpan.FromDays(1)); var before = timer.Snapshot;
+            foreach (var bad in new[] { TimeSpan.Zero, TimeSpan.FromTicks(-1), TimeSpan.FromDays(1) + TimeSpan.FromTicks(1), TimeSpan.MaxValue })
+            {
+                Check(!timer.CanExtend(bad), "Invalid interval reported eligible");
+                Expect<ArgumentOutOfRangeException>(() => timer.TryExtend(bad));
+                Check(timer.Snapshot == before && events == 0, "Invalid extension advanced or partly changed the timer");
+            }
+        });
+        yield return ("Extension total-duration cap permits exactly 24 hours, not extra time after elapsed work", () =>
+        {
+            var clock = new Clock(); using var timer = new FocusTimer(clock, TimeSpan.FromHours(23));
+            timer.Start(); Check(timer.TryExtend(TimeSpan.FromHours(1)), "Exact 24-hour total was rejected");
+            Check(!timer.CanExtend(TimeSpan.FromTicks(1)) && !timer.TryExtend(TimeSpan.FromTicks(1)), "24-hour cap exceeded");
+            clock.Advance(TimeSpan.FromHours(22));
+            Check(!timer.TryExtend(TimeSpan.FromMinutes(5)) && timer.Snapshot.Remaining == TimeSpan.FromHours(2), "Cap checked remaining time instead of total duration");
+        });
+        yield return ("Expired extension checks complete once even when the total cap would reject the request", () =>
+        {
+            var clock = new Clock(); using var timer = new FocusTimer(clock, TimeSpan.FromDays(1));
+            var events = 0; timer.SessionCompleted += _ => events++;
+            timer.Start(); clock.Advance(TimeSpan.FromDays(1));
+            Check(!timer.TryExtend(TimeSpan.FromMinutes(5)) && events == 1 && timer.Snapshot.Status == FocusTimerStatus.Completed,
+                "Cap rejection hid a due completion or revived an expired session");
+            timer.Tick(); Check(!timer.TryExtend(TimeSpan.FromSeconds(1)) && events == 1, "Expired extension duplicated completion");
+        });
+        yield return ("Completion callback sessions are not extended by an older command", () =>
+        {
+            foreach (var next in new[] { FocusSessionKind.Focus, FocusSessionKind.Break })
+            {
+                var clock = new Clock(); using var timer = Timer(clock); var events = 0;
+                timer.SessionCompleted += _ => { events++; timer.Start(next); };
+                timer.Start(); clock.Advance(TimeSpan.FromSeconds(10));
+                Check(!timer.TryExtend(TimeSpan.FromSeconds(5)) && events == 1 && timer.Snapshot.Status == FocusTimerStatus.Running
+                    && timer.Snapshot.Remaining == TimeSpan.FromSeconds(next == FocusSessionKind.Focus ? 10 : 5), "An old command extended the callback's new session");
+                Check(timer.TryExtend(TimeSpan.FromSeconds(1)), "A new explicit extension could not target the new session");
+            }
+        });
+        yield return ("Disposal during completion blocks extension and disposed eligibility stays false", () =>
+        {
+            var clock = new Clock(); using var timer = Timer(clock);
+            timer.SessionCompleted += _ => timer.Dispose(); timer.Start(); clock.Advance(TimeSpan.FromSeconds(10));
+            Check(!timer.TryExtend(TimeSpan.FromSeconds(5)) && !timer.CanExtend(TimeSpan.FromSeconds(1)), "Extension mutated a timer disposed by its callback");
+            Expect<ObjectDisposedException>(() => timer.TryExtend(TimeSpan.FromSeconds(1)));
+        });
+        yield return ("Extensions preserve future defaults, duration changes and explicit restart semantics", () =>
+        {
+            var clock = new Clock(); using var timer = Timer(clock);
+            timer.Start(); Check(timer.TryExtend(TimeSpan.FromMinutes(5)), "Focus extension failed");
+            timer.ConfigureDurations(TimeSpan.FromMinutes(7), TimeSpan.FromMinutes(2));
+            Check(timer.Snapshot.Remaining == TimeSpan.FromSeconds(310), "Future duration change overwrote the extension");
+            timer.Restart(); Check(timer.Snapshot.Remaining == TimeSpan.FromMinutes(7), "Restart retained a one-session extension");
+            timer.Stop(); timer.Start(FocusSessionKind.Break); Check(timer.Snapshot.Remaining == TimeSpan.FromMinutes(2), "Extension changed the default break");
+            timer.TryExtend(TimeSpan.FromMinutes(5)); timer.Stop(); timer.Start();
+            Check(timer.Snapshot.Remaining == TimeSpan.FromMinutes(7), "Break extension changed the default focus");
+        });
         yield return ("Duration configuration preserves active countdown and original completion metadata", () =>
         {
             var clock = new Clock();
