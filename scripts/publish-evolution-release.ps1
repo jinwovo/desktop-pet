@@ -164,30 +164,27 @@ function Wait-DesktopPetPublicRelease {
     param([Parameter(Mandatory=$true)][string]$Version,
           [Parameter(Mandatory=$true)][ValidatePattern('^[1-9][0-9]*$')][string]$ReleaseId,
           [Parameter(Mandatory=$true)][scriptblock]$Fetch,
+          [Parameter(Mandatory=$true)][scriptblock]$Probe,
           [scriptblock]$Wait = { param($seconds) Start-Sleep -Seconds $seconds },
           [ValidateRange(1,5)][int]$Attempts = 5)
     $null = Get-DesktopPetEvolutionThreshold $Version
     $reason = 'release state did not match'
     for ($attempt = 1; $attempt -le $Attempts; $attempt++) {
-        $confirmed = $true
-        $publicResult = $null
-        foreach ($anonymous in @($false, $true)) {
-            try {
-                $observed = & $Fetch $anonymous
-                if ([string]$observed.id -cne $ReleaseId -or $observed.tag_name -cne ('v' + $Version) -or
-                    $observed.draft -isnot [bool] -or $observed.draft -or
-                    $observed.prerelease -isnot [bool] -or $observed.prerelease) {
-                    $confirmed = $false
-                    $reason = 'release state did not match'
-                }
-                if ($anonymous) { $publicResult = $observed }
-            } catch {
-                $confirmed = $false
-                # HTTP exception text may contain request details. Do not print credentials or URLs.
-                $reason = 'a release read was temporarily unavailable'
+        try {
+            $observed = & $Fetch
+            if ([string]$observed.id -cne $ReleaseId -or $observed.tag_name -cne ('v' + $Version) -or
+                $observed.draft -isnot [bool] -or $observed.draft -or
+                $observed.prerelease -isnot [bool] -or $observed.prerelease) {
+                $reason = 'release state did not match'
+            } else {
+                $reachable = & $Probe
+                if ($reachable -is [bool] -and $reachable) { return $observed }
+                $reason = 'public asset verification did not succeed'
             }
+        } catch {
+            # HTTP exception text may contain request details. Do not print credentials or URLs.
+            $reason = 'a release or public asset read was temporarily unavailable'
         }
-        if ($confirmed) { return $publicResult }
         if ($attempt -lt $Attempts) { $null = & $Wait ([int][Math]::Min([Math]::Pow(2, $attempt), 16)) }
     }
     throw ("Published release confirmation failed after $Attempts read attempts: $reason.")
@@ -263,18 +260,27 @@ function Publish-DesktopPetEvolutionRelease {
         $body = @{ draft=$false; prerelease=$false; make_latest='true' } | ConvertTo-Json -Compress
         $null = Invoke-RestMethod -Uri ($api + '/releases/' + $release.id) -Method Patch -Headers $headers -ContentType 'application/json' -Body $body
         $public = Wait-DesktopPetPublicRelease -Version $Version -ReleaseId ([string]$release.id) -Fetch {
-            param($anonymous)
-            $readHeaders = if ($anonymous) {
-                @{ Accept='application/vnd.github+json'; 'User-Agent'='DesktopPet-evolution-public-read-verification' }
-            } else { $headers.Clone() }
+            $readHeaders = $headers.Clone()
             $readHeaders['Cache-Control'] = 'no-cache'
-            $resource = if ($anonymous) { '/releases/tags/v' + $Version } else { '/releases/' + $release.id }
-            Invoke-RestMethod -Uri ($api + $resource + '?confirmation=' + [Guid]::NewGuid().ToString('N')) -Headers $readHeaders
+            Invoke-RestMethod -Uri ($api + '/releases/' + $release.id + '?confirmation=' + [Guid]::NewGuid().ToString('N')) -Headers $readHeaders
+        } -Probe {
+            # Anonymous API calls share runner-IP rate limits. Verify actual public bytes instead.
+            foreach ($asset in $assets) {
+                $publicCopy = Join-Path $download ('public-' + $asset.name)
+                $uri = 'https://github.com/jinwovo/desktop-pet/releases/download/v' + $Version + '/' + $asset.name
+                Invoke-WebRequest -UseBasicParsing -Uri $uri -OutFile $publicCopy -Headers @{ 'Cache-Control'='no-cache' } | Out-Null
+                if (-not [IO.File]::Exists($publicCopy) -or (Get-Item -LiteralPath $publicCopy).Length -ne $asset.size -or
+                    (Get-FileHash -LiteralPath $publicCopy -Algorithm SHA256).Hash -cne
+                    (Get-FileHash -LiteralPath (Join-Path $download $asset.name) -Algorithm SHA256).Hash) {
+                    throw 'A public asset differs from the verified draft download.'
+                }
+            }
+            return $true
         }
         [pscustomobject]@{ Version=$Version; ReleaseId=$public.id; Published=$true; Url=$public.html_url }
     }
     finally {
-        # Only four generated downloads exist here. Avoid recursive deletion of a computed path.
+        # Only the four draft downloads and their public verification copies exist here. Avoid recursive deletion of a computed path.
         if ($download.StartsWith($temporaryRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase) -and
             [IO.Path]::GetFileName($download).StartsWith('DesktopPet-evolution-publication-', [StringComparison]::Ordinal)) {
             try {
@@ -283,6 +289,9 @@ function Publish-DesktopPetEvolutionRelease {
                     $file = Join-Path $download $asset.name
                     Assert-DesktopPetEvolutionNoLinks $file
                     if ([IO.File]::Exists($file)) { [IO.File]::Delete($file) }
+                    $publicFile = Join-Path $download ('public-' + $asset.name)
+                    Assert-DesktopPetEvolutionNoLinks $publicFile
+                    if ([IO.File]::Exists($publicFile)) { [IO.File]::Delete($publicFile) }
                 }
                 if ([IO.Directory]::Exists($download)) { [IO.Directory]::Delete($download) }
             }

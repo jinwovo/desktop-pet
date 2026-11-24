@@ -203,20 +203,21 @@ try {
         Write-Result ('Relative-Path-Rejected-'+$value) (-not (Test-DesktopPetEvolutionAbsolutePath -Path $value))
     }
     $script:readCalls = 0
-    $script:readKinds = @()
+    $script:probeCalls = 0
     $script:readDelays = @()
     $script:confirmationFixture = [pscustomobject]@{ id=42L; tag_name='v1.2.0'; draft=$false; prerelease=$false }
     $confirmedRelease = Wait-DesktopPetPublicRelease -Version '1.2.0' -ReleaseId '42' -Fetch {
-        param($anonymous)
         $script:readCalls++
-        $script:readKinds += $anonymous
-        if ($script:readCalls -le 2) { return [pscustomobject]@{ id=42; tag_name='v1.2.0'; draft=$true; prerelease=$false } }
-        if ($script:readCalls -eq 4) { throw 'Temporary 404 request contains SECRET_DO_NOT_LOG' }
+        if ($script:readCalls -eq 1) { return [pscustomobject]@{ id=42; tag_name='v1.2.0'; draft=$true; prerelease=$false } }
+        if ($script:readCalls -eq 2) { throw 'Temporary API response contains SECRET_DO_NOT_LOG' }
         return $script:confirmationFixture
+    } -Probe {
+        $script:probeCalls++
+        if ($script:probeCalls -eq 1) { throw 'Temporary public asset 404' }
+        return $true
     } -Wait { param($seconds) $script:readDelays += $seconds; 'discard wait output' }
-    Write-Result 'Confirm-Stale-Draft-And-Temporary-404' ($confirmedRelease -eq $script:confirmationFixture -and
-        $script:readCalls -eq 6 -and ($script:readKinds -join ',') -ceq 'False,True,False,True,False,True' -and
-        ($script:readDelays -join ',') -ceq '2,4')
+    Write-Result 'Confirm-Stale-Draft-API-Failure-And-Public-Asset-404' ($confirmedRelease -eq $script:confirmationFixture -and
+        $script:readCalls -eq 4 -and $script:probeCalls -eq 2 -and ($script:readDelays -join ',') -ceq '2,4,8')
 
     foreach ($invalid in @(
         [pscustomobject]@{ id=99; tag_name='v1.2.0'; draft=$false; prerelease=$false },
@@ -224,26 +225,33 @@ try {
         [pscustomobject]@{ id=42; tag_name='v1.2.0'; draft='false'; prerelease=$false },
         [pscustomobject]@{ id=42; tag_name='v1.2.0'; draft=$false; prerelease=$true }
     )) {
-        $script:badPublic = $invalid
+        $script:invalidRelease = $invalid
         $script:readCalls = 0
+        $script:probeCalls = 0
         $script:readDelays = @()
         $caught = $false
         try {
             $null = Wait-DesktopPetPublicRelease -Version '1.2.0' -ReleaseId '42' -Fetch {
-                param($anonymous)
                 $script:readCalls++
-                if ($anonymous) { return $script:badPublic }
-                return $script:confirmationFixture
-            } -Wait { param($seconds) $script:readDelays += $seconds }
+                return $script:invalidRelease
+            } -Probe { $script:probeCalls++; return $true } -Wait { param($seconds) $script:readDelays += $seconds }
         } catch { $caught = $true }
-        Write-Result ('Confirm-Reject-Invalid-Public-' + $invalid.id + '-' + $invalid.tag_name + '-' + $invalid.draft.GetType().Name + '-' + $invalid.prerelease) (
-            $caught -and $script:readCalls -eq 10 -and ($script:readDelays -join ',') -ceq '2,4,8,16')
+        Write-Result ('Confirm-Reject-Invalid-State-' + $invalid.id + '-' + $invalid.tag_name + '-' + $invalid.draft.GetType().Name + '-' + $invalid.prerelease) (
+            $caught -and $script:readCalls -eq 5 -and $script:probeCalls -eq 0 -and ($script:readDelays -join ',') -ceq '2,4,8,16')
+    }
+    foreach ($badProbe in @($false, 'true', $null)) {
+        $script:badProbeResult = $badProbe
+        $caught = $false
+        try {
+            $null = Wait-DesktopPetPublicRelease -Version '1.2.0' -ReleaseId '42' -Attempts 1 -Fetch { $script:confirmationFixture } -Probe { $script:badProbeResult }
+        } catch { $caught = $true }
+        Write-Result ('Confirm-Reject-Unproven-Public-Bytes-' + [string]$badProbe) $caught
     }
     $caught = $false
     try {
         $null = Wait-DesktopPetPublicRelease -Version '1.2.0' -ReleaseId '42' -Attempts 1 -Fetch {
             throw 'SECRET_DO_NOT_LOG'
-        } -Wait { throw 'No wait allowed on the final attempt.' }
+        } -Probe { $true } -Wait { throw 'No wait allowed on the final attempt.' }
     } catch { $caught = $_.Exception.Message -notmatch 'SECRET_DO_NOT_LOG|No wait allowed' -and $_.Exception.Message -match 'after 1 read attempts' }
     Write-Result 'Confirm-Bounded-Failure-No-Request-Disclosure' $caught
     Write-Output ("SUMMARY: {0} passed, {1} failed" -f $script:passed, $script:failed)
