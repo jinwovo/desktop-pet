@@ -86,6 +86,7 @@ internal static class GalleryLocaleRegressionTests
             VerifyRunningPreviewCancellation(pet);
             VerifyPreviewRequestOwnership(pet);
             VerifyClosedPreviewCollection(pet);
+            VerifyCatalogDiscoveryWorker(pet);
         }
         finally
         {
@@ -94,6 +95,110 @@ internal static class GalleryLocaleRegressionTests
             Set(pet, "_settingsDirty", false);
             pet.DisposeResources();
             UiText.SetLanguage(priorLanguage);
+        }
+    }
+
+    private static void VerifyCatalogDiscoveryWorker(MainWindow pet)
+    {
+        var uiThread = Environment.CurrentManagedThreadId;
+        using var firstEntered = new ManualResetEventSlim();
+        using var firstRelease = new ManualResetEventSlim();
+        using var oldEntered = new ManualResetEventSlim();
+        using var oldRelease = new ManualResetEventSlim();
+        using var closeEntered = new ManualResetEventSlim();
+        using var closeRelease = new ManualResetEventSlim();
+        var call = 0;
+        var discoveryThread = 0;
+        CancellationToken oldToken = default, closeToken = default;
+        var gallery = new CharacterGalleryWindow(pet, catalogDiscovery: token =>
+        {
+            var request = Interlocked.Increment(ref call);
+            discoveryThread = Environment.CurrentManagedThreadId;
+            if (request == 1)
+            {
+                firstEntered.Set();
+                // Baseline must fail without freezing the test UI when discovery runs there.
+                if (discoveryThread != uiThread && !firstRelease.Wait(TimeSpan.FromSeconds(15)))
+                    throw new TimeoutException("Initial catalog discovery was never released");
+                return pet.AvailableCharacterNames;
+            }
+            if (request == 2)
+            {
+                oldToken = token;
+                oldEntered.Set();
+                if (!oldRelease.Wait(TimeSpan.FromSeconds(15))) throw new TimeoutException("Old catalog discovery was never released");
+                return new[] { "Broken Locale" };
+            }
+            if (request == 3) return new[] { "Companion" };
+            closeToken = token;
+            closeEntered.Set();
+            if (!closeRelease.Wait(TimeSpan.FromSeconds(15))) throw new TimeoutException("Closed catalog discovery was never released");
+            throw new InvalidDataException("Late failure from closed gallery");
+        });
+        var operations = new List<Task>();
+        try
+        {
+            gallery.Show();
+            gallery.RaiseEvent(new RoutedEventArgs(FrameworkElement.LoadedEvent));
+            Until(() => firstEntered.IsSet, "Catalog discovery did not start");
+            operations.Add(gallery.LoadingTask);
+            Check(discoveryThread != uiThread, "Catalog directory discovery still blocks the WPF UI thread");
+            var uiResponded = false;
+            gallery.Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(() => uiResponded = true));
+            Until(() => uiResponded, "UI stopped processing input while catalog discovery was blocked");
+            ((TextBox)gallery.FindName("SearchBox")).Text = "Companion";
+            Check(!gallery.LoadingTask.IsCompleted && (bool)Get(gallery, "_catalogLoading")!,
+                "Blocked discovery did not leave an active, responsive loading state");
+            firstRelease.Set();
+            Wait(gallery.LoadingTask);
+            Check(gallery.AllCharacters.Count == pet.AvailableCharacterNames.Count &&
+                ((ListBox)gallery.FindName("CharacterCards")).Items.Count == 1,
+                "Catalog discovery lost library entries or an in-flight search");
+            Console.WriteLine("PASS Gallery directory/catalog reads run off the UI thread and allow input and search while blocked");
+
+            gallery.RefreshCharacters();
+            var oldOperation = gallery.LoadingTask;
+            operations.Add(oldOperation);
+            Until(() => oldEntered.IsSet, "Superseded discovery did not start");
+            gallery.RefreshCharacters();
+            operations.Add(gallery.LoadingTask);
+            Wait(gallery.LoadingTask);
+            Check(oldToken.IsCancellationRequested && gallery.AllCharacters.Select(item => item.Name).SequenceEqual(new[] { "Companion" }),
+                "Refreshing did not cancel old discovery or install the latest catalog");
+            var installed = gallery.AllCharacters;
+            var status = ((TextBlock)gallery.FindName("StatusText")).Text;
+            oldRelease.Set();
+            Wait(oldOperation);
+            Check(ReferenceEquals(installed, gallery.AllCharacters) && !(bool)Get(gallery, "_catalogLoading")! &&
+                ((TextBlock)gallery.FindName("StatusText")).Text == status,
+                "Late discovery replaced the latest catalog or changed its status/loading state");
+            Console.WriteLine("PASS Gallery refresh cancels old discovery and ignores its late result without changing the latest catalog");
+
+            gallery.RefreshCharacters();
+            operations.Add(gallery.LoadingTask);
+            Until(() => closeEntered.IsSet, "Closing discovery did not start");
+            gallery.Close();
+            Check(closeToken.IsCancellationRequested, "Closing did not cancel catalog discovery");
+            closeRelease.Set();
+            Wait(gallery.LoadingTask);
+            Check(ReferenceEquals(installed, gallery.AllCharacters) && ((TextBlock)gallery.FindName("StatusText")).Text == status,
+                "A late discovery failure updated a closed gallery");
+            Console.WriteLine("PASS Closing a gallery cancels discovery and discards its late failure");
+        }
+        finally
+        {
+            firstRelease.Set();
+            oldRelease.Set();
+            closeRelease.Set();
+            gallery.Close();
+            foreach (var operation in operations) Wait(operation);
+        }
+
+        static void Until(Func<bool> condition, string message)
+        {
+            var watch = Stopwatch.StartNew();
+            while (!condition() && watch.Elapsed < TimeSpan.FromSeconds(10)) { Pump(); Thread.Sleep(1); }
+            Check(condition(), message);
         }
     }
 

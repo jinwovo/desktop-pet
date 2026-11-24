@@ -22,6 +22,7 @@ public partial class CharacterGalleryWindow : Window
 {
     private readonly MainWindow _pet;
     private readonly Func<string, CancellationToken, CharacterPresentation> _previewLoader;
+    private readonly Func<CancellationToken, IReadOnlyList<string>> _catalogDiscovery;
     private readonly CancellationTokenSource _lifetime = new();
     private CancellationTokenSource? _loadCancellation;
     private long _loadRevision;
@@ -43,10 +44,12 @@ public partial class CharacterGalleryWindow : Window
         ["시나모롤"] = new("Cinnamoroll", ["시나몬롤", "cinnamonroll", "シナモロール"]), ["쿠로미"] = new("Kuromi", ["クロミ"]),
     };
 
-    public CharacterGalleryWindow(MainWindow pet, Func<string, CancellationToken, CharacterPresentation>? previewLoader = null)
+    public CharacterGalleryWindow(MainWindow pet, Func<string, CancellationToken, CharacterPresentation>? previewLoader = null,
+        Func<CancellationToken, IReadOnlyList<string>>? catalogDiscovery = null)
     {
         _pet = pet;
         _previewLoader = previewLoader ?? ((folder, cancellation) => CharacterPresentation.Load(folder, cancellationToken: cancellation));
+        _catalogDiscovery = catalogDiscovery ?? (_ => _pet.AvailableCharacterNames);
         _pet.RenderOptionsChanged += ApplyRenderOptions;
         InitializeComponent();
         MaxHeight = Math.Max(MinHeight, SystemParameters.WorkArea.Height - 40);
@@ -141,10 +144,15 @@ public partial class CharacterGalleryWindow : Window
         RenderCount(CharacterCards.Items.Count);
         try
         {
-            var names = _pet.AvailableCharacterNames.ToArray();
-            var aliases = ReadAliases();
             var items = await Task.Run(() =>
             {
+                cancellation.ThrowIfCancellationRequested();
+                // Directory enumeration and catalog JSON reads can block on slow custom drives.
+                // Keep them with thumbnail IO on the worker, before returning frozen cards to WPF.
+                var names = _catalogDiscovery(cancellation);
+                cancellation.ThrowIfCancellationRequested();
+                var aliases = ReadAliases();
+                cancellation.ThrowIfCancellationRequested();
                 var result = new List<CharacterGalleryItem>();
                 foreach (var name in names)
                 {

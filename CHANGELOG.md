@@ -3,6 +3,7 @@
 ## Unreleased ? 1.3.0 development
 
 - P021: release the gallery's reference to a closed motion preview so its decoded presentation can be collected while the gallery stays open. Keep replacement-preview ownership intact and allow reopening normally.
+- P022: discover character directories and read gallery aliases on the existing background worker. Keep input/search responsive during slow discovery, cancel superseded/closed requests and discard late results without overwriting the current catalog.
 
 ## 1.2.0 — evolution patches P011–P020
 

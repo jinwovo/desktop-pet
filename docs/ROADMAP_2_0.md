@@ -32,6 +32,10 @@ P020 marks the current unread snapshot read from either action menu. Receipt IO 
 
 P021 starts 1.3.0 development: closing a gallery motion preview removes the gallery's reference to that window. Weak-reference tests demonstrate that its decoded presentation becomes collectible while the gallery remains open, and reopening still works. This does not claim a particular working-set reduction or change the immutable 1.2.0 build.
 
+P022 moves directory discovery and catalog JSON reads off WPF's UI thread. A gated worker test reproduces the original failure, verifies input/search while blocked, refreshes to a newer snapshot and closes during a late failure. The full nine-character UI suite and 227 core checks pass. P021-P022 are development changes for 1.3.0; the public 1.2.0 files remain unchanged.
+
+The [1.2.0 release audit](RELEASE_AUDIT_1_2.md) records the original post-publication API rate-limit failure and the successful read-only comparison of all four public files.
+
 | Verified patch threshold | Planned release | Main review area |
 | --- | --- | --- |
 | 10 | 1.1.0 | Motion and runtime defects |
