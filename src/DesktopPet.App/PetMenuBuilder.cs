@@ -16,6 +16,14 @@ internal static class PetMenuBuilder
         var unreadItem = menu.Items.Add(UiText.Get("보관된 알림 확인"), null, (_, _) => petWindow.ShowUnreadNotifications());
         var markAllItem = menu.Items.Add(UiText.Get("알림 모두 확인"), null,
             async (_, _) => await petWindow.AcknowledgeAllNotificationsAsync());
+        var snoozeItem = new WinForms.ToolStripMenuItem(UiText.Get("알림 15분 잠시 끄기"));
+        var resumeNotificationsOnClick = petWindow.NotificationsSnoozed;
+        snoozeItem.Click += (_, _) =>
+        {
+            if (resumeNotificationsOnClick) petWindow.ResumeSnoozedNotifications();
+            else petWindow.SnoozeNotifications();
+        };
+        menu.Items.Add(snoozeItem);
 
         menu.Items.Add(new WinForms.ToolStripSeparator());
 
@@ -66,6 +74,11 @@ internal static class PetMenuBuilder
         menu.Opening += (_, _) =>
         {
             notificationListItem.Text = UiText.Get("알림 목록...");
+            var snoozed = petWindow.NotificationsSnoozed;
+            resumeNotificationsOnClick = snoozed;
+            snoozeItem.Checked = snoozed;
+            snoozeItem.Text = UiText.Get(snoozed ? "알림 잠시 끄기 해제" : "알림 15분 잠시 끄기");
+            snoozeItem.ToolTipText = UiText.Get("자동 말풍선만 잠시 끕니다. 알림은 보관하고 집중 타이머는 계속 진행해요.");
             visibilityItem.Checked = petWindow.IsPetVisible;
             roamingPauseItem.Checked = petWindow.RoamingPaused;
             unreadItem.Enabled = petWindow.PendingNotificationCount > 0;

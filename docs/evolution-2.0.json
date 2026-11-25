@@ -570,11 +570,17 @@
     },
     {
       "id": "P040",
-      "title": "Discovery pending: Focus and notification workflows (40)",
-      "status": "planned",
+      "title": "Snooze automatic notification bubbles for fifteen minutes without losing receipts or focus progress",
+      "status": "verified",
       "milestone": "1.4.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/MainWindow.xaml.cs",
+        "src/DesktopPet.App/PetMenuBuilder.cs",
+        "src/DesktopPet.App/UiText.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/NotificationSnoozeUiTests.cs"
+      ]
     },
     {
       "id": "P041",

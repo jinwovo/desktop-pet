@@ -58,6 +58,9 @@ public static class UiText
     private static readonly Dictionary<string, (string English, string Chinese)> Translations = new(StringComparer.Ordinal)
     {
         ["알림"] = ("Notification", "通知"),
+        ["알림 15분 잠시 끄기"] = ("Pause notifications for 15 min", "暂停通知 15 分钟"),
+        ["알림 잠시 끄기 해제"] = ("Resume paused notifications", "恢复暂停的通知"),
+        ["자동 말풍선만 잠시 끕니다. 알림은 보관하고 집중 타이머는 계속 진행해요."] = ("Pause automatic bubbles only. Notifications stay saved and the focus timer continues.", "仅暂停自动气泡。通知继续保存，专注计时器保持运行。"),
         ["알림 목록..."] = ("Notification list...", "通知列表..."),
         ["보관된 알림 목록"] = ("Saved notifications", "已保存通知"),
         ["선택해도 읽음 처리하지 않아요. 내용은 선택해서 복사할 수 있어요."] = ("Selecting a notification keeps it unread. Select text to copy it.", "选择通知不会标为已读。可选择文本并复制。"),

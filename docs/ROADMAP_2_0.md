@@ -72,6 +72,8 @@ P038 adds explicit selected-notification acknowledgement through the existing as
 
 P039 exports a frozen visible-notification snapshot as local JSON. Native tests change the filter inside the injected filename picker and verify the original selected view is exported. Writer checks cover exactly four raw metadata fields, Unicode/quotes/newlines, null timestamps, no existing-file overwrite, pre/mid-write cancellation and owned temporary cleanup on failed publication. UI checks cover retry with a new filename, three-locale error/busy states, minimum-size action layout, asynchronous saving and closing either during the picker or pending writer. Notifications remain unread. This remains 1.4.0 development work.
 
+P040 adds a session-only 15-minute notification snooze through both menus. Independent injected clocks prove the exact UTC boundary, preserved focus state and receipts, retained arrivals, no backlog replay and repeat-snooze deadline reset. Manual/daily quiet settings and manual hiding remain intact. Native tests reproduce an open Resume menu incorrectly restarting snooze after expiry; capturing its displayed action fixes that behavior. Cached KO/EN/zh-CN menu labels, checkmarks/tooltips and disposed callbacks are covered. This completes P031–P040 for the 1.4.0 milestone.
+
 | Verified patch threshold | Planned release | Main review area |
 | --- | --- | --- |
 | 10 | 1.1.0 | Motion and runtime defects |

@@ -558,7 +558,26 @@ public partial class MainWindow : Window
     public bool QuietHoursEnabled => _settings.QuietHoursEnabled;
     public int QuietHoursStartMinute => _settings.QuietHoursStartMinute;
     public int QuietHoursEndMinute => _settings.QuietHoursEndMinute;
-    public bool IsQuietNow => _settings.QuietMode || QuietHours.IsActive(_settings.QuietHoursEnabled,
+    private DateTimeOffset? _notificationSnoozeUntilUtc;
+
+    public bool NotificationsSnoozed => !_disposed && _notificationSnoozeUntilUtc is { } until && _quietClock.GetUtcNow() < until;
+
+    public void SnoozeNotifications()
+    {
+        Dispatcher.VerifyAccess();
+        if (_disposed) return;
+        _notificationSnoozeUntilUtc = _quietClock.GetUtcNow().AddMinutes(15);
+        DismissForQuietMode();
+    }
+
+    public void ResumeSnoozedNotifications()
+    {
+        Dispatcher.VerifyAccess();
+        if (_disposed) return;
+        _notificationSnoozeUntilUtc = null;
+    }
+
+    public bool IsQuietNow => NotificationsSnoozed || _settings.QuietMode || QuietHours.IsActive(_settings.QuietHoursEnabled,
         _settings.QuietHoursStartMinute, _settings.QuietHoursEndMinute, _quietClock.GetLocalNow());
 
     public void SetQuietHours(bool enabled, int startMinute, int endMinute)
