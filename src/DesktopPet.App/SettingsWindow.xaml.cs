@@ -95,19 +95,31 @@ public partial class SettingsWindow : Window
     private bool IsPreviewActive => !_closed && IsLoaded && IsVisible && WindowState != WindowState.Minimized;
     private void UpdatePreviewAnimationState()
     {
-        if (IsPreviewActive == _previewRenderingSubscribed) return;
-        if (IsPreviewActive)
-        {
+        var active = IsPreviewActive && _previewPresentation is not null;
+        var wasActive = _previewRenderingSubscribed || _previewTimer.IsEnabled;
+        var renderContinuously = active && NeedsLiveRendering;
+        if (active && !wasActive)
             _previewLastElapsedMs = _previewClock.Elapsed.TotalMilliseconds;
-            _lastPreviewRenderingTime = null; _framePacer.Reset();
-            _previewTimer.Start(); CompositionTarget.Rendering += OnPreviewRendering;
-        }
-        else
+
+        if (renderContinuously != _previewRenderingSubscribed)
         {
-            _previewTimer.Stop(); CompositionTarget.Rendering -= OnPreviewRendering;
-            _poseTransition.Reset();
+            if (renderContinuously)
+            {
+                _lastPreviewRenderingTime = null;
+                _framePacer.Reset();
+                CompositionTarget.Rendering += OnPreviewRendering;
+            }
+            else CompositionTarget.Rendering -= OnPreviewRendering;
+            _previewRenderingSubscribed = renderContinuously;
         }
-        _previewRenderingSubscribed = IsPreviewActive;
+
+        var useTimer = active && !renderContinuously;
+        if (useTimer != _previewTimer.IsEnabled)
+        {
+            if (useTimer) _previewTimer.Start();
+            else _previewTimer.Stop();
+        }
+        if (!active && wasActive) _poseTransition.Reset();
     }
 
     private void LoadFromPet(bool preservePreview = false)
@@ -391,6 +403,7 @@ public partial class SettingsWindow : Window
                 (state != PetState.Walk || _lastPreviewState == PetState.Walk));
         }
         _lastPreviewState = state;
+        UpdatePreviewAnimationState();
     }
 
     private async void CharacterCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)

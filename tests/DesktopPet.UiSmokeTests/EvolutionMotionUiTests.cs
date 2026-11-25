@@ -114,6 +114,8 @@ internal static class EvolutionMotionUiTests
             AdvanceSettings(settings, 20);
             sawFinal |= appearance.IsSettling && appearance.SettleProgress == 1;
         }
+        Check(((DispatcherTimer)Get(settings, "_previewTimer")!).IsEnabled && !(bool)Get(settings, "_previewRenderingSubscribed")!,
+            "Resting preview did not return to its low-rate timer after settling");
         Check(sawFinal && !appearance.DisplayWalkPose && appearance.SettleProgress == 1,
             "Settings walk-to-idle transition skipped its exact final rest pose or never released the live rig");
         Check(((Image)settings.FindName("PreviewImage")).Visibility == Visibility.Visible &&
@@ -147,7 +149,7 @@ internal static class EvolutionMotionUiTests
             if (minimize) settings.WindowState = WindowState.Normal;
             else settings.Show();
             DrainDispatcher();
-            Check(timer.IsEnabled && (bool)Get(settings, "_previewRenderingSubscribed")!, "Settings preview did not resume");
+            Check(!timer.IsEnabled && (bool)Get(settings, "_previewRenderingSubscribed")!, "Walking preview did not resume on its single render clock");
             Check(clock.Elapsed.TotalMilliseconds - (double)Get(settings, "_previewLastElapsedMs")! < 1000,
                 "Settings preview resumed with a stale elapsed-time baseline");
         }
