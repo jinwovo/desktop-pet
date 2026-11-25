@@ -300,10 +300,18 @@ public partial class CharacterGalleryWindow : Window
         var query = SearchBox.Text.Trim().Normalize(NormalizationForm.FormKC);
         var category = CategoryCombo.SelectedValue is CharacterGalleryCategory selected ? selected : CharacterGalleryCategory.All;
         var visible = _all.Where(item => (category == CharacterGalleryCategory.All || item.Category == category) && item.SearchText.Contains(query, StringComparison.OrdinalIgnoreCase)).ToArray();
-        _filtering = true;
-        CharacterCards.ItemsSource = visible;
-        CharacterCards.SelectedItem = previous is not null && visible.Contains(previous) ? previous : null;
-        _filtering = false;
+        var current = CharacterCards.ItemsSource as CharacterGalleryItem[];
+        if (current is null || current.Length != visible.Length ||
+            current.Where((item, index) => !ReferenceEquals(item, visible[index])).Any())
+        {
+            _filtering = true;
+            try
+            {
+                CharacterCards.ItemsSource = visible;
+                CharacterCards.SelectedItem = previous is not null && visible.Contains(previous) ? previous : null;
+            }
+            finally { _filtering = false; }
+        }
         EmptyText.Visibility = visible.Length == 0 && _started && !_catalogLoading && !_catalogFailed ? Visibility.Visible : Visibility.Collapsed;
         RenderCount(visible.Length);
         UpdateSelection();

@@ -43,6 +43,11 @@ internal static class GalleryLocaleRegressionTests
             category.SelectedValue = CharacterGalleryCategory.Custom;
             var selected = gallery.AllCharacters.Single(item => item.Name == "사용자 Locale");
             cards.SelectedItem = selected;
+            var resultSource = cards.ItemsSource;
+            search.Text = " locale ";
+            Check(ReferenceEquals(resultSource, cards.ItemsSource) && ReferenceEquals(cards.SelectedItem, selected),
+                "An equivalent gallery query rebuilt its list or lost selection");
+            search.Text = "Locale";
             var all = gallery.AllCharacters;
             var visibleSource = cards.ItemsSource;
             var loadingTask = gallery.LoadingTask;
