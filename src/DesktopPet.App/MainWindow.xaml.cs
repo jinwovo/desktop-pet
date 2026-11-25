@@ -1016,29 +1016,31 @@ public partial class MainWindow : Window
             distanceDeltaPx, _character.WalkCycleDistancePx);
         _walkAnimationElapsedMs = _walkAppearance.AnimationElapsedMs;
         var displayWalkPose = _walkAppearance.DisplayWalkPose;
-        var hasDirectionalLook = !displayWalkPose && _brain.State == PetState.LookAtCursor &&
-            (cursorIsOnRight ? _character.LookRightFrames : _character.LookLeftFrames).Count > 0;
+        var state = _brain.State;
+        var looking = state == PetState.LookAtCursor;
+        var restFrames = looking ? _character.GetLookFrames(cursorIsOnRight) : _character.GetFrames(state);
+        var authoredLook = looking && (cursorIsOnRight ? _character.LookRightFrames : _character.LookLeftFrames).Count > 0;
+        var restFacingRight = authoredLook || _character.UsesFrontalRestFrames(state) || _brain.FacingRight;
         var walkingDirection = displayWalkPose && (_character.HasDirectionalWalk || _character.WalkCycleDistancePx is not null);
         var frontWalk = walkingDirection && _character.UsesFrontalWalkFrames(_walkAppearance.View);
-        var facingRight = walkingDirection ? _walkAppearance.FacingRight : _brain.FacingRight;
-        var flip = hasDirectionalLook || frontWalk || !displayWalkPose && _character.UsesFrontalRestFrames(_brain.State) || facingRight ? 1 : -1;
+        var facingRight = displayWalkPose
+            ? frontWalk || (walkingDirection ? _walkAppearance.FacingRight : _brain.FacingRight)
+            : restFacingRight;
+        var flip = facingRight ? 1 : -1;
         if (flip != _lastFlip)
         {
             FlipTransform.ScaleX = flip;
             _lastFlip = flip;
         }
 
-        var frames = displayWalkPose ? _character.GetWalkFrames(_walkAppearance.View)
-            : _brain.State == PetState.LookAtCursor
-            ? _character.GetLookFrames(cursorIsOnRight)
-            : _character.GetFrames(_brain.State);
-
-        var animationElapsedMs = displayWalkPose ? _walkAnimationElapsedMs : _brain.StateElapsedMs;
-        if (_brain.State == PetState.Idle && _character.FrameDurationsByState.ContainsKey(PetState.Idle))
+        var frames = displayWalkPose ? _character.GetWalkFrames(_walkAppearance.View) : restFrames;
+        var restElapsed = _brain.StateElapsedMs;
+        if (state == PetState.Idle && _character.FrameDurationsByState.ContainsKey(PetState.Idle))
         {
             _idleAppearanceElapsedMs += dt * 1000;
-            animationElapsedMs = _idleAppearanceElapsedMs;
+            restElapsed = _idleAppearanceElapsedMs;
         }
+        var animationElapsedMs = displayWalkPose && state != PetState.Idle ? _walkAnimationElapsedMs : restElapsed;
         var framePath = displayWalkPose && _character.WalkCycleDistancePx is not null
             ? _character.GetWalkFramePath(_walkAppearance.View, _walkAppearance.GaitPhase,
                 _walkAppearance.IsSettling ? _walkAppearance.SettleProgress : 0)
@@ -1060,10 +1062,8 @@ public partial class MainWindow : Window
             }
             if (_walkAppearance.IsSettling)
             {
-                var rest = _character.GetFrames(_brain.State);
-                var restElapsed = _brain.State == PetState.Idle && _character.FrameDurationsByState.ContainsKey(PetState.Idle)
-                    ? _idleAppearanceElapsedMs : _brain.StateElapsedMs;
-                PetRig.SetRestFrame(GetFrame(_character.GetFramePath(_brain.State, rest, restElapsed)), _character.UsesFrontalRestFrames(_brain.State));
+                var restPath = _character.GetFramePath(state, restFrames, restElapsed);
+                PetRig.SetRestFrame(GetFrame(restPath), unmirrored: false, restFacingRight: restFacingRight);
             }
             PetRig.UpdatePose(_walkAppearance.View, _walkAppearance.GaitPhase,
                 _walkAppearance.IsSettling ? _walkAppearance.SettleProgress : 0, _walkAppearance.FacingRight, dt, _settings.ReducedMotion, _walkAppearance.EntryWeight);

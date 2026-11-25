@@ -701,11 +701,17 @@
     },
     {
       "id": "P049",
-      "title": "Discovery pending: Accessibility and localization (49)",
-      "status": "planned",
+      "title": "Keep directional gaze artwork consistent through the walk to rest handoff",
+      "status": "verified",
       "milestone": "1.5.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/GroundedRigVisual.cs",
+        "src/DesktopPet.App/MainWindow.xaml.cs",
+        "src/DesktopPet.App/MotionPreviewWindow.xaml.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/EvolutionMotionUiTests.cs"
+      ]
     },
     {
       "id": "P050",

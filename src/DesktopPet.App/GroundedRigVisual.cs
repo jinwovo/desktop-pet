@@ -22,6 +22,8 @@ public sealed class GroundedRigVisual : FrameworkElement
     private CharacterPresentation? _presentation;
     private WalkRigDefinition? _rig;
     private bool _facingRight = true, _unmirroredRest = true;
+    private bool? _restFacingRight;
+    private bool RestFacesRight => _unmirroredRest || (_restFacingRight ?? _facingRight);
 
     private sealed class ViewLayers
     {
@@ -94,7 +96,7 @@ public sealed class GroundedRigVisual : FrameworkElement
         _walking.Opacity = 1; _rest.Opacity = 0;
         UpdateDisplayMatrix(); InvalidateVisual();
     }
-    public void SetRestFrame(ImageSource source, bool unmirrored)
+    public void SetRestFrame(ImageSource source, bool unmirrored, bool? restFacingRight = null)
     {
         if (source is not BitmapSource bitmap) throw new ArgumentException("A rig resting frame must be a bitmap.", nameof(source));
         if (!ReferenceEquals(_restFrame, source))
@@ -102,7 +104,8 @@ public sealed class GroundedRigVisual : FrameworkElement
             _restFrame = bitmap; _restBlend = null;
             if (RestWeight == 0) _restDrawing.ImageSource = source;
         }
-        if (_unmirroredRest == unmirrored) return;
+        if (_unmirroredRest == unmirrored && _restFacingRight == restFacingRight) return;
+        _restFacingRight = restFacingRight;
         _unmirroredRest = unmirrored; _restSnapshot = null; _restBlend = null; UpdateDisplayMatrix();
     }
     private static double SplitY(CharacterDefinition definition) => Math.Clamp(definition.AnchorY - definition.FrameHeight * 0.2,
@@ -182,10 +185,11 @@ public sealed class GroundedRigVisual : FrameworkElement
             {
                 // Capture unscaled parts in the resting layer's coordinate system. Its final
                 // display transform still owns scaling and any authored resting-frame flip.
-                if (!_facingRight && _unmirroredRest)
+                var flipSnapshot = _facingRight != RestFacesRight;
+                if (flipSnapshot)
                     context.PushTransform(new MatrixTransform(-1, 0, 0, 1, frame.FrameWidth, 0));
                 context.DrawDrawing(_layers.Group);
-                if (!_facingRight && _unmirroredRest) context.Pop();
+                if (flipSnapshot) context.Pop();
             }
             var snapshot = new RenderTargetBitmap(frame.FrameWidth, frame.FrameHeight, 96, 96, PixelFormats.Pbgra32);
             snapshot.Render(_restCapture); snapshot.Freeze(); _restSnapshot = snapshot;
@@ -204,7 +208,7 @@ public sealed class GroundedRigVisual : FrameworkElement
         var normal = new Matrix(scale, 0, 0, scale, x, y);
         var mirrored = new Matrix(-scale, 0, 0, scale, x + frame.FrameWidth * scale, y);
         _displayTransform.Matrix = _facingRight ? normal : mirrored;
-        _restDisplayTransform.Matrix = _facingRight || _unmirroredRest ? normal : mirrored;
+        _restDisplayTransform.Matrix = RestFacesRight ? normal : mirrored;
     }
     protected override void OnRender(DrawingContext drawingContext) { base.OnRender(drawingContext); drawingContext.DrawDrawing(_drawing); }
 }

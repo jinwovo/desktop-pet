@@ -48,6 +48,7 @@ internal static class EvolutionMotionUiTests
             VerifySettingsSettling(settings);
             VerifyPreviewLifecycle(settings, motion);
             VerifyWeightedIdleHandoff(motion, presentation);
+            VerifyDirectionalLookHandoff(motion, presentation);
             VerifyLanguagePreservesPreview(settings);
             VerifyMotionLanguagePreservesPose(motion, presentation);
             Check(!pet.AutoConnectAssistants && Get(pet, "_inbox") is null && Get(pet, "_windowPlatformMonitor") is null,
@@ -211,6 +212,35 @@ internal static class EvolutionMotionUiTests
         }
         Check(sawFinal && !appearance.DisplayWalkPose, "Weighted idle handoff did not finish");
         Console.WriteLine("PASS Actual MotionPreview settling and raster handoff share the advancing weighted idle/blink timeline");
+    }
+
+    private static void VerifyDirectionalLookHandoff(MotionPreviewWindow motion, CharacterPresentation presentation)
+    {
+        foreach (var right in new[] { false, true })
+        {
+            Invoke(motion, "ResetScene");
+            var brain = (PetBrain)Get(motion, "_brain")!;
+            var rig = (GroundedRigVisual)motion.FindName("MotionRig");
+            var actor = (Image)motion.FindName("Actor");
+            var appearance = (WalkAppearanceController)Get(motion, "_walkAppearance")!;
+            var cursor = new PetPoint(brain.X + actor.Width / 2 + (right ? 30 : -30), brain.Y + actor.Height / 2);
+            Invoke(brain, "ChangeState", PetState.Walk);
+            Invoke(motion, "RenderActor", 0.02);
+            Invoke(brain, "ChangeState", PetState.Idle);
+            Invoke(motion, "RenderActor", 0d);
+            brain.Tick(0.01, cursor);
+            Set(motion, "_cursor", cursor);
+            Check(brain.State == PetState.LookAtCursor && appearance.IsSettling, "Cursor did not interrupt an active settle");
+            Invoke(motion, "RenderActor", 0.18);
+            var definition = presentation.Definition;
+            var expected = presentation.Frames[definition.GetFramePath(PetState.LookAtCursor, definition.GetLookFrames(right), brain.StateElapsedMs)];
+            Check(rig.RestWeight == 1 && ReferenceEquals(Get(rig, "_restFrame"), expected),
+                $"Settling selected the wrong directional look artwork (right={right})");
+            Invoke(motion, "RenderActor", 0d);
+            Check(ReferenceEquals(actor.Source, expected) && ((System.Windows.Media.ScaleTransform)actor.RenderTransform).ScaleX == 1,
+                "Raster handoff changed or mirrored the authored look frame");
+        }
+        Console.WriteLine("PASS A nearby cursor during settling uses exact left/right look artwork through raster handoff");
     }
 
     private static void VerifyLanguagePreservesPreview(SettingsWindow settings)
