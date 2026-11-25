@@ -116,3 +116,5 @@ P048 reproduces a 3px instantaneous foot lift at a zero-time restart from fully 
 P049 Choose the same left or right look frame and display orientation during settling and after the raster handoff. The WPF test reproduces the wrong frame when a nearby cursor interrupts settling and verifies both authored directions through the handoff.
 
 P050 Refresh the paused pose when reduced motion changes while preserving simulation time and the inspected stride. The WPF test reproduces the stale blend and checks that a toggle updates its weight without advancing the paused simulation. An FPS-only update preserves the inspected pose.
+
+P051 removes the enumerator allocation on weighted frame selection. A Release probe calling the actual method one million times changed from 32,000,000 bytes to zero thread allocations while producing the same frame-selection checksum. All 256 core checks passed.

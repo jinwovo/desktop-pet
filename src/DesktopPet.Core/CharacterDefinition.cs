@@ -218,7 +218,7 @@ public sealed class CharacterDefinition
         if (FrameDurationsByState.TryGetValue(state, out var durations) && durations.Count == frames.Count)
         {
             var total = 0d;
-            foreach (var duration in durations) total += duration;
+            for (var i = 0; i < durations.Count; i++) total += durations[i];
             var position = double.IsFinite(stateElapsedMs) && stateElapsedMs >= 0 ? stateElapsedMs % total : 0;
             var boundary = 0d;
             for (var i = 0; i < durations.Count; i++)

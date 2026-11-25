@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased (1.6.0 development)
+
+- P051 Remove per-call allocations from weighted animation frame selection while preserving frame timings.
+
 ## 1.5.0 — evolution patches P041–P050
 
 - P050 Refresh the paused pose when reduced motion changes while preserving simulation time and the inspected stride.

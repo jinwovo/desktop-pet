@@ -727,11 +727,16 @@
     },
     {
       "id": "P051",
-      "title": "Discovery pending: Resource and rendering performance (51)",
-      "status": "planned",
+      "title": "Eliminate enumerator allocation from weighted animation frame selection",
+      "status": "verified",
       "milestone": "1.6.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.Core/CharacterDefinition.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.RegressionTests/TimedAnimationTests.cs",
+        "tests/DesktopPet.RegressionTests/DirectionalWalkTests.cs"
+      ]
     },
     {
       "id": "P052",
