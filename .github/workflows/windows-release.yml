@@ -148,32 +148,40 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Packaged character ZIP import failed" }
       - name: Validate extracted release and startup
         run: |
-          . ./scripts/package-release.ps1
-          $archive = Get-Item ("./artifacts/releases/DesktopPet-" + $env:DESKTOPPET_RELEASE_VERSION + "-win-x64.zip")
-          $smokeRoot = Join-Path $env:RUNNER_TEMP ("DesktopPet-release-smoke-" + [Guid]::NewGuid().ToString("N"))
-          Expand-Archive -LiteralPath $archive.FullName -DestinationPath $smokeRoot
-          Test-DesktopPetReleasePayload -Directory $smokeRoot -ExpectedVersion $env:DESKTOPPET_RELEASE_VERSION -ExpectedDeployment "self-contained-single-file"
-          $exe = Join-Path $smokeRoot "DesktopPet.App.exe"
-          $start = New-Object Diagnostics.ProcessStartInfo
-          $start.FileName = $exe
-          $start.Arguments = "--version"
-          $start.UseShellExecute = $false
-          $start.CreateNoWindow = $true
-          $start.WindowStyle = [Diagnostics.ProcessWindowStyle]::Hidden
-          $start.RedirectStandardOutput = $true
-          $start.RedirectStandardError = $true
-          $process = [Diagnostics.Process]::Start($start)
           try {
-            $stdoutTask = $process.StandardOutput.ReadToEndAsync()
-            $stderrTask = $process.StandardError.ReadToEndAsync()
-            if (-not $process.WaitForExit(30000)) { $process.Kill(); throw 'Owned version-check child timed out.' }
-            $exitCode = $process.ExitCode
-            $stdout = $stdoutTask.GetAwaiter().GetResult().Trim()
-            $stderr = $stderrTask.GetAwaiter().GetResult()
-          } finally { $process.Dispose() }
-          if ($exitCode -ne 0 -or $stderr -ne '' -or $stdout -ne ($env:DESKTOPPET_RELEASE_VERSION + '.0')) { throw "Packaged startup failed: exit $exitCode, stdout '$stdout', stderr '$stderr'" }
-          powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File tests/installation-check-regression.ps1 -ApplicationPath $exe
-          if ($LASTEXITCODE -ne 0) { throw 'Actual release installation checks failed' }
+            . ./scripts/package-release.ps1
+            $archive = Get-Item ("./artifacts/releases/DesktopPet-" + $env:DESKTOPPET_RELEASE_VERSION + "-win-x64.zip")
+            $smokeRoot = Join-Path $env:RUNNER_TEMP ("DesktopPet-release-smoke-" + [Guid]::NewGuid().ToString("N"))
+            Expand-Archive -LiteralPath $archive.FullName -DestinationPath $smokeRoot
+            Test-DesktopPetReleasePayload -Directory $smokeRoot -ExpectedVersion $env:DESKTOPPET_RELEASE_VERSION -ExpectedDeployment "self-contained-single-file"
+            Write-Output '::notice title=Release validation stage::Extracted payload manifest verified'
+            $exe = Join-Path $smokeRoot "DesktopPet.App.exe"
+            $start = New-Object Diagnostics.ProcessStartInfo
+            $start.FileName = $exe
+            $start.Arguments = "--version"
+            $start.UseShellExecute = $false
+            $start.CreateNoWindow = $true
+            $start.WindowStyle = [Diagnostics.ProcessWindowStyle]::Hidden
+            $start.RedirectStandardOutput = $true
+            $start.RedirectStandardError = $true
+            $process = [Diagnostics.Process]::Start($start)
+            try {
+              $stdoutTask = $process.StandardOutput.ReadToEndAsync()
+              $stderrTask = $process.StandardError.ReadToEndAsync()
+              if (-not $process.WaitForExit(30000)) { $process.Kill(); throw 'Owned version-check child timed out.' }
+              $exitCode = $process.ExitCode
+              $stdout = $stdoutTask.GetAwaiter().GetResult().Trim()
+              $stderr = $stderrTask.GetAwaiter().GetResult()
+            } finally { $process.Dispose() }
+            if ($exitCode -ne 0 -or $stderr -ne '' -or $stdout -ne ($env:DESKTOPPET_RELEASE_VERSION + '.0')) { throw "Packaged startup failed: exit $exitCode, stdout '$stdout', stderr '$stderr'" }
+            Write-Output '::notice title=Release validation stage::Packaged version startup verified; checking installation lifecycle'
+            powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File tests/installation-check-regression.ps1 -ApplicationPath $exe
+            if ($LASTEXITCODE -ne 0) { throw 'Actual release installation checks failed' }
+          } catch {
+            $detail = ([string]$_.Exception.Message).Replace('%', '%25').Replace([string][char]13, '%0D').Replace([string][char]10, '%0A')
+            Write-Output ('::error title=Extracted release validation::{0}' -f $detail)
+            throw
+          }
       - uses: actions/upload-artifact@v4
         with:
           name: DesktopPet-public-windows
