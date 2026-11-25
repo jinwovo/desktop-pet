@@ -25,7 +25,7 @@ function Get-DesktopPetPublicSourceFiles {
         'docs\DISTRIBUTION.md', 'docs\PUBLIC_ASSET_PROVENANCE.md', 'docs\CHARACTER_PACKS.md', 'docs\PUBLIC_RELEASE.md', 'docs\REFERENCE_REVIEW.ko.md', 'docs\NVIDIA_WORK.md',
         'docs\RELEASE_1_0.md',
         'docs\ROADMAP_2_0.md', 'docs\evolution-2.0.json',
-        'docs\RELEASE_AUDIT_1_2.md', 'docs\RELEASE_AUDIT_1_3.md',
+        'docs\RELEASE_AUDIT_1_2.md', 'docs\RELEASE_AUDIT_1_3.md', 'docs\RELEASE_AUDIT_1_4.md',
         'tests\test_nvidia_work.py',
         'docs\preview\public-characters.png', 'docs\preview\public-walk.gif', 'docs\preview\public-walk.html',
         'docs\preview\public-settings.png', 'docs\preview\live-rig-v8.png',

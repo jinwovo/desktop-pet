@@ -4,6 +4,8 @@ The project owner requested 100 meaningful improvements from the 1.0.2 baseline 
 
 ## Counting and evidence
 
+[1.4.0 is publicly verified](RELEASE_AUDIT_1_4.md) with P001–P040. Later verified entries describe development work until their next ten-patch release threshold.
+
 A verified patch changes product behavior or repairs a reproducible defect, identifies its changed source files and names the regression fixtures that passed. Documentation, version changes, release administration and repeated tests do not count as additional product patches. A patch may resolve related symptoms together. Review findings are checked against source and execution before acceptance.
 
 The first ten patches address pointer-facing jitter, preview state transitions and background work, idle-frame continuity, quiet-review integrity, bubble/gallery localization, decode cancellation, redundant image loading and opaque rest blending. User notification text and character-authored names remain intact. Development API credentials are excluded from runtime output.

@@ -11,6 +11,7 @@ $documents += 'docs\RELEASE_1_0.md'
 $documents += 'docs\ROADMAP_2_0.md'
 $documents += 'docs\RELEASE_AUDIT_1_3.md'
 $documents += 'docs\RELEASE_AUDIT_1_2.md'
+$documents += 'docs\RELEASE_AUDIT_1_4.md'
 $checked = 0
 foreach ($relative in $documents) {
     $path = Join-Path $repoRoot $relative
