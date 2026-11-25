@@ -162,10 +162,21 @@ public partial class MotionPreviewWindow : Window
 
     public void SetRenderOptions(int maximumFps, bool reducedMotion)
     {
+        if (_closed) return;
+        var motionChanged = _reducedMotion != reducedMotion;
         _framePacer.MaximumFps = maximumFps;
         _reducedMotion = reducedMotion;
         if (!_playbackPaused || reducedMotion) _poseTransition.Reset();
         if (_brain is not null) _brain.HopBetweenPlatforms = !reducedMotion;
+        if (motionChanged && _playbackPaused && _liveRigActive)
+            UpdateLiveRigPose(0);
+    }
+
+    private void UpdateLiveRigPose(double elapsedSeconds)
+    {
+        MotionRig.UpdatePose(_walkAppearance.View, _walkAppearance.GaitPhase,
+            _walkAppearance.IsSettling ? _walkAppearance.SettleProgress : 0,
+            _walkAppearance.FacingRight, elapsedSeconds, _reducedMotion, _walkAppearance.EntryWeight);
     }
 
     private void ResetScene()
@@ -278,8 +289,7 @@ public partial class MotionPreviewWindow : Window
                 var restPath = definition.GetFramePath(state, restFrames, restElapsed);
                 MotionRig.SetRestFrame(_presentation.Frames[restPath], unmirrored: false, restFacingRight: restFacingRight);
             }
-            MotionRig.UpdatePose(_walkAppearance.View, _walkAppearance.GaitPhase,
-                _walkAppearance.IsSettling ? _walkAppearance.SettleProgress : 0, _walkAppearance.FacingRight, dt, _reducedMotion, _walkAppearance.EntryWeight);
+            UpdateLiveRigPose(dt);
         }
         else
         {

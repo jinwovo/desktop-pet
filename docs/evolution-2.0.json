@@ -715,11 +715,15 @@
     },
     {
       "id": "P050",
-      "title": "Discovery pending: Accessibility and localization (50)",
-      "status": "planned",
+      "title": "Apply reduced motion immediately to a paused motion preview",
+      "status": "verified",
       "milestone": "1.5.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/MotionPreviewWindow.xaml.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/MotionPlaybackUiTests.cs"
+      ]
     },
     {
       "id": "P051",

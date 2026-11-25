@@ -88,8 +88,42 @@ internal static class MotionPlaybackUiTests
             Check(!window.IsAnimating&&!((GroundedRigVisual)window.FindName("MotionRig")).HasRig,"Closed inspector retained playback or rig resources");
             Console.WriteLine("PASS Actual frame stepping changes rendered gait; language, hide/minimize, reset, resume and close preserve inspector lifecycle");
             VerifyRasterClocks(root,presentation);
+            VerifyPausedRenderOptions(presentation);
         }
         finally{window.Close();UiText.SetLanguage(language);}
+    }
+
+    private static void VerifyPausedRenderOptions(CharacterPresentation presentation)
+    {
+        var window = new MotionPreviewWindow(presentation, 1);
+        try
+        {
+            window.Show();
+            Click((Button)window.FindName("PausePlaybackButton"));
+            Invoke(window, "ResetScene");
+            var brain = (PetBrain)Get(window, "_brain")!;
+            var appearance = (WalkAppearanceController)Get(window, "_walkAppearance")!;
+            var rig = (GroundedRigVisual)window.FindName("MotionRig");
+            Invoke(brain, "ChangeState", PetState.Walk);
+            Invoke(window, "RenderActor", 0.09);
+            Invoke(brain, "ChangeState", PetState.Idle);
+            Invoke(window, "RenderActor", 0d);
+            Invoke(window, "RenderActor", 0.15);
+            double progress = appearance.SettleProgress;
+            var before = (brain.X, brain.Y, brain.State, brain.StateElapsedMs, appearance.GaitPhase, progress);
+            var weight = rig.RestWeight;
+            Check(weight is > 0 and < 1, "Paused fixture has no partial settling blend");
+            window.SetRenderOptions(120, false);
+            Check(rig.RestWeight == weight, "FPS-only change altered the inspected render");
+            window.SetRenderOptions(120, true);
+            Check(rig.RestWeight == 0, "Paused live rig kept its blend after reduced motion was enabled");
+            window.SetRenderOptions(120, false);
+            Check(Math.Abs(rig.RestWeight - weight) < 1e-9 && !window.IsAnimating &&
+                before == (brain.X, brain.Y, brain.State, brain.StateElapsedMs, appearance.GaitPhase, appearance.SettleProgress),
+                "Changing reduced motion advanced or resumed the inspected simulation");
+            Console.WriteLine("PASS A paused live rig updates reduced motion immediately without advancing its pose clock");
+        }
+        finally { window.Close(); }
     }
 
     private static void VerifyRasterClocks(string root,CharacterPresentation source)
