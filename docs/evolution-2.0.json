@@ -683,11 +683,21 @@
     },
     {
       "id": "P048",
-      "title": "Discovery pending: Accessibility and localization (48)",
-      "status": "planned",
+      "title": "Ease the vertical start of distance-driven gait without changing planted contacts",
+      "status": "verified",
       "milestone": "1.5.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.Core/WalkAppearanceController.cs",
+        "src/DesktopPet.App/GroundedRigVisual.cs",
+        "src/DesktopPet.App/MainWindow.xaml.cs",
+        "src/DesktopPet.App/MotionPreviewWindow.xaml.cs",
+        "src/DesktopPet.App/SettingsWindow.xaml.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.RegressionTests/WalkEntryTests.cs",
+        "tests/DesktopPet.UiSmokeTests/WalkEntryUiTests.cs",
+        "tests/DesktopPet.UiSmokeTests/GroundedRigVisualRegressionTests.cs"
+      ]
     },
     {
       "id": "P049",

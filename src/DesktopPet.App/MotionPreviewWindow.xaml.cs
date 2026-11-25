@@ -276,7 +276,7 @@ public partial class MotionPreviewWindow : Window
                 MotionRig.SetRestFrame(_presentation.Frames[definition.GetFramePath(_brain.State, rest, restElapsed)], definition.UsesFrontalRestFrames(_brain.State));
             }
             MotionRig.UpdatePose(_walkAppearance.View, _walkAppearance.GaitPhase,
-                _walkAppearance.IsSettling ? _walkAppearance.SettleProgress : 0, _walkAppearance.FacingRight, dt, _reducedMotion);
+                _walkAppearance.IsSettling ? _walkAppearance.SettleProgress : 0, _walkAppearance.FacingRight, dt, _reducedMotion, _walkAppearance.EntryWeight);
         }
         else
         {

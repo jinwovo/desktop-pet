@@ -108,7 +108,7 @@ public sealed class GroundedRigVisual : FrameworkElement
     private static double SplitY(CharacterDefinition definition) => Math.Clamp(definition.AnchorY - definition.FrameHeight * 0.2,
         definition.FrameHeight * 0.55, definition.FrameHeight * 0.85);
     public bool UpdatePose(WalkView view, double phase, double settleProgress, bool facingRight, double elapsedSeconds = 1d / 60,
-        bool reducedMotion = false)
+        bool reducedMotion = false, double entryWeight = 1)
     {
         if (_rig is null || _presentation?.Definition.WalkCycleDistancePx is not { } distance) return false;
         var turn = _viewBlend.Update(view, elapsedSeconds, reducedMotion);
@@ -120,8 +120,21 @@ public sealed class GroundedRigVisual : FrameworkElement
         if (!ReferenceEquals(_layers.Far.ImageSource, farSource)) _layers.Far.ImageSource = farSource;
         var pose = GroundedGait.Sample(phase, distance, _rig.FootLiftPx);
         if (settleProgress > 0) pose = GroundedGait.Settle(pose, settleProgress);
+        var weight = reducedMotion || !double.IsFinite(entryWeight) ? 1 : Math.Clamp(entryWeight, 0, 1);
+        pose = pose with
+        {
+            FootA = pose.FootA with { Lift = pose.FootA.Lift * weight },
+            FootB = pose.FootB with { Lift = pose.FootB.Lift * weight },
+            BodyBob = pose.BodyBob * weight
+        };
         Pose = pose;
         var joints = RigSecondaryMotion.Sample(phase, settleProgress, reducedMotion);
+        joints = joints with
+        {
+            HeadAngle = joints.HeadAngle * weight, TorsoAngle = joints.TorsoAngle * weight,
+            HeadLagY = joints.HeadLagY * weight, NearFootRoll = joints.NearFootRoll * weight,
+            FarFootRoll = joints.FarFootRoll * weight
+        };
         var definition = _presentation.Definition;
         Matrix Foot(GaitFootPose foot, double roll)
         {

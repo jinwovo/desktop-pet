@@ -242,6 +242,7 @@ var tests = new (string Name, Action Run)[]
  .Concat(EmoteFlightTests.Create())
  .Concat(CharacterImportCancellationTests.Create())
  .Concat(RigSecondaryMotionTests.Create())
+ .Concat(WalkEntryTests.Create())
  .Concat(CursorGazeControllerTests.Create()).ToArray();
 
 if (args.Contains("--character-export-only")) tests = CharacterPackExportTests.Create().ToArray();

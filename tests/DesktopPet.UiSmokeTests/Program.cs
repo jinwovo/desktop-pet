@@ -22,6 +22,11 @@ internal static class Program
         MainWindow? pet = null;
         try
         {
+            if (args.Contains("--walk-entry-only"))
+            {
+                WalkEntryUiTests.Run(folder, args.Contains("--capture"));
+                return 0;
+            }
             if (args.Contains("--gallery-shortcuts-only"))
             {
                 GalleryShortcutUiTests.Run(folder, args.Contains("--capture"));
@@ -271,6 +276,7 @@ internal static class Program
             var baselineIndex = Array.IndexOf(args, "--baseline-characters");
             Check(baselineIndex < 0 || baselineIndex + 1 < args.Length, "Missing --baseline-characters directory");
             GroundedRigVisualRegressionTests.Run(MainWindow.CharactersRoot, baselineIndex < 0 ? null : args[baselineIndex + 1], args.Contains("--capture"));
+            WalkEntryUiTests.Run(folder, args.Contains("--capture"));
             VerifyPoseTransitions(character);
 
             var motion = new MotionPreviewWindow(CharacterPresentation.Load(Path.Combine(MainWindow.CharactersRoot, "Companion")), 1);

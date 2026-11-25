@@ -2,6 +2,8 @@
 
 ## Unreleased (1.5.0 development)
 
+- P048: ease initial vertical gait lift and secondary motion over 90ms instead of instantly raising a lowered foot on restart. Preserve exact horizontal planted contacts, distance phase, legacy timing and bounded completion; resume interrupted settling continuously and skip the added easing for reduced motion. Apply the same behavior to desktop, Settings and motion previews without new bitmap captures or timers.
+
 - P047: search the gallery with Ctrl+F and reset its query/category together with Ctrl+L, without rescanning or applying a character. Keep selection when still visible, preserve F5 refresh and text editing, provide localized visible/accessibility hints, and support input during discovery while rejecting disabled or closed actions.
 
 - P046: localize gallery search/category/list accessibility names and usage help, and expose each card's original authored name with its localized category. Preserve Unicode/custom names, filter/selection and the active pet through language changes, and detach closed-window metadata updates.

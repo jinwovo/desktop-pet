@@ -375,7 +375,7 @@ public partial class SettingsWindow : Window
                 PreviewRig.SetRestFrame(_previewPresentation.Frames[definition.GetFramePath(state, rest, _previewStateElapsedMs)], definition.UsesFrontalRestFrames(state));
             }
             PreviewRig.UpdatePose(_walkAppearance.View, _walkAppearance.GaitPhase,
-                _walkAppearance.IsSettling ? _walkAppearance.SettleProgress : 0, _walkAppearance.FacingRight, elapsedMs / 1000, _pet.ReducedMotion);
+                _walkAppearance.IsSettling ? _walkAppearance.SettleProgress : 0, _walkAppearance.FacingRight, elapsedMs / 1000, _pet.ReducedMotion, _walkAppearance.EntryWeight);
         }
         else
         {

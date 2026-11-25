@@ -1066,7 +1066,7 @@ public partial class MainWindow : Window
                 PetRig.SetRestFrame(GetFrame(_character.GetFramePath(_brain.State, rest, restElapsed)), _character.UsesFrontalRestFrames(_brain.State));
             }
             PetRig.UpdatePose(_walkAppearance.View, _walkAppearance.GaitPhase,
-                _walkAppearance.IsSettling ? _walkAppearance.SettleProgress : 0, _walkAppearance.FacingRight, dt, _settings.ReducedMotion);
+                _walkAppearance.IsSettling ? _walkAppearance.SettleProgress : 0, _walkAppearance.FacingRight, dt, _settings.ReducedMotion, _walkAppearance.EntryWeight);
         }
         else
         {

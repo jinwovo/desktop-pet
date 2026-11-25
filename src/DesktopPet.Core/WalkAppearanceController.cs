@@ -10,6 +10,7 @@ public sealed class WalkAppearanceController
 {
     private enum Stage { Enter, Side, GlanceTurn, ReverseTurn }
     private const double SettleDurationMs = 180;
+    private const double EntryDurationMs = 90;
     private readonly Random _random;
     private bool _walking;
     private bool _requestedFacingRight = true;
@@ -23,6 +24,7 @@ public sealed class WalkAppearanceController
     private bool _distanceDriven;
     private bool _hasDistancePose;
     private double _settleElapsedMs;
+    private double _entryStartWeight, _entryElapsedMs;
 
     public WalkAppearanceController(Random? random = null) => _random = random ?? new Random();
 
@@ -32,6 +34,8 @@ public sealed class WalkAppearanceController
     public double GaitPhase { get; private set; }
     public bool IsSettling { get; private set; }
     public double SettleProgress { get; private set; } = 1;
+    /// <summary>Only vertical lift and secondary motion ease in; horizontal contact travel stays exact.</summary>
+    public double EntryWeight { get; private set; } = 1;
     public bool DisplayWalkPose => _walking || IsSettling;
     public bool UsesDistanceGait => _distanceDriven;
 
@@ -48,6 +52,8 @@ public sealed class WalkAppearanceController
         _settleElapsedMs = 0;
         IsSettling = false;
         SettleProgress = 1;
+        EntryWeight = 1;
+        _entryStartWeight = _entryElapsedMs = 0;
         AnimationElapsedMs = GaitPhase = 0;
         View = WalkView.Front;
     }
@@ -107,6 +113,11 @@ public sealed class WalkAppearanceController
 
         if (!_walking)
         {
+            _entryStartWeight = _distanceDriven
+                ? IsSettling ? EntryWeight * (1 - SettleProgress * SettleProgress * (3 - 2 * SettleProgress)) : 0
+                : 1;
+            _entryElapsedMs = 0;
+            EntryWeight = _entryStartWeight;
             if (_distanceDriven && _hasDistancePose && FacingRight != movementFacingRight)
                 GaitPhase = GroundedGait.ReversePhase(GaitPhase);
             _walking = true;
@@ -143,6 +154,12 @@ public sealed class WalkAppearanceController
         }
 
         if (elapsedMs <= 0) return;
+        if (_distanceDriven)
+        {
+            _entryElapsedMs = Math.Min(EntryDurationMs, _entryElapsedMs + elapsedMs);
+            var t = _entryElapsedMs / EntryDurationMs;
+            EntryWeight = _entryStartWeight + (1 - _entryStartWeight) * t * t * (3 - 2 * t);
+        }
         View = _stageView;
         if (!_distanceDriven)
         {

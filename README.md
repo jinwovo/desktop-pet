@@ -129,6 +129,8 @@ The gallery also exposes localized search/category/list names and usage help thr
 
 In the gallery, **Ctrl+F** focuses and selects the name query; **Ctrl+L** clears both the query and category. These remain usable during discovery without starting another scan. **F5** still refreshes the catalog; clearing filters preserves a selected card when it remains visible and never applies a pet.
 
+Walking now eases the initial vertical foot lift and secondary movement over **90 ms**, including a restart during settling. Planted horizontal contacts, travel-driven phase and normal stride timing stay exact; reduced motion skips the added easing. This applies to the desktop pet, Settings preview and motion inspector for all nine curated live rigs.
+
 ## Notification controls
 
 - **Pause notifications for 15 min** temporarily silences automatic bubbles while keeping unread items and the focus timer. **Resume paused notifications** clears only this temporary pause; manual/daily quiet settings remain in effect. Expiry and resume do not replay the saved backlog. The pause resets when the app closes.
