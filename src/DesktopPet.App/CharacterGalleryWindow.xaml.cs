@@ -58,7 +58,7 @@ public partial class CharacterGalleryWindow : Window
     {
         _pet = pet;
         _previewLoader = previewLoader ?? ((folder, cancellation) => CharacterPresentation.Load(folder, cancellationToken: cancellation));
-        _catalogDiscovery = catalogDiscovery ?? (_ => _pet.AvailableCharacterNames);
+        _catalogDiscovery = catalogDiscovery ?? _pet.DiscoverCharacters;
         _chooseExportPath = chooseExportPath ?? ChooseExportPath;
         _exporter = exporter ?? _pet.ExportCharacterAsync;
         _pet.RenderOptionsChanged += ApplyRenderOptions;
@@ -226,7 +226,7 @@ public partial class CharacterGalleryWindow : Window
                         var custom = Path.GetFullPath(folder).StartsWith(customPrefix, StringComparison.OrdinalIgnoreCase);
                         if (!custom && (name is "Companion" or "Nimbus" or "Ember")) category = CharacterGalleryCategory.Original;
                         else if (!custom && aliases.ContainsKey(name)) category = CharacterGalleryCategory.FanArt;
-                        var thumbnail = CharacterPresentation.LoadThumbnail(folder);
+                        var thumbnail = CharacterPresentation.LoadThumbnail(folder, cancellationToken: cancellation);
                         result.Add(new(name, alias.EnglishName, category, thumbnail, true,
                             category == CharacterGalleryCategory.FanArt ? "선택형 팬아트 팩" : category == CharacterGalleryCategory.Custom ? "직접 추가한 친구" : "DesktopPet 오리지널 친구",
                             SearchText(name, alias)));

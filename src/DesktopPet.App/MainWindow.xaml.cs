@@ -480,6 +480,7 @@ public partial class MainWindow : Window
     }
 
     public IReadOnlyList<string> AvailableCharacterNames => _characterLibrary.GetNames();
+    internal IReadOnlyList<string> DiscoverCharacters(CancellationToken cancellationToken) => _characterLibrary.GetNames(cancellationToken);
     public string CustomCharactersRoot => _characterLibrary.CustomRoot;
     public string ResolveCharacterFolder(string name) => _characterLibrary.Resolve(name);
 

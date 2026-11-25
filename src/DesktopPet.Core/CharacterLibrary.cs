@@ -28,11 +28,12 @@ public sealed class CharacterLibrary
     public string BundledRoot { get; }
     public string CustomRoot { get; }
 
-    public IReadOnlyList<string> GetNames()
+    public IReadOnlyList<string> GetNames(CancellationToken cancellationToken = default)
     {
         var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        AddNames(BundledRoot, names);
-        AddNames(CustomRoot, names);
+        AddNames(BundledRoot, names, cancellationToken);
+        AddNames(CustomRoot, names, cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
         return Array.AsReadOnly(names.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray());
     }
 
@@ -206,12 +207,14 @@ public sealed class CharacterLibrary
             string.Equals(Path.GetFileName(folder), name, StringComparison.OrdinalIgnoreCase))
         : null;
 
-    private static void AddNames(string root, HashSet<string> names)
+    private static void AddNames(string root, HashSet<string> names, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         EnsureNoReparsePoints(root);
         if (!Directory.Exists(root)) return;
         foreach (var folder in Directory.EnumerateDirectories(root))
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var name = Path.GetFileName(folder);
             if (!IsValidName(name)) continue;
             var manifest = Path.Combine(folder, "character.json");

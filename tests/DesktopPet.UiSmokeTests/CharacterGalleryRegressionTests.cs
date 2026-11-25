@@ -255,6 +255,17 @@ internal static class CharacterGalleryRegressionTests
 
     private static void VerifyThumbnailDecoder(string bundled, string fixture)
     {
+        using var cancelled = new CancellationTokenSource();
+        cancelled.Cancel();
+        void ExpectCancelled(Action action)
+        {
+            try { action(); }
+            catch (OperationCanceledException ex) when (ex.CancellationToken == cancelled.Token) { return; }
+            throw new Exception("Cancelled catalog work completed instead of honoring its token");
+        }
+        var missing = Path.Combine(fixture, "missing-cancelled-character");
+        ExpectCancelled(() => CharacterPresentation.LoadThumbnail(missing, cancellationToken: cancelled.Token));
+        ExpectCancelled(() => new CharacterLibrary(bundled, missing).GetNames(cancelled.Token));
         var thumbnail = CharacterPresentation.LoadThumbnail(Path.Combine(bundled, "Companion"), 96);
         Check(thumbnail.IsFrozen && thumbnail.PixelWidth == 96 && thumbnail.PixelHeight == 48,
             "Thumbnail decoder did not bound both axes while retaining aspect ratio");
