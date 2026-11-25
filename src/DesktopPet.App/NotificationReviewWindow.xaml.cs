@@ -43,6 +43,7 @@ public sealed partial class NotificationReviewWindow : Window
         _pet = pet ?? throw new ArgumentNullException(nameof(pet));
         InitializeComponent();
         InitializeNotificationExport(chooseExportPath, notificationExporter);
+        InitializeNotificationShortcuts();
         UiText.Attach(this);
 
         _pet.PendingNotificationCountChanged += OnPetCountChanged;
@@ -231,6 +232,7 @@ public sealed partial class NotificationReviewWindow : Window
 
         ClearFiltersButton.IsEnabled = SearchBox.Text.Length > 0 || _sourceFilter != SourceChoice.All;
         RefreshExportUi();
+        RefreshNotificationShortcutHelp();
     }
 
     private void RefreshSelectionButton()

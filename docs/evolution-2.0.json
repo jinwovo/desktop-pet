@@ -597,11 +597,17 @@
     },
     {
       "id": "P042",
-      "title": "Discovery pending: Accessibility and localization (42)",
-      "status": "planned",
+      "title": "Operate saved-notification export, acknowledgement and filters with guarded keyboard commands",
+      "status": "verified",
       "milestone": "1.5.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/NotificationReviewWindow.Shortcuts.cs",
+        "src/DesktopPet.App/NotificationReviewWindow.xaml.cs",
+        "src/DesktopPet.App/UiText.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/NotificationShortcutUiTests.cs"
+      ]
     },
     {
       "id": "P043",

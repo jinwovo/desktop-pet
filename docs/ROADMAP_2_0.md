@@ -78,6 +78,8 @@ P040 adds a session-only 15-minute notification snooze through both menus. Indep
 
 P041 starts 1.5.0 development with accessible names for all eleven Settings inputs and format help for the four time fields. A native automation-peer fixture reproduces an empty language-selector name, then verifies 33 localized names and all four help texts across KO/EN/zh-CN. Unapplied raw drafts, current presentation and preferences stay intact; closed callbacks cannot change metadata. This verifies programmatic Windows accessibility metadata; Narrator interaction has not been manually tested. P041 is not included in the immutable 1.4.0 download.
 
+P042 adds three notification-browser keyboard actions as one accessibility improvement: Ctrl+S exports the visible snapshot, Ctrl+Shift+R acknowledges only the selected receipt and Ctrl+L clears search/source filters. Native routed-command fixtures verify the registered gestures, real JSON output, gated receipt ownership and forced empty/busy/closed execution guards. Existing Find/Escape behavior and ordinary Delete editing remain intact, with localized shortcut tooltips and automation help across KO/EN/zh-CN. This is 1.5.0 development work, outside the 1.4.0 download.
+
 | Verified patch threshold | Planned release | Main review area |
 | --- | --- | --- |
 | 10 | 1.1.0 | Motion and runtime defects |

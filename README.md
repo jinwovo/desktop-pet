@@ -117,6 +117,8 @@ In 1.4.0, switching Settings language keeps unapplied timer and quiet-hour input
 
 **1.5.0 development:** Settings input names and duration/time-format help are available through Windows UI Automation in all three languages. Language changes preserve pending edits. This accessibility improvement is not included in the 1.4.0 download.
 
+The 1.5.0 notification browser also supports **Ctrl+S** to export visible JSON, **Ctrl+Shift+R** to mark only the selected item read and **Ctrl+L** to clear filters. Busy, empty and closed windows reject unavailable actions. Existing Find/Escape and text-editing Delete behavior stay available.
+
 - **Pause notifications for 15 min** temporarily silences automatic bubbles while keeping unread items and the focus timer. **Resume paused notifications** clears only this temporary pause; manual/daily quiet settings remain in effect. Expiry and resume do not replay the saved backlog. The pause resets when the app closes.
 - **1.4.0:** open **Notification list...** from the tray or pet menu to browse saved items, even with the pet hidden. Selecting an item keeps it unread; its original text can be selected and copied. Source labels and local timestamps help identify completions, and the selected item stays in place as new notifications arrive.
 - In the notification browser, search titles, messages and sources, then narrow results to Claude, Codex, focus timers, tests or other sources. **Ctrl+F** focuses search; **Clear filters** or **Escape** clears the query and source filter. Language changes keep your raw query and filter choice. Counts distinguish visible matches from the saved total.
