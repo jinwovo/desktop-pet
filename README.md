@@ -16,7 +16,7 @@ A quiet desktop companion for AI work, focused sessions, and a less empty taskba
 
 [2.0 roadmap and 100-patch progress](docs/ROADMAP_2_0.md)
 
-1.4.0 brings the evolution total to 40 verified improvements. It adds session extensions and focus counts, draft-safe settings, saved-notification search and source filters, selected-item acknowledgement, local JSON export and a fifteen-minute notification snooze.
+1.5.0 ships 50 verified improvements, including smoother walking transitions, keyboard shortcuts for Settings and the gallery, and localized Windows accessibility labels.
 
 DesktopPet is a Windows desktop pet with gentle completion notifications for local Claude Code and Codex, a 25/5 focus timer, and importable character packs. Its live walking renderer moves cached body and foot layers continuously, using actual travel distance to keep a planted foot from sliding.
 
@@ -113,9 +113,9 @@ In 1.4.0, switching Settings language keeps unapplied timer and quiet-hour input
 
 1.4.0 also offers **25 / 5** and **50 / 10** quick-fill buttons. They fill focus/break minute fields only; use **Apply time** to change future defaults. A running or paused session and any added time stay intact.
 
-## Keyboard and accessibility (1.5.0 development)
+## Keyboard and accessibility (1.5.0)
 
-**1.5.0 development:** Settings input names and duration/time-format help are available through Windows UI Automation in all three languages. Language changes preserve pending edits. This accessibility improvement is not included in the 1.4.0 download.
+**1.5.0:** Settings input names and duration/time-format help are available through Windows UI Automation in all three languages. Language changes preserve pending edits.
 
 The 1.5.0 notification browser also supports **Ctrl+S** to export visible JSON, **Ctrl+Shift+R** to mark only the selected item read and **Ctrl+L** to clear filters. Busy, empty and closed windows reject unavailable actions. Existing Find/Escape and text-editing Delete behavior stay available.
 
@@ -130,6 +130,8 @@ The gallery also exposes localized search/category/list names and usage help thr
 In the gallery, **Ctrl+F** focuses and selects the name query; **Ctrl+L** clears both the query and category. These remain usable during discovery without starting another scan. **F5** still refreshes the catalog; clearing filters preserves a selected card when it remains visible and never applies a pet.
 
 Walking now eases the initial vertical foot lift and secondary movement over **90 ms**, including a restart during settling. Planted horizontal contacts, travel-driven phase and normal stride timing stay exact; reduced motion skips the added easing. This applies to the desktop pet, Settings preview and motion inspector for all nine curated live rigs.
+
+A pet that notices the cursor while stopping now uses the same directional artwork through the whole transition. Reduced motion updates a paused preview immediately.
 
 ## Notification controls
 
@@ -204,7 +206,7 @@ The suites use fixture directories and do not register hooks in your real assist
 To create a public Windows x64 package:
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 1.4.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 1.5.0
 ```
 
 The output is a self-contained ZIP and a SHA256 sidecar under `artifacts/releases/`. Missing runtime packs cause a build failure; the script does not silently change deployment type. The [Windows workflow](.github/workflows/windows-release.yml) is configured to run checks and create artifacts; its presence does not imply a successful remote build or a published release.

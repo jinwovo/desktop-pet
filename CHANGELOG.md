@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased (1.5.0 development)
+## 1.5.0 — evolution patches P041–P050
 
 - P050 Refresh the paused pose when reduced motion changes while preserving simulation time and the inspected stride.
 
