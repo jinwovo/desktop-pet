@@ -30,6 +30,15 @@ public static class TimedAnimationTests
             Check(character.GetFramePath(PetState.Idle, frames, 7730d * 1_000_000_000 + 4200) == frames[1], "Long sparse-blink cycle lost its boundary");
         }));
 
+        yield return ("Weighted lookup skips boundaries rounded to the same timestamp", () => InFolder(folder =>
+        {
+            Write(folder, "{\"idle\":[10000000000000000,1,1,10000000000000000]}");
+            var character = CharacterLoader.Load(folder);
+            var frames = character.GetFrames(PetState.Idle);
+            Check(character.GetFramePath(PetState.Idle, frames, 10000000000000000d) == frames[3],
+                "The exact boundary selected a frame with no representable duration");
+        }));
+
         yield return ("Unspecified animation timings retain the legacy per-state interval multiplier", () => InFolder(folder =>
         {
             Write(folder, "{\"idle\":[4200,120,3300,110]}");

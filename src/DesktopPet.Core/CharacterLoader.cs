@@ -174,16 +174,19 @@ public static class CharacterLoader
                 throw new InvalidDataException($"'{jsonPath}': frameDurationsMs 상태가 중복되었습니다: {name}.");
             if (durations is null || durations.Count == 0 || durations.Count != frames[state].Count)
                 throw new InvalidDataException($"'{jsonPath}': {name}의 frameDurationsMs 개수는 실제 프레임 개수와 같아야 합니다.");
+            var boundaries = new double[durations.Count];
             var total = 0d;
-            foreach (var duration in durations)
+            for (var i = 0; i < durations.Count; i++)
             {
+                var duration = durations[i];
                 if (!double.IsFinite(duration) || duration <= 0 || duration > double.MaxValue - total)
                     throw new InvalidDataException($"'{jsonPath}': frameDurationsMs는 유한한 양수이며 합계가 유한해야 합니다: {name}.");
                 total += duration;
                 if (!double.IsFinite(total))
                     throw new InvalidDataException($"'{jsonPath}': frameDurationsMs 합계가 너무 큽니다: {name}.");
+                boundaries[i] = total;
             }
-            result.Add(state, durations.ToArray());
+            result.Add(state, new FrameTimeline(durations.ToArray(), boundaries));
         }
         return result;
     }

@@ -217,6 +217,7 @@ public sealed class CharacterDefinition
 
         if (FrameDurationsByState.TryGetValue(state, out var durations) && durations.Count == frames.Count)
         {
+            if (durations is FrameTimeline timeline) return frames[timeline.FindFrame(stateElapsedMs)];
             var total = 0d;
             for (var i = 0; i < durations.Count; i++) total += durations[i];
             var position = double.IsFinite(stateElapsedMs) && stateElapsedMs >= 0 ? stateElapsedMs % total : 0;
