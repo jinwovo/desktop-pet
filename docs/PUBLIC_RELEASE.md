@@ -35,13 +35,13 @@ Review the exported folder before copying it into an authenticated clone of the 
 The default package is self-contained and requires access to missing NuGet runtime/build packs:
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 1.3.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 1.4.0
 ```
 
 An explicitly labelled alternative requires the user's .NET10 Desktop Runtime x64:
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 1.3.0 -FrameworkDependent
+powershell -NoProfile -File scripts/package-release.ps1 -Version 1.4.0 -FrameworkDependent
 ```
 
 The output directory is `artifacts/releases/`. Keep the entire ZIP layout. Compare its `.zip.sha256`, extract it and validate the manifest before reviewing the app on a test Windows profile. Do not use your real assistant configuration as a regression fixture.

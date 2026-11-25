@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased (1.4.0 development)
+## 1.4.0 — evolution patches P031–P040
 
 - P040: pause automatic notification bubbles for 15 minutes from either shared menu while retaining unread receipts and the running focus timer. Expire at the exact UTC deadline without another polling timer, preserve manual/daily quiet settings and do not replay saved popups on expiry/resume. Honor a menu's displayed Resume action even if its deadline passes while it remains open, and ignore disposed callbacks.
 - P039: export the currently visible notification snapshot as local JSON through an explicit filename picker. Preserve original titles/messages/source/timestamps and unread receipts, capture before the picker can change filters, protect existing files and publish through an owned temporary file. Cancel unfinished saves on close, clean temporary files on failure/cancellation and localize saving/success/retry feedback. Keep all footer actions usable at minimum window size.

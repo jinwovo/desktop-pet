@@ -16,7 +16,7 @@ A quiet desktop companion for AI work, focused sessions, and a less empty taskba
 
 [2.0 roadmap and 100-patch progress](docs/ROADMAP_2_0.md)
 
-1.3.0 brings the evolution total to 30 verified improvements. This milestone adds responsive character loading, gallery refresh and ZIP export, pause/step and reaction inspection, scene PNGs and frame guides, and anger glyphs that preserve character silhouettes.
+1.4.0 brings the evolution total to 40 verified improvements. It adds session extensions and focus counts, draft-safe settings, saved-notification search and source filters, selected-item acknowledgement, local JSON export and a fifteen-minute notification snooze.
 
 DesktopPet is a Windows desktop pet with gentle completion notifications for local Claude Code and Codex, a 25/5 focus timer, and importable character packs. Its live walking renderer moves cached body and foot layers continuously, using actual travel distance to keep a planted foot from sliding.
 
@@ -105,19 +105,19 @@ In Settings, open **Focus timer** (`집중 타이머`):
 
 Use the minute fields and **시간 적용** to change durations. Changes preserve an active/paused countdown and apply on the next start or explicit restart. The timer does not automatically chain sessions or restore an active countdown after the app closes. Its completion uses the same local notification inbox, hidden-pet rules, and Do not disturb setting. Tray controls are also available.
 
-**1.4.0 development preview:** **Add 5 min** in Settings or the tray/pet menu extends only the current running or paused focus/break session. Pause state and default durations stay unchanged; Restart uses the configured default again. An expired session completes once and cannot be revived by a late click. Total active time is capped at 24 hours per session. This feature is not included in the 1.3.0 download.
+**1.4.0:** **Add 5 min** in Settings or the tray/pet menu extends only the current running or paused focus/break session. Pause state and default durations stay unchanged; Restart uses the configured default again. An expired session completes once and cannot be revived by a late click. Total active time is capped at 24 hours per session.
 
-The same 1.4.0 preview shows **Focus sessions completed** for this app run. **Reset count** in Settings or the tray/pet menu clears only that number; it keeps the current countdown, temporary extensions and unread notifications. Breaks do not increase the count, and the count is not saved between app runs. This is also absent from the 1.3.0 download.
+1.4.0 shows **Focus sessions completed** for this app run. **Reset count** in Settings or the tray/pet menu clears only that number; it keeps the current countdown, temporary extensions and unread notifications. Breaks do not increase the count, and the count is not saved between app runs.
 
-Also in 1.4.0 development, switching Settings language keeps unapplied timer and quiet-hour inputs, including the schedule checkbox, and translates the latest validation/Apply feedback. Apply remains explicit; a valid backup restore replaces these drafts with its restored values and clears stale feedback.
+In 1.4.0, switching Settings language keeps unapplied timer and quiet-hour inputs, including the schedule checkbox, and translates the latest validation/Apply feedback. Apply remains explicit; a valid backup restore replaces these drafts with its restored values and clears stale feedback.
 
-The 1.4.0 preview also offers **25 / 5** and **50 / 10** quick-fill buttons. They fill focus/break minute fields only; use **Apply time** to change future defaults. A running or paused session and any added time stay intact.
+1.4.0 also offers **25 / 5** and **50 / 10** quick-fill buttons. They fill focus/break minute fields only; use **Apply time** to change future defaults. A running or paused session and any added time stay intact.
 
 ## Notification controls
 
 - **Pause notifications for 15 min** temporarily silences automatic bubbles while keeping unread items and the focus timer. **Resume paused notifications** clears only this temporary pause; manual/daily quiet settings remain in effect. Expiry and resume do not replay the saved backlog. The pause resets when the app closes.
-- **1.4.0 development:** open **Notification list...** from the tray or pet menu to browse saved items, even with the pet hidden. Selecting an item keeps it unread; its original text can be selected and copied. Source labels and local timestamps help identify completions, and the selected item stays in place as new notifications arrive. This is not in the 1.3.0 download.
-- In that development browser, search titles, messages and sources, then narrow results to Claude, Codex, focus timers, tests or other sources. **Ctrl+F** focuses search; **Clear filters** or **Escape** clears the query and source filter. Language changes keep your raw query and filter choice. Counts distinguish visible matches from the saved total.
+- **1.4.0:** open **Notification list...** from the tray or pet menu to browse saved items, even with the pet hidden. Selecting an item keeps it unread; its original text can be selected and copied. Source labels and local timestamps help identify completions, and the selected item stays in place as new notifications arrive.
+- In the notification browser, search titles, messages and sources, then narrow results to Claude, Codex, focus timers, tests or other sources. **Ctrl+F** focuses search; **Clear filters** or **Escape** clears the query and source filter. Language changes keep your raw query and filter choice. Counts distinguish visible matches from the saved total.
 - **Mark selected notification as read** explicitly acknowledges just that item. Other saved notifications and arrivals remain unread; a failed file deletion offers **Retry marking read**. The operation keeps its original target if you select another row or close the browser while it is working.
 - **Export visible JSON** saves a local snapshot of the current search/filter results without marking them read. It includes original title, message, source and creation time; choose where to store it. Existing files are preserved, a new filename can be retried, and closing the browser cancels an unfinished save. No cloud upload is involved.
 - Auto-hide closes a bubble without deleting it; the unread tray entry remains available.
@@ -186,7 +186,7 @@ The suites use fixture directories and do not register hooks in your real assist
 To create a public Windows x64 package:
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 1.3.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 1.4.0
 ```
 
 The output is a self-contained ZIP and a SHA256 sidecar under `artifacts/releases/`. Missing runtime packs cause a build failure; the script does not silently change deployment type. The [Windows workflow](.github/workflows/windows-release.yml) is configured to run checks and create artifacts; its presence does not imply a successful remote build or a published release.
