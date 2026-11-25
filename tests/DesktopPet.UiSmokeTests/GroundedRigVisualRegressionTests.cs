@@ -33,10 +33,44 @@ internal static class GroundedRigVisualRegressionTests
         Console.WriteLine($"PASS Actual live-rig drawing transforms keep planted feet fixed through sub-frame phases, scaling and native pixel placement for {verified} characters");
         Console.WriteLine($"PASS Actual live-rig settling lowers raised feet continuously without moving either contact anchor for {verified} characters");
         Console.WriteLine($"PASS Actual upper-body reversals blend without a one-frame mirror jump while contact feet stay fixed for {verified} characters");
+        VerifyBoundedBlendWrites();
         VerifyPixelPlacement();
         VerifyRetainedDrawingUpdates(benchmark!, capture);
         VerifyCachedUpdates(benchmark!);
         ProfileDecodeResources(benchmark!, baselineCharactersRoot);
+    }
+
+    private static void VerifyBoundedBlendWrites()
+    {
+        const int width = 20, height = 12, stride = width * 4;
+        var side = new byte[stride * height];
+        // Keep an opaque reference outside the changed area. It must survive scratch initialization.
+        Array.Fill(side, (byte)180, 0, 4);
+        var turn = (byte[])side.Clone();
+        for (var y = 6; y <= 8; y++)
+            for (var x = 11; x <= 13; x++)
+                Array.Fill(turn, (byte)240, y * stride + x * 4, 4);
+
+        BitmapSource Bitmap(byte[] pixels) =>
+            BitmapSource.Create(width, height, 96, 96, PixelFormats.Pbgra32, null, pixels, stride);
+        var type = typeof(GroundedRigVisual).Assembly.GetType("DesktopPet.App.RigTextureBlend")!;
+        var blend = Activator.CreateInstance(type, Bitmap(side), Bitmap(turn), null)!;
+        var at = type.GetMethod("At")!;
+        object? scratch = null;
+        foreach (var weight in new[] { 64, 192, 256, 128, 0, 64 })
+        {
+            var bitmap = (BitmapSource)at.Invoke(blend, new object[] { weight / 256d, 0d, false })!;
+            if (weight is > 0 and < 256)
+            {
+                scratch ??= bitmap;
+                Check(ReferenceEquals(scratch, bitmap), "A partial texture update replaced the scratch bitmap");
+            }
+            var expected = side.Zip(turn, (a, b) => (byte)((a * (256 - weight) + b * weight + 128) >> 8));
+            Check(Pixels(bitmap).SequenceEqual(expected), "Partial texture upload changed pixels or lost the immutable border");
+        }
+        var bounds = (Int32Rect)type.GetField("_changedBounds", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(blend)!;
+        Check(bounds == new Int32Rect(11, 6, 3, 3), "Texture update region includes unaffected pixels");
+        Console.WriteLine("PASS Sparse texture blending updates 9 of 240 pixels after the first upload and preserves every output byte");
     }
 
     private static GroundedRigVisual Visual(CharacterPresentation presentation, double scale = 1)

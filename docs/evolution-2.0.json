@@ -740,11 +740,15 @@
     },
     {
       "id": "P052",
-      "title": "Discovery pending: Resource and rendering performance (52)",
-      "status": "planned",
+      "title": "Limit repeated rig texture writes to the region that can change",
+      "status": "verified",
       "milestone": "1.6.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/RigTextureBlend.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/GroundedRigVisualRegressionTests.cs"
+      ]
     },
     {
       "id": "P053",

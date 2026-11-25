@@ -14,6 +14,7 @@ internal sealed class RigTextureBlend
     private readonly byte[]? _pivot, _pivotMirrored;
     private readonly BitmapSource? _pivotSource, _pivotMirroredSource;
     private readonly int[] _changed;
+    private readonly Int32Rect _changedBounds;
     private readonly WriteableBitmap _scratch;
     private readonly int _stride;
     private int _lastWeight = -1;
@@ -62,6 +63,8 @@ internal sealed class RigTextureBlend
             _pivotSource = Frozen(_pivot); _pivotMirroredSource = Frozen(_pivotMirrored);
         }
         var changed = new List<int>();
+        var minX = width;
+        var maxX = -1;
         for (var i = 0; i < _side.Length; i += 4)
         {
             var differs = false;
@@ -69,9 +72,19 @@ internal sealed class RigTextureBlend
                 differs |= _side[i + c] != _turn[i + c] || _sideMirrored is not null &&
                     (_side[i + c] != _sideMirrored[i + c] || _side[i + c] != _turnMirrored![i + c] ||
                      _side[i + c] != _pivot![i + c] || _side[i + c] != _pivotMirrored![i + c]);
-            if (differs) changed.Add(i);
+            if (!differs) continue;
+            changed.Add(i);
+            var x = i % _stride / 4;
+            minX = Math.Min(minX, x);
+            maxX = Math.Max(maxX, x);
         }
         _changed = changed.ToArray();
+        if (_changed.Length > 0)
+        {
+            var top = _changed[0] / _stride;
+            var bottom = _changed[^1] / _stride;
+            _changedBounds = new Int32Rect(minX, top, maxX - minX + 1, bottom - top + 1);
+        }
         _scratch = new WriteableBitmap(width, height, 96, 96, PixelFormats.Pbgra32, null);
     }
     public ImageSource At(double turnWeight, double mirrorWeight = 0, bool pivotMirrored = false)
@@ -100,7 +113,11 @@ internal sealed class RigTextureBlend
                             : (byte)((pivot * (512 - 2 * mirror) + reflected * (2 * mirror - 256) + 128) >> 8);
                     }
                 }
-            _scratch.WritePixels(new Int32Rect(0, 0, _scratch.PixelWidth, _scratch.PixelHeight), _pixels, _stride, 0);
+            // Initialize unchanged pixels once. Later blends only overwrite the region that can differ.
+            if (_lastWeight < 0)
+                _scratch.WritePixels(new Int32Rect(0, 0, _scratch.PixelWidth, _scratch.PixelHeight), _pixels, _stride, 0, 0);
+            else if (!_changedBounds.IsEmpty)
+                _scratch.WritePixels(_changedBounds, _pixels, _stride, _changedBounds.X, _changedBounds.Y);
             _lastWeight = weight; _lastMirrorWeight = mirror; _lastPivotMirrored = pivotMirrored;
         }
         return _scratch;

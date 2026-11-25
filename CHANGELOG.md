@@ -2,6 +2,8 @@
 
 ## Unreleased (1.6.0 development)
 
+- P052 Restrict repeated live-rig texture uploads to the changed region while keeping the same pixels and blend weights.
+
 - P051 Remove per-call allocations from weighted animation frame selection while preserving frame timings.
 
 ## 1.5.0 — evolution patches P041–P050
