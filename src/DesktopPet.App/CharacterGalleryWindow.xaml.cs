@@ -63,6 +63,7 @@ public partial class CharacterGalleryWindow : Window
         _exporter = exporter ?? _pet.ExportCharacterAsync;
         _pet.RenderOptionsChanged += ApplyRenderOptions;
         InitializeComponent();
+        InitializeGalleryShortcuts();
         MaxHeight = Math.Max(MinHeight, SystemParameters.WorkArea.Height - 40);
         SetCategoryChoices(CharacterGalleryCategory.All);
         Loaded += (_, _) => { if (!_started) { _started = true; RefreshCharacters(); } };
@@ -79,6 +80,7 @@ public partial class CharacterGalleryWindow : Window
         };
         UiText.Attach(this);
         RefreshGalleryAccessibleNames();
+        RefreshGalleryShortcutHelp();
         Loaded += (_, _) => RefreshLanguage();
         // Translate static controls first, then redraw stateful labels that must not be reset
         // to the empty strings present when UiText first attached to this window.
@@ -120,6 +122,7 @@ public partial class CharacterGalleryWindow : Window
         UpdateSelection();
         RenderStatus();
         RefreshGalleryAccessibleNames();
+        RefreshGalleryShortcutHelp();
     }
 
     private void RefreshGalleryAccessibleNames()

@@ -667,11 +667,19 @@
     },
     {
       "id": "P047",
-      "title": "Discovery pending: Accessibility and localization (47)",
-      "status": "planned",
+      "title": "Make gallery search and combined filter reset available from the keyboard",
+      "status": "verified",
       "milestone": "1.5.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/CharacterGalleryWindow.Shortcuts.cs",
+        "src/DesktopPet.App/CharacterGalleryWindow.xaml.cs",
+        "src/DesktopPet.App/CharacterGalleryWindow.xaml",
+        "src/DesktopPet.App/UiText.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/GalleryShortcutUiTests.cs",
+        "tests/DesktopPet.UiSmokeTests/Program.cs"
+      ]
     },
     {
       "id": "P048",

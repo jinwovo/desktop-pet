@@ -74,6 +74,7 @@
             <StackPanel>
                 <TextBlock x:Name="CountText" Foreground="#68766A"/>
                 <TextBlock x:Name="StatusText" Foreground="#354E3B" TextWrapping="Wrap" Margin="0,3,12,0"/>
+                <TextBlock x:Name="GalleryShortcutHint" Text="Ctrl+F 검색 · Ctrl+L 초기화 · F5 새로고침" Foreground="#68766A" TextWrapping="Wrap" Margin="0,4,12,0"/>
             </StackPanel>
         </DockPanel>
     </Grid>

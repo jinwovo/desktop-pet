@@ -2,6 +2,8 @@
 
 ## Unreleased (1.5.0 development)
 
+- P047: search the gallery with Ctrl+F and reset its query/category together with Ctrl+L, without rescanning or applying a character. Keep selection when still visible, preserve F5 refresh and text editing, provide localized visible/accessibility hints, and support input during discovery while rejecting disabled or closed actions.
+
 - P046: localize gallery search/category/list accessibility names and usage help, and expose each card's original authored name with its localized category. Preserve Unicode/custom names, filter/selection and the active pet through language changes, and detach closed-window metadata updates.
 - P045: keep Settings motion-test, AI-connection and Close actions plus the section-navigation hint visible in a fixed footer. Scroll only the unchanged body cards, preserve time-editor/section shortcuts and keep all controls inside the client area across KO/EN/zh-CN at 500px height. Closing still leaves unapplied drafts untouched.
 - P044: jump directly to Settings character, size/speed, focus and notification sections with Ctrl+1–4. Scroll the target into view and focus it without applying edits or changing the active pet. Localize the visible hint/window accessibility help and reject unknown, disabled, hidden or closed navigation targets.

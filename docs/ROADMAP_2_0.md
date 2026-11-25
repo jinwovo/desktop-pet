@@ -108,3 +108,5 @@ The [1.1.0 recovery workflow](../.github/workflows/publish-1.1.0.yml) reuses the
 ## Validation limits
 
 Automated WPF rendering checks inspect actual pixels, contact transforms and window lifecycles. A renderer-loop timing is not a hardware-independent FPS measurement. Physical clean-PC, mixed-DPI and subjective motion checks remain explicitly distinguishable from automated results. The stable 2.0.0 tag is created after the ledger and final verification gates pass.
+
+P047 adds gallery Find and filter-reset commands with a localized visible hint and window accessibility help. Native tests cover actual focus/selection, query/category reset, preserved current pet/preferences/card selection, all three locales, input during blocked discovery without a rescan, explicit refresh, and disabled/closed actions. This remains 1.5.0 development work.

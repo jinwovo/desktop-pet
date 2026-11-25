@@ -57,6 +57,8 @@ public static class UiText
     }
     private static readonly Dictionary<string, (string English, string Chinese)> Translations = new(StringComparer.Ordinal)
     {
+        ["Ctrl+F 검색 · Ctrl+L 초기화 · F5 새로고침"] = ("Ctrl+F Search · Ctrl+L Clear filters · F5 Refresh", "Ctrl+F 搜索 · Ctrl+L 重置筛选 · F5 刷新"),
+        ["Ctrl+F로 이름 검색, Ctrl+L로 검색·분류 초기화, F5로 새로고침합니다."] = ("Ctrl+F to search names, Ctrl+L to clear search and category, F5 to refresh.", "Ctrl+F 搜索名称，Ctrl+L 重置搜索和类别，F5 刷新。"),
         ["펫을 데려올 화면"] = ("Monitor to recover the pet to", "恢复宠物的目标屏幕"),
         ["프레임 제한"] = ("Frame rate limit", "帧率限制"),
         ["집중 시간(분)"] = ("Focus duration (minutes)", "专注时长（分钟）"),

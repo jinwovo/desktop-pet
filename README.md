@@ -127,6 +127,8 @@ Settings keeps its motion-test, AI-connection and Close actions plus the section
 
 The gallery also exposes localized search/category/list names and usage help through Windows accessibility metadata. Cards retain their original authored names, including Unicode custom names, and announce their localized category.
 
+In the gallery, **Ctrl+F** focuses and selects the name query; **Ctrl+L** clears both the query and category. These remain usable during discovery without starting another scan. **F5** still refreshes the catalog; clearing filters preserves a selected card when it remains visible and never applies a pet.
+
 ## Notification controls
 
 - **Pause notifications for 15 min** temporarily silences automatic bubbles while keeping unread items and the focus timer. **Resume paused notifications** clears only this temporary pause; manual/daily quiet settings remain in effect. Expiry and resume do not replay the saved backlog. The pause resets when the app closes.

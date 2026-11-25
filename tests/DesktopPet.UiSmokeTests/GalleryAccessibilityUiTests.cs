@@ -30,7 +30,7 @@ internal static class GalleryAccessibilityUiTests
         Invoke(pet, "ApplyPresentation", CharacterPresentation.Load(Path.Combine(MainWindow.CharactersRoot, "Companion")));
         var save = (DispatcherTimer)Get(pet, "_settingsSaveTimer")!;
         save.Interval = TimeSpan.FromDays(1);
-        var names = new[] { "Companion", "Nimbus", "? ?? ??" };
+        var names = new[] { "Companion", "Nimbus", "내 친구 你好" };
         var gallery = new CharacterGalleryWindow(pet, catalogDiscovery: _ => names);
         try
         {
