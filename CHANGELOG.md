@@ -2,6 +2,7 @@
 
 ## Unreleased (1.5.0 development)
 
+- P043: apply focus/break durations and quiet-hour schedules with Enter inside their four time editors, before the window's default Close action can receive it. Reuse existing validation, keep invalid drafts open, preserve active focus sessions and other key/IME routing, localize shortcut hints and ignore closed-editor input.
 - P042: make saved-notification export, selected acknowledgement and filter reset available with Ctrl+S, Ctrl+Shift+R and Ctrl+L. Route the same existing actions, recheck empty/busy/closed guards on command execution, preserve Find/Escape and normal Delete editing, and localize shortcut tooltips/accessibility help in KO/EN/zh-CN.
 - P041: provide localized UI Automation names for all eleven Settings selectors, sliders and time inputs, plus duration/HH:mm help for the four time fields. Refresh metadata on language changes without applying drafts or changing the active character, and ignore closed-window callbacks. Native automation-peer checks cover KO/EN/zh-CN; no manual screen-reader claim is made.
 

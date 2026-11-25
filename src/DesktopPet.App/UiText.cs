@@ -65,6 +65,8 @@ public static class UiText
         ["방해 금지 종료 시간"] = ("Quiet hours end time", "免打扰结束时间"),
         ["집중 1~180분, 휴식 1~60분. 시간 적용을 눌러 반영하세요."] = ("Focus: 1–180 minutes; break: 1–60 minutes. Use Apply time to apply.", "专注：1–180 分钟；休息：1–60 分钟。点击应用时长以应用。"),
         ["알림"] = ("Notification", "通知"),
+        ["Enter로 집중·휴식 시간 적용"] = ("Apply focus/break durations with Enter", "按 Enter 应用专注/休息时长"),
+        ["Enter로 방해 금지 예약 적용"] = ("Apply the quiet-hours schedule with Enter", "按 Enter 应用免打扰时段"),
         ["보이는 알림을 JSON으로 저장 (Ctrl+S)"] = ("Export visible notifications as JSON (Ctrl+S)", "将当前通知导出为 JSON（Ctrl+S）"),
         ["선택한 알림만 읽음 처리 (Ctrl+Shift+R)"] = ("Mark only the selected notification read (Ctrl+Shift+R)", "仅将选定通知标为已读（Ctrl+Shift+R）"),
         ["검색어와 출처 필터 초기화 (Ctrl+L)"] = ("Clear search and source filters (Ctrl+L)", "清除搜索和来源筛选（Ctrl+L）"),

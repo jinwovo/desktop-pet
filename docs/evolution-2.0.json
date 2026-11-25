@@ -611,11 +611,17 @@
     },
     {
       "id": "P043",
-      "title": "Discovery pending: Accessibility and localization (43)",
-      "status": "planned",
+      "title": "Apply time-editor drafts with scoped Enter while preserving validation and the active focus session",
+      "status": "verified",
       "milestone": "1.5.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/SettingsWindow.InputShortcuts.cs",
+        "src/DesktopPet.App/SettingsWindow.xaml.cs",
+        "src/DesktopPet.App/UiText.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/SettingsTimeInputUiTests.cs"
+      ]
     },
     {
       "id": "P044",

@@ -52,6 +52,7 @@ public partial class SettingsWindow : Window
     {
         _pet = pet;
         InitializeComponent();
+        InitializeTimeInputShortcuts();
         _poseTransition = new PoseTransitionPresenter(PreviewImage, PreviousPreviewImage);
         VersionText.Text = "DesktopPet " + typeof(App).Assembly.GetName().Version!.ToString(3);
         MaxHeight = Math.Max(500, SystemParameters.WorkArea.Height - 60);
@@ -86,6 +87,7 @@ public partial class SettingsWindow : Window
         UiText.Attach(this);
         UiText.LanguageChanged += RefreshLanguage;
         RefreshAccessibleNames();
+        RefreshTimeInputShortcutHelp();
     }
 
     private bool IsPreviewActive => !_closed && IsLoaded && IsVisible && WindowState != WindowState.Minimized;
@@ -202,6 +204,7 @@ public partial class SettingsWindow : Window
         RenderFocusTimer();
         RefreshDurationPresetTooltips();
         RefreshAccessibleNames();
+        RefreshTimeInputShortcutHelp();
     }
 
     private void RefreshAccessibleNames()

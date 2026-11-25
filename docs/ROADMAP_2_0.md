@@ -80,6 +80,8 @@ P041 starts 1.5.0 development with accessible names for all eleven Settings inpu
 
 P042 adds three notification-browser keyboard actions as one accessibility improvement: Ctrl+S exports the visible snapshot, Ctrl+Shift+R acknowledges only the selected receipt and Ctrl+L clears search/source filters. Native routed-command fixtures verify the registered gestures, real JSON output, gated receipt ownership and forced empty/busy/closed execution guards. Existing Find/Escape behavior and ordinary Delete editing remain intact, with localized shortcut tooltips and automation help across KO/EN/zh-CN. This is 1.5.0 development work, outside the 1.4.0 download.
 
+P043 scopes Enter to the four Settings time editors. A native routed-key fixture first reproduces missing duration application, then verifies valid/invalid duration and schedule drafts across three locales. It checks that the window remains open on validation failures, future defaults can change while the active focus snapshot stays intact, and other/IME-processed or closed-editor key events do not apply values. Localized tooltips and the Enter accelerator retain the earlier automation names/format help. Physical keyboard/IME interaction is not claimed. This is 1.5.0 development work.
+
 | Verified patch threshold | Planned release | Main review area |
 | --- | --- | --- |
 | 10 | 1.1.0 | Motion and runtime defects |

@@ -22,6 +22,11 @@ internal static class Program
         MainWindow? pet = null;
         try
         {
+            if (args.Contains("--settings-time-input-only"))
+            {
+                SettingsTimeInputUiTests.Run(folder, args.Contains("--capture"));
+                return 0;
+            }
             if (args.Contains("--notification-shortcuts-only"))
             {
                 NotificationShortcutUiTests.Run(folder, args.Contains("--capture"));
@@ -452,6 +457,7 @@ internal static class Program
             NotificationSnoozeUiTests.Run(folder, args.Contains("--capture"));
             SettingsAccessibilityUiTests.Run(folder, args.Contains("--capture"));
             NotificationShortcutUiTests.Run(folder, args.Contains("--capture"));
+            SettingsTimeInputUiTests.Run(folder, args.Contains("--capture"));
             GalleryLocaleRegressionTests.Run(folder, args.Contains("--capture"));
             CharacterSwitchUiTests.Run(folder);
             CharacterExportUiTests.Run(folder, args.Contains("--capture"));
