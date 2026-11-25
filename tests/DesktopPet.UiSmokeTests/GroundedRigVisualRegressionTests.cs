@@ -56,6 +56,10 @@ internal static class GroundedRigVisualRegressionTests
         var type = typeof(GroundedRigVisual).Assembly.GetType("DesktopPet.App.RigTextureBlend")!;
         var blend = Activator.CreateInstance(type, Bitmap(side), Bitmap(turn), null)!;
         var at = type.GetMethod("At")!;
+        var scratchField = type.GetField("_scratch", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        at.Invoke(blend, new object[] { 0d, 0d, false });
+        at.Invoke(blend, new object[] { 1d, 0d, false });
+        Check(scratchField.GetValue(blend) is null, "Endpoint-only rendering allocated a scratch bitmap");
         object? scratch = null;
         foreach (var weight in new[] { 64, 192, 256, 128, 0, 64 })
         {
