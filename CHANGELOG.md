@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased (1.5.0 development)
+
+- P041: provide localized UI Automation names for all eleven Settings selectors, sliders and time inputs, plus duration/HH:mm help for the four time fields. Refresh metadata on language changes without applying drafts or changing the active character, and ignore closed-window callbacks. Native automation-peer checks cover KO/EN/zh-CN; no manual screen-reader claim is made.
+
 ## 1.4.0 — evolution patches P031–P040
 
 - P040: pause automatic notification bubbles for 15 minutes from either shared menu while retaining unread receipts and the running focus timer. Expire at the exact UTC deadline without another polling timer, preserve manual/daily quiet settings and do not replay saved popups on expiry/resume. Honor a menu's displayed Resume action even if its deadline passes while it remains open, and ignore disposed callbacks.

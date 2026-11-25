@@ -85,6 +85,7 @@ public partial class SettingsWindow : Window
         };
         UiText.Attach(this);
         UiText.LanguageChanged += RefreshLanguage;
+        RefreshAccessibleNames();
     }
 
     private bool IsPreviewActive => !_closed && IsLoaded && IsVisible && WindowState != WindowState.Minimized;
@@ -200,6 +201,29 @@ public partial class SettingsWindow : Window
             CharacterHint.Text = UiText.Get("캐릭터를 불러오고 있어요…");
         RenderFocusTimer();
         RefreshDurationPresetTooltips();
+        RefreshAccessibleNames();
+    }
+
+    private void RefreshAccessibleNames()
+    {
+        if (_closed) return;
+
+        System.Windows.Automation.AutomationProperties.SetName(LanguageCombo, UiText.Get("언어"));
+        System.Windows.Automation.AutomationProperties.SetName(CharacterCombo, UiText.Get("캐릭터"));
+        System.Windows.Automation.AutomationProperties.SetName(PreviewStateCombo, UiText.Get("동작 미리보기"));
+        System.Windows.Automation.AutomationProperties.SetName(MonitorTargetCombo, UiText.Get("펫을 데려올 화면"));
+        System.Windows.Automation.AutomationProperties.SetName(FrameRateCombo, UiText.Get("프레임 제한"));
+        System.Windows.Automation.AutomationProperties.SetName(ScaleSlider, UiText.Get("크기"));
+        System.Windows.Automation.AutomationProperties.SetName(SpeedSlider, UiText.Get("걷기 속도"));
+        System.Windows.Automation.AutomationProperties.SetName(FocusMinutesBox, UiText.Get("집중 시간(분)"));
+        System.Windows.Automation.AutomationProperties.SetName(BreakMinutesBox, UiText.Get("휴식 시간(분)"));
+        System.Windows.Automation.AutomationProperties.SetName(QuietStartBox, UiText.Get("방해 금지 시작 시간"));
+        System.Windows.Automation.AutomationProperties.SetName(QuietEndBox, UiText.Get("방해 금지 종료 시간"));
+
+        System.Windows.Automation.AutomationProperties.SetHelpText(FocusMinutesBox, UiText.Get("집중 1~180분, 휴식 1~60분. 시간 적용을 눌러 반영하세요."));
+        System.Windows.Automation.AutomationProperties.SetHelpText(BreakMinutesBox, UiText.Get("집중 1~180분, 휴식 1~60분. 시간 적용을 눌러 반영하세요."));
+        System.Windows.Automation.AutomationProperties.SetHelpText(QuietStartBox, UiText.Get(QuietHoursHelpKey));
+        System.Windows.Automation.AutomationProperties.SetHelpText(QuietEndBox, UiText.Get(QuietHoursHelpKey));
     }
 
     private void UpdateValueLabels()

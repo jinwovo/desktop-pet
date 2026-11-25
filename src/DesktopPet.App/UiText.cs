@@ -57,6 +57,13 @@ public static class UiText
     }
     private static readonly Dictionary<string, (string English, string Chinese)> Translations = new(StringComparer.Ordinal)
     {
+        ["펫을 데려올 화면"] = ("Monitor to recover the pet to", "恢复宠物的目标屏幕"),
+        ["프레임 제한"] = ("Frame rate limit", "帧率限制"),
+        ["집중 시간(분)"] = ("Focus duration (minutes)", "专注时长（分钟）"),
+        ["휴식 시간(분)"] = ("Break duration (minutes)", "休息时长（分钟）"),
+        ["방해 금지 시작 시간"] = ("Quiet hours start time", "免打扰开始时间"),
+        ["방해 금지 종료 시간"] = ("Quiet hours end time", "免打扰结束时间"),
+        ["집중 1~180분, 휴식 1~60분. 시간 적용을 눌러 반영하세요."] = ("Focus: 1–180 minutes; break: 1–60 minutes. Use Apply time to apply.", "专注：1–180 分钟；休息：1–60 分钟。点击应用时长以应用。"),
         ["알림"] = ("Notification", "通知"),
         ["알림 15분 잠시 끄기"] = ("Pause notifications for 15 min", "暂停通知 15 分钟"),
         ["알림 잠시 끄기 해제"] = ("Resume paused notifications", "恢复暂停的通知"),

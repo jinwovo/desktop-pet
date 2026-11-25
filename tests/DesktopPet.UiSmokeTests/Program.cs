@@ -22,6 +22,11 @@ internal static class Program
         MainWindow? pet = null;
         try
         {
+            if (args.Contains("--settings-accessibility-only"))
+            {
+                SettingsAccessibilityUiTests.Run(folder, args.Contains("--capture"));
+                return 0;
+            }
             if (args.Contains("--notification-snooze-only"))
             {
                 NotificationSnoozeUiTests.Run(folder, args.Contains("--capture"));
@@ -440,6 +445,7 @@ internal static class Program
             NotificationSelectionUiTests.Run(folder, args.Contains("--capture"));
             NotificationExportUiTests.Run(folder, args.Contains("--capture"));
             NotificationSnoozeUiTests.Run(folder, args.Contains("--capture"));
+            SettingsAccessibilityUiTests.Run(folder, args.Contains("--capture"));
             GalleryLocaleRegressionTests.Run(folder, args.Contains("--capture"));
             CharacterSwitchUiTests.Run(folder);
             CharacterExportUiTests.Run(folder, args.Contains("--capture"));

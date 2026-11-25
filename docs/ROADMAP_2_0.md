@@ -74,6 +74,8 @@ P039 exports a frozen visible-notification snapshot as local JSON. Native tests 
 
 P040 adds a session-only 15-minute notification snooze through both menus. Independent injected clocks prove the exact UTC boundary, preserved focus state and receipts, retained arrivals, no backlog replay and repeat-snooze deadline reset. Manual/daily quiet settings and manual hiding remain intact. Native tests reproduce an open Resume menu incorrectly restarting snooze after expiry; capturing its displayed action fixes that behavior. Cached KO/EN/zh-CN menu labels, checkmarks/tooltips and disposed callbacks are covered. This completes P031–P040 for the 1.4.0 milestone.
 
+P041 starts 1.5.0 development with accessible names for all eleven Settings inputs and format help for the four time fields. A native automation-peer fixture reproduces an empty language-selector name, then verifies 33 localized names and all four help texts across KO/EN/zh-CN. Unapplied raw drafts, current presentation and preferences stay intact; closed callbacks cannot change metadata. This verifies programmatic Windows accessibility metadata; Narrator interaction has not been manually tested. P041 is not included in the immutable 1.4.0 download.
+
 | Verified patch threshold | Planned release | Main review area |
 | --- | --- | --- |
 | 10 | 1.1.0 | Motion and runtime defects |

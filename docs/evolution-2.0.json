@@ -584,11 +584,16 @@
     },
     {
       "id": "P041",
-      "title": "Discovery pending: Accessibility and localization (41)",
-      "status": "planned",
+      "title": "Expose localized accessible names and time-format help for all eleven Settings inputs",
+      "status": "verified",
       "milestone": "1.5.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/SettingsWindow.xaml.cs",
+        "src/DesktopPet.App/UiText.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/SettingsAccessibilityUiTests.cs"
+      ]
     },
     {
       "id": "P042",
