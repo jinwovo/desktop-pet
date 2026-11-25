@@ -76,6 +76,7 @@ internal static class NotificationReviewUiTests
             OpenItem(petMenu).PerformClick(); Pump();
             var review = Window();
             var list = (ListBox)review.FindName("NotificationItems");
+            Check(ReferenceEquals(list.ItemsSource, review.AllItems), "Unfiltered review copied its immutable inbox snapshot");
             var details = (TextBox)review.FindName("NotificationDetails");
             var count = (TextBox)review.FindName("CountText");
             Check(!ReferenceEquals(empty, review) && review.AllItems.Count == 5 && details.IsReadOnly && details.IsTabStop,

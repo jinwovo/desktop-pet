@@ -180,6 +180,12 @@ public sealed partial class NotificationReviewWindow : Window
         var query = _searchText;
         var source = _sourceFilter;
 
+        if (query.Length == 0 && source == SourceChoice.All)
+        {
+            _visibleItems = _allItems;
+            return;
+        }
+
         IEnumerable<SavedNotificationItem> filtered = _allItems;
 
         if (query.Length > 0)
