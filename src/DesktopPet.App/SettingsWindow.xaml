@@ -234,7 +234,8 @@
                     Padding="10,5" Click="AssistantConnections_Click" />
             <Button x:Name="CloseButton" Content="닫기" DockPanel.Dock="Right"
                     Padding="18,5" Click="CloseButton_Click" IsDefault="True" />
-            <TextBlock />
+            <TextBlock x:Name="SettingsNavigationHint" Text="Ctrl+1~4로 설정 구역 이동" FontSize="11"
+                       Foreground="#666666" Margin="8,0,0,0" VerticalAlignment="Center" TextWrapping="Wrap"/>
         </DockPanel>
     </StackPanel>
     </ScrollViewer>

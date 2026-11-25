@@ -625,11 +625,18 @@
     },
     {
       "id": "P044",
-      "title": "Discovery pending: Accessibility and localization (44)",
-      "status": "planned",
+      "title": "Navigate all four Settings sections directly with focus-safe localized keyboard shortcuts",
+      "status": "verified",
       "milestone": "1.5.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/SettingsWindow.Navigation.cs",
+        "src/DesktopPet.App/SettingsWindow.xaml.cs",
+        "src/DesktopPet.App/SettingsWindow.xaml",
+        "src/DesktopPet.App/UiText.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/SettingsNavigationUiTests.cs"
+      ]
     },
     {
       "id": "P045",

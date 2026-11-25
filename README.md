@@ -121,6 +121,8 @@ The 1.5.0 notification browser also supports **Ctrl+S** to export visible JSON, 
 
 In time editors, **Enter** applies the focus/break duration or quiet-hour schedule draft. Invalid values keep Settings open with the normal validation message, and active focus sessions keep their current countdown.
 
+In Settings, **Ctrl+1–4** jumps to character, size/speed, focus or notification settings. The target scrolls into view and receives focus without applying pending edits.
+
 ## Notification controls
 
 - **Pause notifications for 15 min** temporarily silences automatic bubbles while keeping unread items and the focus timer. **Resume paused notifications** clears only this temporary pause; manual/daily quiet settings remain in effect. Expiry and resume do not replay the saved backlog. The pause resets when the app closes.

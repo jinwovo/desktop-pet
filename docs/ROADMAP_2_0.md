@@ -82,6 +82,8 @@ P042 adds three notification-browser keyboard actions as one accessibility impro
 
 P043 scopes Enter to the four Settings time editors. A native routed-key fixture first reproduces missing duration application, then verifies valid/invalid duration and schedule drafts across three locales. It checks that the window remains open on validation failures, future defaults can change while the active focus snapshot stays intact, and other/IME-processed or closed-editor key events do not apply values. Localized tooltips and the Enter accelerator retain the earlier automation names/format help. Physical keyboard/IME interaction is not claimed. This is 1.5.0 development work.
 
+P044 groups four Settings section shortcuts into one navigation improvement. Native tests check actual keyboard focus and viewport coordinates after Ctrl+1–4 routes in three locales, including the lower notification section. Raw drafts, focus snapshot, current presentation and preferences remain unchanged. Strict command parameters and enabled/visible/focusable/closed guards reject unavailable targets; the visible hint and window automation help relocalize without overwriting input-format metadata. This is 1.5.0 development work.
+
 | Verified patch threshold | Planned release | Main review area |
 | --- | --- | --- |
 | 10 | 1.1.0 | Motion and runtime defects |
