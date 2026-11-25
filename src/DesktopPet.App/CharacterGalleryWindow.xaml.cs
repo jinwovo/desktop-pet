@@ -113,12 +113,17 @@ public partial class CharacterGalleryWindow : Window
     private void RefreshLanguage()
     {
         if (_closed) return;
-        var selected = (CharacterCards.SelectedItem as CharacterGalleryItem)?.Name;
+        var selected = CharacterCards.SelectedItem;
         var category = CategoryCombo.SelectedValue is CharacterGalleryCategory value ? value : CharacterGalleryCategory.All;
         SetCategoryChoices(category);
-        FilterCharacters();
-        CharacterCards.Items.Refresh();
-        CharacterCards.SelectedItem = CharacterCards.Items.OfType<CharacterGalleryItem>().FirstOrDefault(item => item.Name == selected);
+        _filtering = true;
+        try
+        {
+            CharacterCards.Items.Refresh();
+            CharacterCards.SelectedItem = selected;
+        }
+        finally { _filtering = false; }
+        RenderCount(CharacterCards.Items.Count);
         UpdateSelection();
         RenderStatus();
         RefreshGalleryAccessibleNames();

@@ -44,6 +44,7 @@ internal static class GalleryLocaleRegressionTests
             var selected = gallery.AllCharacters.Single(item => item.Name == "사용자 Locale");
             cards.SelectedItem = selected;
             var all = gallery.AllCharacters;
+            var visibleSource = cards.ItemsSource;
             var loadingTask = gallery.LoadingTask;
             var image = selected.Thumbnail;
             var active = Get(pet, "_character");
@@ -66,6 +67,7 @@ internal static class GalleryLocaleRegressionTests
                 Check(categoryLabel == UiText.Get("추가한 캐릭터"), "Gallery category choices retained the previous language");
                 Check(TextBlocks(cards).Any(block => block.Text == UiText.Get("추가한 캐릭터")),
                     "Visible gallery cards retained their previous category-label language");
+                Check(ReferenceEquals(visibleSource, cards.ItemsSource), "Relabeling replaced the visible catalog source");
                 Check(ReferenceEquals(all, gallery.AllCharacters) && ReferenceEquals(loadingTask, gallery.LoadingTask) && ReferenceEquals(image, selected.Thumbnail) &&
                     ReferenceEquals(active, Get(pet, "_character")) && before == JsonSerializer.Serialize(preferences) && !(bool)Get(pet, "_settingsDirty")!,
                     "Changing gallery language reloaded artwork, applied a character or modified preferences");
