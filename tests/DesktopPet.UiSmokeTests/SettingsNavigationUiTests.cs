@@ -36,7 +36,7 @@ internal static class SettingsNavigationUiTests
         try
         {
             settings.Show(); settings.Activate(); Pump();
-            var scroll = (ScrollViewer)settings.Content;
+            var scroll = (ScrollViewer)settings.FindName("SettingsScrollViewer");
             var focusBox = (TextBox)settings.FindName("FocusMinutesBox"); var breakBox = (TextBox)settings.FindName("BreakMinutesBox");
             focusBox.Text = " 39 "; breakBox.Text = "pending";
             var draft = (focusBox.Text, breakBox.Text); var focus = timer.Snapshot;

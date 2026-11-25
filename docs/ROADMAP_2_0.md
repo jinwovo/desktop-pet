@@ -84,6 +84,8 @@ P043 scopes Enter to the four Settings time editors. A native routed-key fixture
 
 P044 groups four Settings section shortcuts into one navigation improvement. Native tests check actual keyboard focus and viewport coordinates after Ctrl+1–4 routes in three locales, including the lower notification section. Raw drafts, focus snapshot, current presentation and preferences remain unchanged. Strict command parameters and enabled/visible/focusable/closed guards reject unavailable targets; the visible hint and window automation help relocalize without overwriting input-format metadata. This is 1.5.0 development work.
 
+P045 fixes Settings actions scrolling out of reach. The native 500px fixture reproduces an action at Y=1607 outside the 462px client, then checks fixed footer bounds and constant Y at top/middle/bottom scroll positions in three locales. A two-row root grid pins the original three actions and navigation hint while leaving all body cards/names/handlers intact. Closing preserves unapplied drafts; section-focus/viewport checks still pass using the named body scroll viewer. Two source reviews, native captures and NIM visual review found no new layout defect. This is 1.5.0 development work.
+
 | Verified patch threshold | Planned release | Main review area |
 | --- | --- | --- |
 | 10 | 1.1.0 | Motion and runtime defects |

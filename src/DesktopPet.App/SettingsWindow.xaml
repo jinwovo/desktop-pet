@@ -32,7 +32,12 @@
         </Style>
     </Window.Resources>
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+<Grid x:Name="SettingsLayout">
+  <Grid.RowDefinitions>
+    <RowDefinition Height="*" />
+    <RowDefinition Height="Auto" />
+  </Grid.RowDefinitions>
+  <ScrollViewer x:Name="SettingsScrollViewer" Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
     <StackPanel Margin="16">
         <DockPanel Margin="0,0,0,12">
             <TextBlock Text="언어" VerticalAlignment="Center" Margin="0,0,10,0"/>
@@ -227,16 +232,13 @@
                            FontSize="11" Foreground="#777777" TextWrapping="Wrap" Margin="0,6,0,0"/>
             </StackPanel>
         </Border>
-        <DockPanel>
-            <Button Content="움직임 시험" DockPanel.Dock="Left" Margin="8,0,0,0"
-                    Padding="10,5" Click="MotionPreviewButton_Click" />
-            <Button Content="AI 연결" DockPanel.Dock="Left" Margin="8,0,0,0"
-                    Padding="10,5" Click="AssistantConnections_Click" />
-            <Button x:Name="CloseButton" Content="닫기" DockPanel.Dock="Right"
-                    Padding="18,5" Click="CloseButton_Click" IsDefault="True" />
-            <TextBlock x:Name="SettingsNavigationHint" Text="Ctrl+1~4로 설정 구역 이동" FontSize="11"
-                       Foreground="#666666" Margin="8,0,0,0" VerticalAlignment="Center" TextWrapping="Wrap"/>
-        </DockPanel>
-    </StackPanel>
-    </ScrollViewer>
+</StackPanel>
+  </ScrollViewer>
+  <DockPanel x:Name="SettingsFooter" Grid.Row="1" Margin="16,0,16,16" Background="#FFF7F7F9">
+    <Button Content="움직임 시험" DockPanel.Dock="Left" Margin="8,0,0,0" Padding="10,5" Click="MotionPreviewButton_Click" />
+    <Button Content="AI 연결" DockPanel.Dock="Left" Margin="8,0,0,0" Padding="10,5" Click="AssistantConnections_Click" />
+    <Button x:Name="CloseButton" Content="닫기" DockPanel.Dock="Right" Padding="18,5" Click="CloseButton_Click" IsDefault="True" />
+    <TextBlock x:Name="SettingsNavigationHint" Text="Ctrl+1~4로 설정 구역 이동" FontSize="11" Foreground="#666666" Margin="8,0,0,0" VerticalAlignment="Center" TextWrapping="Wrap"/>
+  </DockPanel>
+</Grid>
 </Window>

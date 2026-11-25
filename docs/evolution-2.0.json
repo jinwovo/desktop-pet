@@ -640,11 +640,16 @@
     },
     {
       "id": "P045",
-      "title": "Discovery pending: Accessibility and localization (45)",
-      "status": "planned",
+      "title": "Keep Settings actions and section hints visible in a fixed footer while its body scrolls",
+      "status": "verified",
       "milestone": "1.5.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/SettingsWindow.xaml"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/SettingsFooterUiTests.cs",
+        "tests/DesktopPet.UiSmokeTests/SettingsNavigationUiTests.cs"
+      ]
     },
     {
       "id": "P046",

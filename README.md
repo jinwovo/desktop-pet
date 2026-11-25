@@ -123,6 +123,8 @@ In time editors, **Enter** applies the focus/break duration or quiet-hour schedu
 
 In Settings, **Ctrl+1–4** jumps to character, size/speed, focus or notification settings. The target scrolls into view and receives focus without applying pending edits.
 
+Settings keeps its motion-test, AI-connection and Close actions plus the section hint visible while the body scrolls, including on a short window. Closing does not apply pending time edits.
+
 ## Notification controls
 
 - **Pause notifications for 15 min** temporarily silences automatic bubbles while keeping unread items and the focus timer. **Resume paused notifications** clears only this temporary pause; manual/daily quiet settings remain in effect. Expiry and resume do not replay the saved backlog. The pause resets when the app closes.
