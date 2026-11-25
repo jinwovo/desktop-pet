@@ -263,18 +263,12 @@ public partial class MotionPreviewWindow : Window
             ? frontWalk || (walkingDirection ? _walkAppearance.FacingRight : _brain.FacingRight)
             : restFacingRight;
         ActorFlip.ScaleX = facingRight ? 1 : -1;
-        var frames = displayWalkPose ? definition.GetWalkFrames(_walkAppearance.View) : restFrames;
         var restElapsed = _brain.StateElapsedMs;
         if (state == PetState.Idle && definition.FrameDurationsByState.ContainsKey(PetState.Idle))
         {
             _idleAppearanceElapsedMs += dt * 1000;
             restElapsed = _idleAppearanceElapsedMs;
         }
-        var elapsed = displayWalkPose && state != PetState.Idle ? _walkElapsedMs : restElapsed;
-        var framePath = displayWalkPose && definition.WalkCycleDistancePx is not null
-            ? definition.GetWalkFramePath(_walkAppearance.View, _walkAppearance.GaitPhase,
-                _walkAppearance.IsSettling ? _walkAppearance.SettleProgress : 0)
-            : definition.GetFramePath(displayWalkPose ? PetState.Walk : _brain.State, frames, elapsed);
         if (displayWalkPose && MotionRig.HasRig)
         {
             if (!_liveRigActive)
@@ -300,6 +294,12 @@ public partial class MotionPreviewWindow : Window
                 MotionRig.Visibility = Visibility.Collapsed;
                 _liveRigActive = false;
             }
+            var frames = displayWalkPose ? definition.GetWalkFrames(_walkAppearance.View) : restFrames;
+            var elapsed = displayWalkPose && state != PetState.Idle ? _walkElapsedMs : restElapsed;
+            var framePath = displayWalkPose && definition.WalkCycleDistancePx is not null
+                ? definition.GetWalkFramePath(_walkAppearance.View, _walkAppearance.GaitPhase,
+                    _walkAppearance.IsSettling ? _walkAppearance.SettleProgress : 0)
+                : definition.GetFramePath(displayWalkPose ? PetState.Walk : _brain.State, frames, elapsed);
             _poseTransition.SetFrame(_presentation.Frames[framePath], ActorFlip.ScaleX, frames,
                 !_reducedMotion && (definition.WalkCycleDistancePx is null || !displayWalkPose) &&
                 (_brain.State != PetState.Walk || _lastPoseState == PetState.Walk));

@@ -632,8 +632,7 @@ internal static class Program
                 var expectedPhase = GroundedGait.NormalizePhase(previousPhase + Math.Abs(brain.X - previousX) / (pet.Width / character.FrameWidth) / character.WalkCycleDistancePx!.Value);
                 Check(Math.Abs(expectedPhase - appearance.GaitPhase) < 1e-8,
                     "Desktop gait still uses an elapsed-time or endpoint-velocity estimate instead of measured displacement");
-                Check((string)Get(pet, "_lastFramePath")! == character.GetWalkFramePath(appearance.View, expectedPhase),
-                    "Desktop renderer sampled the wrong distance-gait frame");
+
                 views.Add(appearance.View);
                 Check(!((PoseTransitionPresenter)Get(pet, "_poseTransition")!).IsTransitioning,
                     "Desktop grounded stance has a moving outgoing ghost layer");
@@ -644,16 +643,26 @@ internal static class Program
                 Check(Math.Abs(residual.X - placement.OffsetX) < 1e-10 && Math.Abs(residual.Y - placement.OffsetY) < 1e-10 &&
                     (int)Get(pet, "_lastNativeX")! == placement.PixelX && (int)Get(pet, "_lastNativeY")! == placement.PixelY,
                     "Desktop renderer dropped the subpixel offset or disagreed with its cached native placement plan");
-                Check(character.GetWalkFrames(appearance.View).Contains((string)Get(pet, "_lastFramePath")!),
-                    "Desktop renderer did not select the current directional walk artwork");
+
                 if (character.WalkRig is not null)
                 {
                     var live = (GroundedRigVisual)pet.FindName("PetRig");
                     Check(live.HasRig && live.Visibility == Visibility.Visible && live.PoseUpdateCount > 0 &&
                         ((Image)pet.FindName("PetImage")).Visibility == Visibility.Hidden,
                         "Desktop renderer selected raster frames instead of the live rig");
+                    var exactPose = GroundedGait.Sample(expectedPhase, character.WalkCycleDistancePx!.Value, character.WalkRig.FootLiftPx);
+                    Check(Math.Abs(live.Pose.FootA.X - exactPose.FootA.X) < 1e-6 &&
+                        Math.Abs(live.Pose.FootB.X - exactPose.FootB.X) < 1e-6,
+                        "Desktop rig did not render the distance-driven contact positions");
                     Check(((System.Collections.IDictionary)Get(pet, "_frameCache")!).Count == cachedTextureCount,
                         "Desktop live walking lazily decoded an unused raster gait texture");
+                }
+                else
+                {
+                    var expectedPath = character.GetWalkFramePath(appearance.View, expectedPhase);
+                    Check((string)Get(pet, "_lastFramePath")! == expectedPath &&
+                        character.GetWalkFrames(appearance.View).Contains(expectedPath),
+                        "Desktop renderer sampled the wrong directional raster frame");
                 }
                 var expectedFlip = right || appearance.View == WalkView.Front ? 1 : -1;
                 Check(((System.Windows.Media.ScaleTransform)pet.FindName("FlipTransform")).ScaleX == expectedFlip,

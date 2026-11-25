@@ -355,11 +355,6 @@ public partial class SettingsWindow : Window
         var displayWalkPose = _walkAppearance.DisplayWalkPose;
         _previewStateElapsedMs += elapsedMs;
         _previewAnimationMs = displayWalkPose ? _walkAppearance.AnimationElapsedMs : _previewStateElapsedMs;
-        var frames = displayWalkPose ? definition.GetWalkFrames(_walkAppearance.View) : definition.GetFrames(state);
-        var path = displayWalkPose && definition.WalkCycleDistancePx is not null
-            ? definition.GetWalkFramePath(_walkAppearance.View, _walkAppearance.GaitPhase,
-                _walkAppearance.IsSettling ? _walkAppearance.SettleProgress : 0)
-            : definition.GetFramePath(displayWalkPose ? PetState.Walk : state, frames, _previewAnimationMs);
         if (displayWalkPose && PreviewRig.HasRig)
         {
             if (!_liveRigActive)
@@ -386,6 +381,11 @@ public partial class SettingsWindow : Window
                 PreviewRig.Visibility = Visibility.Collapsed;
                 _liveRigActive = false;
             }
+            var frames = displayWalkPose ? definition.GetWalkFrames(_walkAppearance.View) : definition.GetFrames(state);
+            var path = displayWalkPose && definition.WalkCycleDistancePx is not null
+                ? definition.GetWalkFramePath(_walkAppearance.View, _walkAppearance.GaitPhase,
+                    _walkAppearance.IsSettling ? _walkAppearance.SettleProgress : 0)
+                : definition.GetFramePath(displayWalkPose ? PetState.Walk : state, frames, _previewAnimationMs);
             _poseTransition.SetFrame(_previewPresentation.Frames[path], 1, frames,
                 !_pet.ReducedMotion && (definition.WalkCycleDistancePx is null || !displayWalkPose) &&
                 (state != PetState.Walk || _lastPreviewState == PetState.Walk));

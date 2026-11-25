@@ -1033,21 +1033,11 @@ public partial class MainWindow : Window
             _lastFlip = flip;
         }
 
-        var frames = displayWalkPose ? _character.GetWalkFrames(_walkAppearance.View) : restFrames;
         var restElapsed = _brain.StateElapsedMs;
         if (state == PetState.Idle && _character.FrameDurationsByState.ContainsKey(PetState.Idle))
         {
             _idleAppearanceElapsedMs += dt * 1000;
             restElapsed = _idleAppearanceElapsedMs;
-        }
-        var animationElapsedMs = displayWalkPose && state != PetState.Idle ? _walkAnimationElapsedMs : restElapsed;
-        var framePath = displayWalkPose && _character.WalkCycleDistancePx is not null
-            ? _character.GetWalkFramePath(_walkAppearance.View, _walkAppearance.GaitPhase,
-                _walkAppearance.IsSettling ? _walkAppearance.SettleProgress : 0)
-            : _character.GetFramePath(displayWalkPose ? PetState.Walk : _brain.State, frames, animationElapsedMs);
-        if (!string.Equals(framePath, _lastFramePath, StringComparison.Ordinal))
-        {
-            _lastFramePath = framePath;
         }
         // Depart in the quarter/profile pose immediately, so the frontal rest sprite
         // cannot linger as a moving outgoing layer of a dissolve.
@@ -1076,6 +1066,16 @@ public partial class MainWindow : Window
                 PetRig.Visibility = Visibility.Collapsed;
                 PetImage.Visibility = Visibility.Visible;
                 _liveRigActive = false;
+            }
+            var frames = displayWalkPose ? _character.GetWalkFrames(_walkAppearance.View) : restFrames;
+            var animationElapsedMs = displayWalkPose && state != PetState.Idle ? _walkAnimationElapsedMs : restElapsed;
+            var framePath = displayWalkPose && _character.WalkCycleDistancePx is not null
+                ? _character.GetWalkFramePath(_walkAppearance.View, _walkAppearance.GaitPhase,
+                    _walkAppearance.IsSettling ? _walkAppearance.SettleProgress : 0)
+                : _character.GetFramePath(displayWalkPose ? PetState.Walk : _brain.State, frames, animationElapsedMs);
+            if (!string.Equals(framePath, _lastFramePath, StringComparison.Ordinal))
+            {
+                _lastFramePath = framePath;
             }
             _poseTransition.SetFrame(GetFrame(framePath), flip, frames,
                 !_settings.ReducedMotion && (_character.WalkCycleDistancePx is null || !displayWalkPose) &&
