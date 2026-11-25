@@ -1,6 +1,15 @@
 # Changelog
 
-## Unreleased (1.6.0 development)
+## 1.6.0 — evolution patches P051–P060
+
+- P060 Show the current inbox snapshot directly when there is no search or source filter, avoiding a second list copy.
+- P059 Use the original textures for endpoint poses and allocate the reusable blend bitmap only when needed.
+- P058 Compute cumulative boundaries when loading a manifest and locate frames with binary search, including exact and repeated boundaries.
+- P057 Propagate gallery cancellation through directory enumeration and manifest and thumbnail loading so superseded work can stop sooner.
+- P056 Reuse the displayed items when revised search criteria yield the same card references in the same order.
+- P055 Relabel the existing result source and keep the selected card and preview request.
+- P054 Use the composition callback for live walking and settling, then return to the low-rate timer at rest.
+- P053 Keep raster lookup on the raster path and verify native foot positions using the actual live pose.
 
 - P052 Restrict repeated live-rig texture uploads to the changed region while keeping the same pixels and blend weights.
 

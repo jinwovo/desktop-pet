@@ -16,7 +16,7 @@
 
 [2.0 路线图与 100 次改进进度](docs/ROADMAP_2_0.md)
 
-1.5.0 累计包含 50 项经过验证的改进，包括更平滑的步态过渡、设置与角色库快捷键，以及三种语言的 Windows 辅助功能标签。
+1.6.0 累计包含 60 项经过验证的改进。预览只启用一种刷新方式，实时骨架跳过无用的帧查找，加权动画使用预计算时间线。角色库复用相同的筛选结果，并取消已被替换的扫描与缩略图任务。
 
 DesktopPet 可以提醒本地 Claude Code、Codex 的回复完成，提供 25 分钟专注 / 5 分钟休息计时器，并支持导入角色包。行走时使用缓存的身体与双脚图层连续运动，根据实际移动距离调整步态，减少脚踩地时的滑动。
 
@@ -205,7 +205,7 @@ powershell -NoProfile -File tests/package-regression.ps1
 构建公开 Windows x64 包：
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 1.5.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 1.6.0
 ```
 
 输出位于 `artifacts/releases/`，包含 self-contained ZIP 与 SHA256 文件。缺少运行时包时构建会失败，不会静默切换为其他部署方式。[Windows 工作流](.github/workflows/windows-release.yml)配置了测试与构建产物；存在该文件不等于远程构建已通过或版本已经发布。

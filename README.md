@@ -16,7 +16,7 @@ A quiet desktop companion for AI work, focused sessions, and a less empty taskba
 
 [2.0 roadmap and 100-patch progress](docs/ROADMAP_2_0.md)
 
-1.5.0 ships 50 verified improvements, including smoother walking transitions, keyboard shortcuts for Settings and the gallery, and localized Windows accessibility labels.
+1.6.0 brings the total to 60 verified improvements. The preview uses one active render clock, the live rig skips unused sprite lookup, and weighted frame selection uses a precomputed timeline. The gallery reuses unchanged results and cancels superseded work.
 
 DesktopPet is a Windows desktop pet with gentle completion notifications for local Claude Code and Codex, a 25/5 focus timer, and importable character packs. Its live walking renderer moves cached body and foot layers continuously, using actual travel distance to keep a planted foot from sliding.
 
@@ -206,7 +206,7 @@ The suites use fixture directories and do not register hooks in your real assist
 To create a public Windows x64 package:
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 1.5.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 1.6.0
 ```
 
 The output is a self-contained ZIP and a SHA256 sidecar under `artifacts/releases/`. Missing runtime packs cause a build failure; the script does not silently change deployment type. The [Windows workflow](.github/workflows/windows-release.yml) is configured to run checks and create artifacts; its presence does not imply a successful remote build or a published release.

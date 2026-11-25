@@ -752,67 +752,106 @@
     },
     {
       "id": "P053",
-      "title": "Discovery pending: Resource and rendering performance (53)",
-      "status": "planned",
+      "title": "Skip raster fallback sampling while live rigs render",
+      "status": "verified",
       "milestone": "1.6.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/MainWindow.xaml.cs",
+        "src/DesktopPet.App/MotionPreviewWindow.xaml.cs",
+        "src/DesktopPet.App/SettingsWindow.xaml.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/Program.cs"
+      ]
     },
     {
       "id": "P054",
-      "title": "Discovery pending: Resource and rendering performance (54)",
-      "status": "planned",
+      "title": "Use a single active Settings preview clock",
+      "status": "verified",
       "milestone": "1.6.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/SettingsWindow.xaml.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/EvolutionMotionUiTests.cs"
+      ]
     },
     {
       "id": "P055",
-      "title": "Discovery pending: Resource and rendering performance (55)",
-      "status": "planned",
+      "title": "Reuse the gallery result source on language changes",
+      "status": "verified",
       "milestone": "1.6.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/CharacterGalleryWindow.xaml.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/GalleryLocaleRegressionTests.cs"
+      ]
     },
     {
       "id": "P056",
-      "title": "Discovery pending: Resource and rendering performance (56)",
-      "status": "planned",
+      "title": "Keep gallery rows when a search matches the same cards",
+      "status": "verified",
       "milestone": "1.6.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/CharacterGalleryWindow.xaml.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/GalleryLocaleRegressionTests.cs"
+      ]
     },
     {
       "id": "P057",
-      "title": "Discovery pending: Resource and rendering performance (57)",
-      "status": "planned",
+      "title": "Cancel obsolete character discovery and thumbnail loading",
+      "status": "verified",
       "milestone": "1.6.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.Core/CharacterLibrary.cs",
+        "src/DesktopPet.App/MainWindow.xaml.cs",
+        "src/DesktopPet.App/CharacterGalleryWindow.xaml.cs",
+        "src/DesktopPet.App/CharacterPresentation.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/CharacterGalleryRegressionTests.cs"
+      ]
     },
     {
       "id": "P058",
-      "title": "Discovery pending: Resource and rendering performance (58)",
-      "status": "planned",
+      "title": "Index validated weighted animation timelines",
+      "status": "verified",
       "milestone": "1.6.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.Core/CharacterLoader.cs",
+        "src/DesktopPet.Core/CharacterDefinition.cs",
+        "src/DesktopPet.Core/FrameTimeline.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.RegressionTests/TimedAnimationTests.cs"
+      ]
     },
     {
       "id": "P059",
-      "title": "Discovery pending: Resource and rendering performance (59)",
-      "status": "planned",
+      "title": "Allocate blend scratch storage only for intermediate poses",
+      "status": "verified",
       "milestone": "1.6.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/RigTextureBlend.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/GroundedRigVisualRegressionTests.cs"
+      ]
     },
     {
       "id": "P060",
-      "title": "Discovery pending: Resource and rendering performance (60)",
-      "status": "planned",
+      "title": "Reuse the read-only inbox snapshot for unfiltered browsing",
+      "status": "verified",
       "milestone": "1.6.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/NotificationReviewWindow.xaml.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/NotificationReviewUiTests.cs"
+      ]
     },
     {
       "id": "P061",

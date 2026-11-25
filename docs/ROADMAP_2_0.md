@@ -120,3 +120,19 @@ P050 Refresh the paused pose when reduced motion changes while preserving simula
 P051 removes the enumerator allocation on weighted frame selection. A Release probe calling the actual method one million times changed from 32,000,000 bytes to zero thread allocations while producing the same frame-selection checksum. All 256 core checks passed.
 
 P052 bounds repeated bitmap writes to the rectangle that covers the changing pixels, including reflected and pivot artwork. The synthetic WPF case updates 9 of 240 pixels after initializing the scratch bitmap and matches every expected output byte. Native contact, reversal and rest rendering checks pass across the nine rigs.
+
+P053 Keep raster lookup on the raster path and verify native foot positions using the actual live pose.
+
+P054 Use the composition callback for live walking and settling, then return to the low-rate timer at rest.
+
+P055 Relabel the existing result source and keep the selected card and preview request.
+
+P056 Reuse the displayed items when revised search criteria yield the same card references in the same order.
+
+P057 Propagate gallery cancellation through directory enumeration and manifest and thumbnail loading so superseded work can stop sooner.
+
+P058 Compute cumulative boundaries when loading a manifest and locate frames with binary search, including exact and repeated boundaries.
+
+P059 Use the original textures for endpoint poses and allocate the reusable blend bitmap only when needed.
+
+P060 Show the current inbox snapshot directly when there is no search or source filter, avoiding a second list copy.
