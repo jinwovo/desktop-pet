@@ -68,6 +68,8 @@ P036 adds an independent read-only saved-notification browser through both share
 
 P037 adds literal case-insensitive title/body/source search combined with fixed source categories. Native tests cover metacharacters, multilingual text, normalized sources, raw whitespace drafts, selection preservation, incoming matching/nonmatching receipts, localized source labels/counts/accessibility names, Ctrl+F, Escape and closed callbacks. An actual deselection fixture reproduces the previous false no-match hint before verifying separate empty/no-match/select-a-row messages. Minimum-size captures prove finite title width, visible ellipsis and complete selectable details in KO/EN/zh-CN. Filters do not acknowledge receipts or change pet preferences. This remains 1.4.0 development work.
 
+P038 adds explicit selected-notification acknowledgement through the existing asynchronous receipt worker. Native gated-worker tests prove responsiveness, stable target identity despite selection/locale changes, duplicate-click suppression, blank-ID independence and arrival preservation. A real locked receipt remains on disk with retry feedback, then deletes only after an explicit unlocked retry. Closing and reopening preserves operation ownership and prevents late updates to the old controls; disposed popup callbacks do nothing. Browsing/searching still keeps notifications unread. This is 1.4.0 development work.
+
 | Verified patch threshold | Planned release | Main review area |
 | --- | --- | --- |
 | 10 | 1.1.0 | Motion and runtime defects |

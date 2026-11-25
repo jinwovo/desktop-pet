@@ -537,11 +537,19 @@
     },
     {
       "id": "P038",
-      "title": "Discovery pending: Focus and notification workflows (38)",
-      "status": "planned",
+      "title": "Acknowledge only the selected saved receipt asynchronously with identity-safe retry and window lifetime guards",
+      "status": "verified",
       "milestone": "1.4.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/MainWindow.xaml.cs",
+        "src/DesktopPet.App/NotificationReviewWindow.xaml",
+        "src/DesktopPet.App/NotificationReviewWindow.xaml.cs",
+        "src/DesktopPet.App/UiText.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/NotificationSelectionUiTests.cs",
+        "tests/DesktopPet.UiSmokeTests/NotificationBatchUiTests.cs"
+      ]
     },
     {
       "id": "P039",

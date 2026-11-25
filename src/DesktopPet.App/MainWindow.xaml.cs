@@ -1320,16 +1320,31 @@ public partial class MainWindow : Window
     private HashSet<InboxNotification>? _acknowledgingAll;
     public bool IsAcknowledgingAll => _acknowledgingAll is not null;
 
-    public async Task<int> AcknowledgeAllNotificationsAsync()
+    public Task<int> AcknowledgeAllNotificationsAsync()
     {
         Dispatcher.VerifyAccess();
 
         if (_disposed || IsAcknowledgingAll || _unreadNotifications.Count == 0)
         {
-            return 0;
+            return Task.FromResult(0);
         }
 
         var snapshot = new HashSet<InboxNotification>(_unreadNotifications);
+        return AcknowledgeNotificationsAsync(snapshot);
+    }
+
+    public Task<int> AcknowledgeSavedNotificationAsync(SavedNotificationItem? item)
+    {
+        Dispatcher.VerifyAccess();
+        if (_disposed || IsAcknowledgingAll || item is null || !_unreadNotifications.Contains(item.Receipt))
+        {
+            return Task.FromResult(0);
+        }
+        return AcknowledgeNotificationsAsync(new HashSet<InboxNotification> { item.Receipt });
+    }
+
+    private async Task<int> AcknowledgeNotificationsAsync(HashSet<InboxNotification> snapshot)
+    {
         _acknowledgingAll = snapshot;
 
         try
@@ -1401,7 +1416,7 @@ public partial class MainWindow : Window
 
     private void AcknowledgeNotification()
     {
-        if (_activeNotification is null || _acknowledgingAll?.Contains(_activeNotification) == true) return;
+        if (_disposed || _activeNotification is null || _acknowledgingAll?.Contains(_activeNotification) == true) return;
         _notificationPopupTimer.Stop();
         if (!_activeNotification.Acknowledge())
         {

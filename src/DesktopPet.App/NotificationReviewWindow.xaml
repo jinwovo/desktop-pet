@@ -123,6 +123,7 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBox x:Name="CountText"
                          Grid.Column="0"
@@ -133,8 +134,15 @@
                          VerticalAlignment="Center"
                          IsTabStop="False"
                          Focusable="False"/>
-                <Button x:Name="CloseButton"
+                <Button x:Name="MarkSelectedReadButton"
                         Grid.Column="1"
+                        Content="선택한 알림 읽음 처리"
+                        Click="MarkSelectedRead_Click"
+                        MinWidth="120"
+                        Padding="12,4"
+                        Margin="8,0,0,0"/>
+                <Button x:Name="CloseButton"
+                        Grid.Column="2"
                         Content="닫기"
                         IsCancel="True"
                         Click="Close_Click"

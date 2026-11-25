@@ -13,6 +13,8 @@ public sealed partial class NotificationReviewWindow : Window
 {
     private readonly MainWindow _pet;
     private IReadOnlyList<SavedNotificationItem> _allItems = Array.Empty<SavedNotificationItem>();
+    private bool _selectionBusy;
+    private SavedNotificationItem? _failedSelection;
     private IReadOnlyList<SavedNotificationItem> _visibleItems = Array.Empty<SavedNotificationItem>();
     private string _searchText = string.Empty;
     private SourceChoice _sourceFilter = SourceChoice.All;
@@ -228,9 +230,25 @@ public sealed partial class NotificationReviewWindow : Window
         ClearFiltersButton.IsEnabled = SearchBox.Text.Length > 0 || _sourceFilter != SourceChoice.All;
     }
 
+    private void RefreshSelectionButton()
+    {
+        if (MarkSelectedReadButton == null) return;
+        if (_closed)
+        {
+            MarkSelectedReadButton.IsEnabled = false;
+            return;
+        }
+
+        var item = NotificationItems.SelectedItem as SavedNotificationItem;
+        MarkSelectedReadButton.IsEnabled = !_selectionBusy && item != null && !_pet.IsAcknowledgingAll;
+        MarkSelectedReadButton.Content = UiText.Get(_selectionBusy ? "선택한 알림 읽음 처리 중…" :
+            _failedSelection is not null && ReferenceEquals(item?.Receipt, _failedSelection.Receipt) ? "읽음 처리 재시도" : "선택한 알림 읽음 처리");
+    }
+
     private void RenderDetails()
     {
         var item = NotificationItems.SelectedItem as SavedNotificationItem;
+        RefreshSelectionButton();
         if (item == null)
         {
             NotificationDetails.Text = _allItems.Count == 0 ? UiText.Get("보관된 알림이 없어요.") :
@@ -253,6 +271,35 @@ public sealed partial class NotificationReviewWindow : Window
     {
         if (_closed || _refreshing) return;
         RenderDetails();
+    }
+
+    private async void MarkSelectedRead_Click(object sender, RoutedEventArgs e)
+    {
+        if (_closed || _selectionBusy) return;
+        if (_pet.IsAcknowledgingAll) { RefreshSelectionButton(); return; }
+        var item = NotificationItems.SelectedItem as SavedNotificationItem;
+        if (item == null) return;
+
+        _selectionBusy = true;
+        RefreshSelectionButton();
+
+        try
+        {
+            var removed = await _pet.AcknowledgeSavedNotificationAsync(item);
+            if (!_closed) _failedSelection = removed == 0 ? item : null;
+        }
+        catch
+        {
+            if (!_closed) _failedSelection = item;
+        }
+        finally
+        {
+            if (!_closed)
+            {
+                _selectionBusy = false;
+                RefreshSnapshot();
+            }
+        }
     }
 
     private void Close_Click(object sender, RoutedEventArgs e)
