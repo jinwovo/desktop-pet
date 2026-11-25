@@ -2,6 +2,7 @@
 
 ## Unreleased (1.5.0 development)
 
+- P046: localize gallery search/category/list accessibility names and usage help, and expose each card's original authored name with its localized category. Preserve Unicode/custom names, filter/selection and the active pet through language changes, and detach closed-window metadata updates.
 - P045: keep Settings motion-test, AI-connection and Close actions plus the section-navigation hint visible in a fixed footer. Scroll only the unchanged body cards, preserve time-editor/section shortcuts and keep all controls inside the client area across KO/EN/zh-CN at 500px height. Closing still leaves unapplied drafts untouched.
 - P044: jump directly to Settings character, size/speed, focus and notification sections with Ctrl+1–4. Scroll the target into view and focus it without applying edits or changing the active pet. Localize the visible hint/window accessibility help and reject unknown, disabled, hidden or closed navigation targets.
 - P043: apply focus/break durations and quiet-hour schedules with Enter inside their four time editors, before the window's default Close action can receive it. Reuse existing validation, keep invalid drafts open, preserve active focus sessions and other key/IME routing, localize shortcut hints and ignore closed-editor input.

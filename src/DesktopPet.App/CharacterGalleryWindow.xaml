@@ -34,6 +34,8 @@
                     <ListBox.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ListBox.ItemsPanel>
                     <ListBox.ItemContainerStyle>
                         <Style TargetType="ListBoxItem">
+                            <Setter Property="AutomationProperties.Name" Value="{Binding Name}"/>
+                            <Setter Property="AutomationProperties.HelpText" Value="{Binding CategoryLabel}"/>
                             <Setter Property="Padding" Value="0"/><Setter Property="Margin" Value="0,0,8,8"/>
                             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                         </Style>

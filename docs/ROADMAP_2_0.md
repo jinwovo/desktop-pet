@@ -86,6 +86,8 @@ P044 groups four Settings section shortcuts into one navigation improvement. Nat
 
 P045 fixes Settings actions scrolling out of reach. The native 500px fixture reproduces an action at Y=1607 outside the 462px client, then checks fixed footer bounds and constant Y at top/middle/bottom scroll positions in three locales. A two-row root grid pins the original three actions and navigation hint while leaving all body cards/names/handlers intact. Closing preserves unapplied drafts; section-focus/viewport checks still pass using the named body scroll viewer. Two source reviews, native captures and NIM visual review found no new layout defect. This is 1.5.0 development work.
 
+P046 repairs gallery automation metadata. Native peers first show a Korean search name in English UI and a card name different from its authored name. The fix explicitly localizes search/category/list metadata and binds card names directly to authored strings, with localized category help. Tests cover KO/EN/zh-CN, a Unicode unavailable custom-card fixture, filter/selection/current-pet preservation and closed callbacks. All nine-character UI checks pass. This verifies native automation metadata, without claiming manual Narrator interaction, and remains 1.5.0 development work.
+
 | Verified patch threshold | Planned release | Main review area |
 | --- | --- | --- |
 | 10 | 1.1.0 | Motion and runtime defects |

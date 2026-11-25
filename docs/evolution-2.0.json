@@ -653,11 +653,17 @@
     },
     {
       "id": "P046",
-      "title": "Discovery pending: Accessibility and localization (46)",
-      "status": "planned",
+      "title": "Expose localized gallery automation metadata while retaining authored Unicode card names",
+      "status": "verified",
       "milestone": "1.5.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/CharacterGalleryWindow.xaml.cs",
+        "src/DesktopPet.App/CharacterGalleryWindow.xaml",
+        "src/DesktopPet.App/UiText.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/GalleryAccessibilityUiTests.cs"
+      ]
     },
     {
       "id": "P047",

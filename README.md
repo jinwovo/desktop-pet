@@ -125,6 +125,8 @@ In Settings, **Ctrl+1–4** jumps to character, size/speed, focus or notificatio
 
 Settings keeps its motion-test, AI-connection and Close actions plus the section hint visible while the body scrolls, including on a short window. Closing does not apply pending time edits.
 
+The gallery also exposes localized search/category/list names and usage help through Windows accessibility metadata. Cards retain their original authored names, including Unicode custom names, and announce their localized category.
+
 ## Notification controls
 
 - **Pause notifications for 15 min** temporarily silences automatic bubbles while keeping unread items and the focus timer. **Resume paused notifications** clears only this temporary pause; manual/daily quiet settings remain in effect. Expiry and resume do not replay the saved backlog. The pause resets when the app closes.

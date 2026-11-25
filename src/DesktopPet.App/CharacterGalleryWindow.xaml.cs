@@ -78,6 +78,7 @@ public partial class CharacterGalleryWindow : Window
             _motionPreview?.Close();
         };
         UiText.Attach(this);
+        RefreshGalleryAccessibleNames();
         Loaded += (_, _) => RefreshLanguage();
         // Translate static controls first, then redraw stateful labels that must not be reset
         // to the empty strings present when UiText first attached to this window.
@@ -118,6 +119,27 @@ public partial class CharacterGalleryWindow : Window
         CharacterCards.SelectedItem = CharacterCards.Items.OfType<CharacterGalleryItem>().FirstOrDefault(item => item.Name == selected);
         UpdateSelection();
         RenderStatus();
+        RefreshGalleryAccessibleNames();
+    }
+
+    private void RefreshGalleryAccessibleNames()
+    {
+        if (_closed) return;
+
+        string searchName = UiText.Get("캐릭터 이름 검색");
+        string categoryName = UiText.Get("캐릭터 종류");
+        string cardsName = UiText.Get("캐릭터 목록");
+        string searchTip = UiText.Get("이름으로 검색 · 한글 또는 영어");
+        string cardsHelp = UiText.Get("선택하면 미리 볼 수 있어요. 함께하기를 눌러야 현재 캐릭터를 바꿉니다.");
+
+        System.Windows.Automation.AutomationProperties.SetName(SearchBox, searchName);
+        System.Windows.Automation.AutomationProperties.SetName(CategoryCombo, categoryName);
+        System.Windows.Automation.AutomationProperties.SetName(CharacterCards, cardsName);
+
+        SearchBox.ToolTip = searchTip;
+        System.Windows.Automation.AutomationProperties.SetHelpText(SearchBox, searchTip);
+
+        System.Windows.Automation.AutomationProperties.SetHelpText(CharacterCards, cardsHelp);
     }
 
     private void SetStatus(string key, params object[] arguments)

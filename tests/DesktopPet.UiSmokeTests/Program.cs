@@ -22,6 +22,11 @@ internal static class Program
         MainWindow? pet = null;
         try
         {
+            if (args.Contains("--gallery-accessibility-only"))
+            {
+                GalleryAccessibilityUiTests.Run(folder, args.Contains("--capture"));
+                return 0;
+            }
             if (args.Contains("--settings-footer-only"))
             {
                 SettingsFooterUiTests.Run(folder, args.Contains("--capture"));
@@ -470,6 +475,7 @@ internal static class Program
             SettingsTimeInputUiTests.Run(folder, args.Contains("--capture"));
             SettingsNavigationUiTests.Run(folder, args.Contains("--capture"));
             SettingsFooterUiTests.Run(folder, args.Contains("--capture"));
+            GalleryAccessibilityUiTests.Run(folder, args.Contains("--capture"));
             GalleryLocaleRegressionTests.Run(folder, args.Contains("--capture"));
             CharacterSwitchUiTests.Run(folder);
             CharacterExportUiTests.Run(folder, args.Contains("--capture"));
