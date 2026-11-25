@@ -37,10 +37,12 @@ public sealed partial class NotificationReviewWindow : Window
         Other
     }
 
-    public NotificationReviewWindow(MainWindow pet)
+    public NotificationReviewWindow(MainWindow pet, Func<string?>? chooseExportPath = null,
+        Func<IReadOnlyList<SavedNotificationItem>, string, CancellationToken, Task>? notificationExporter = null)
     {
         _pet = pet ?? throw new ArgumentNullException(nameof(pet));
         InitializeComponent();
+        InitializeNotificationExport(chooseExportPath, notificationExporter);
         UiText.Attach(this);
 
         _pet.PendingNotificationCountChanged += OnPetCountChanged;
@@ -228,6 +230,7 @@ public sealed partial class NotificationReviewWindow : Window
         }
 
         ClearFiltersButton.IsEnabled = SearchBox.Text.Length > 0 || _sourceFilter != SourceChoice.All;
+        RefreshExportUi();
     }
 
     private void RefreshSelectionButton()
@@ -334,6 +337,7 @@ public sealed partial class NotificationReviewWindow : Window
     private void OnClosed(object? sender, EventArgs e)
     {
         _closed = true;
+        CancelNotificationExport();
 
         if (_pendingRefresh != null)
         {

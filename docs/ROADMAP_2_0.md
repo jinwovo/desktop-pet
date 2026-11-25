@@ -70,6 +70,8 @@ P037 adds literal case-insensitive title/body/source search combined with fixed 
 
 P038 adds explicit selected-notification acknowledgement through the existing asynchronous receipt worker. Native gated-worker tests prove responsiveness, stable target identity despite selection/locale changes, duplicate-click suppression, blank-ID independence and arrival preservation. A real locked receipt remains on disk with retry feedback, then deletes only after an explicit unlocked retry. Closing and reopening preserves operation ownership and prevents late updates to the old controls; disposed popup callbacks do nothing. Browsing/searching still keeps notifications unread. This is 1.4.0 development work.
 
+P039 exports a frozen visible-notification snapshot as local JSON. Native tests change the filter inside the injected filename picker and verify the original selected view is exported. Writer checks cover exactly four raw metadata fields, Unicode/quotes/newlines, null timestamps, no existing-file overwrite, pre/mid-write cancellation and owned temporary cleanup on failed publication. UI checks cover retry with a new filename, three-locale error/busy states, minimum-size action layout, asynchronous saving and closing either during the picker or pending writer. Notifications remain unread. This remains 1.4.0 development work.
+
 | Verified patch threshold | Planned release | Main review area |
 | --- | --- | --- |
 | 10 | 1.1.0 | Motion and runtime defects |

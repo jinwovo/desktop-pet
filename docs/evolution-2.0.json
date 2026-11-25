@@ -553,11 +553,20 @@
     },
     {
       "id": "P039",
-      "title": "Discovery pending: Focus and notification workflows (39)",
-      "status": "planned",
+      "title": "Export the visible notification snapshot locally without overwriting files or acknowledging receipts",
+      "status": "verified",
       "milestone": "1.4.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/SavedNotificationJsonWriter.cs",
+        "src/DesktopPet.App/NotificationReviewWindow.Export.cs",
+        "src/DesktopPet.App/NotificationReviewWindow.xaml",
+        "src/DesktopPet.App/NotificationReviewWindow.xaml.cs",
+        "src/DesktopPet.App/UiText.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/NotificationExportUiTests.cs",
+        "tests/DesktopPet.UiSmokeTests/SavedNotificationExportWriterTests.cs"
+      ]
     },
     {
       "id": "P040",

@@ -22,6 +22,11 @@ internal static class Program
         MainWindow? pet = null;
         try
         {
+            if (args.Contains("--notification-export-only"))
+            {
+                NotificationExportUiTests.Run(folder, args.Contains("--capture"));
+                return 0;
+            }
             if (args.Contains("--notification-selection-only"))
             {
                 NotificationSelectionUiTests.Run(folder, args.Contains("--capture"));
@@ -428,6 +433,7 @@ internal static class Program
             NotificationReviewUiTests.Run(folder, args.Contains("--capture"));
             NotificationSearchUiTests.Run(folder, args.Contains("--capture"));
             NotificationSelectionUiTests.Run(folder, args.Contains("--capture"));
+            NotificationExportUiTests.Run(folder, args.Contains("--capture"));
             GalleryLocaleRegressionTests.Run(folder, args.Contains("--capture"));
             CharacterSwitchUiTests.Run(folder);
             CharacterExportUiTests.Run(folder, args.Contains("--capture"));
