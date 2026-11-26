@@ -23,13 +23,28 @@ public partial class App : System.Windows.Application
     protected override void OnStartup(StartupEventArgs e)
     {
         var command = e.Args.Length == 1 ? e.Args[0] : null;
-        if (e.Args.Length > 0 && command is not ("--check-install" or "--disconnect-assistants" or "--version"))
+        if (e.Args.Length > 0 && command is not ("--check-install" or "--disconnect-assistants" or "--version" or "--help"))
         {
-            Console.Error.WriteLine("DesktopPet accepts one maintenance option: --check-install, --version or --disconnect-assistants.");
+            Console.Error.WriteLine("DesktopPet accepts one maintenance option. Run DesktopPet.App.exe --help.");
             Shutdown(64);
             return;
         }
 
+        if (command == "--help")
+        {
+            Console.WriteLine("""
+                DesktopPet.App.exe [option]
+                  --help                   Show this help.
+                  --version                Print the numeric application version.
+                  --check-install          Check packaged resources and print a JSON report.
+                  --disconnect-assistants  Disconnect DesktopPet hooks from assistant profiles.
+
+                With no option, DesktopPet starts normally.
+                Exit codes: 0 success, 2 maintenance check failed, 64 invalid command.
+                """);
+            Shutdown();
+            return;
+        }
         if (command == "--check-install")
         {
             var result = InstallationCheck.Inspect(AppContext.BaseDirectory);
