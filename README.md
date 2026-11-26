@@ -18,6 +18,8 @@ A quiet desktop companion for AI work, focused sessions, and a less empty taskba
 
 1.6.0 brings the total to 60 verified improvements. The preview uses one active render clock, the live rig skips unused sprite lookup, and weighted frame selection uses a precomputed timeline. The gallery reuses unchanged results and cancels superseded work.
 
+**1.7.0 development.** DesktopPet keeps the previous distinct local settings. If the current file is missing, corrupt or oversized, it reads the previous valid version. A temporarily blocked save can retry in the background.
+
 DesktopPet is a Windows desktop pet with gentle completion notifications for local Claude Code and Codex, a 25/5 focus timer, and importable character packs. Its live walking renderer moves cached body and foot layers continuously, using actual travel distance to keep a planted foot from sliding.
 
 Version 1.0.2 keeps independent head/torso/foot motion, eases upper-body reversals over 120 ms and finishes side/quarter-view changes in 100 ms. The nine curated companions walk about 20% faster with a lower foot lift. Existing six-texture packs work unchanged; reduced motion disables articulation and fades.

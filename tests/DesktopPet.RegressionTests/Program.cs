@@ -153,6 +153,40 @@ var tests = new (string Name, Action Run)[]
         File.WriteAllText(backup, "null");
         Check(PetSettings.Load(path).Language == "auto", "Missing primary and invalid backup did not fall back to defaults");
     })),
+    ("Oversized settings recover without displacing a readable Unicode backup", () => InTemporaryFolder(folder =>
+    {
+        var path = Path.Combine(folder, "settings.json");
+        var backup = path + ".bak";
+        File.WriteAllText(backup, "{\"Language\":\"en\",\"FocusMinutes\":32}", System.Text.Encoding.Unicode);
+        File.WriteAllText(path, new string(' ', 256 * 1024) + "{\"FocusMinutes\":40}");
+        var recovered = PetSettings.Load(path);
+        Check(recovered.FocusMinutes == 32 && recovered.Language == "en", "Oversized primary bypassed recovery");
+        var backupBytes = File.ReadAllBytes(backup);
+        recovered.FocusMinutes = 46;
+        recovered.Save(path);
+        Check(PetSettings.Load(path).FocusMinutes == 46 && File.ReadAllBytes(backup).SequenceEqual(backupBytes),
+            "Replacing oversized primary discarded the valid Unicode backup");
+        recovered.CharacterName = new string('a', 256 * 1024);
+        Throws<IOException>(() => recovered.Save(path));
+        Check(PetSettings.Load(path).FocusMinutes == 46 && Directory.GetFiles(folder).Length == 2,
+            "Rejecting oversized settings modified the previous save or leaked a staging file");
+    })),
+    ("Saving identical preferences leaves the prior distinct version available", () => InTemporaryFolder(folder =>
+    {
+        var path = Path.Combine(folder, "settings.json");
+        var settings = new PetSettings { FocusMinutes = 35 };
+        settings.Save(path);
+        settings.FocusMinutes = 45;
+        settings.Save(path);
+        var backup = File.ReadAllBytes(path + ".bak");
+        File.SetLastWriteTimeUtc(path, new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+        var savedAt = File.GetLastWriteTimeUtc(path);
+        settings.Save(path);
+        Check(File.GetLastWriteTimeUtc(path) == savedAt && File.ReadAllBytes(path + ".bak").SequenceEqual(backup),
+            "An unchanged save rewrote the primary or rotated away the previous settings");
+        File.Delete(path);
+        Check(PetSettings.Load(path).FocusMinutes == 35, "Recovery no longer has the last distinct version");
+    })),
     ("Atomic settings writes preserve previous file on failure", () => InTemporaryFolder(folder =>
     {
         var path = Path.Combine(folder, "settings.json");

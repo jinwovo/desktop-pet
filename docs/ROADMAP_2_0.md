@@ -136,3 +136,11 @@ P058 Compute cumulative boundaries when loading a manifest and locate frames wit
 P059 Use the original textures for endpoint poses and allocate the reusable blend bitmap only when needed.
 
 P060 Show the current inbox snapshot directly when there is no search or source filter, avoiding a second list copy.
+
+P061 Keep the previous valid local settings and recover it if the primary is missing or malformed. Repairing the primary preserves the good backup.
+
+P062 Retry failed settings writes after 2, 4 and 8 seconds while the app is running. A persistent failure reports once and shutdown permits one final attempt without starting a timer.
+
+P063 Limit local settings files to 256 KiB and fall back when the primary exceeds that size. Preserve BOM-aware decoding of previous settings.
+
+P064 Skip an unchanged write so the recovery copy keeps the older distinct version.

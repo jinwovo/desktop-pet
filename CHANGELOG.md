@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased (1.7.0 development)
+
+- P064 Skip an unchanged write so the recovery copy keeps the older distinct version.
+- P063 Limit local settings files to 256 KiB and fall back when the primary exceeds that size. Preserve BOM-aware decoding of previous settings.
+- P062 Retry failed settings writes after 2, 4 and 8 seconds while the app is running. A persistent failure reports once and shutdown permits one final attempt without starting a timer.
+- P061 Keep the previous valid local settings and recover it if the primary is missing or malformed. Repairing the primary preserves the good backup.
+
 ## 1.6.0 — evolution patches P051–P060
 
 - P060 Show the current inbox snapshot directly when there is no search or source filter, avoiding a second list copy.

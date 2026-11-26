@@ -855,35 +855,51 @@
     },
     {
       "id": "P061",
-      "title": "Discovery pending: Recovery and durable preferences (61)",
-      "status": "planned",
+      "title": "Recover local preferences from the last valid version",
+      "status": "verified",
       "milestone": "1.7.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.Core/PetSettings.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.RegressionTests/Program.cs"
+      ]
     },
     {
       "id": "P062",
-      "title": "Discovery pending: Recovery and durable preferences (62)",
-      "status": "planned",
+      "title": "Retry briefly blocked preference saves",
+      "status": "verified",
       "milestone": "1.7.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/MainWindow.xaml.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/SettingsSaveRecoveryUiTests.cs"
+      ]
     },
     {
       "id": "P063",
-      "title": "Discovery pending: Recovery and durable preferences (63)",
-      "status": "planned",
+      "title": "Bound local settings reads and writes",
+      "status": "verified",
       "milestone": "1.7.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.Core/PetSettings.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.RegressionTests/Program.cs"
+      ]
     },
     {
       "id": "P064",
-      "title": "Discovery pending: Recovery and durable preferences (64)",
-      "status": "planned",
+      "title": "Keep the previous distinct settings on an identical save",
+      "status": "verified",
       "milestone": "1.7.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.Core/PetSettings.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.RegressionTests/Program.cs"
+      ]
     },
     {
       "id": "P065",

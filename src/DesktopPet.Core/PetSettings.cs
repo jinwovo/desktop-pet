@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 
 namespace DesktopPet.Core;
@@ -5,6 +6,7 @@ namespace DesktopPet.Core;
 /// <summary>User-adjustable, persisted preferences — not derived from any character.json.</summary>
 public sealed class PetSettings
 {
+    private const int MaxFileBytes = 256 * 1024;
     public const string DefaultCharacterName = "Companion";
     public string CharacterName { get; set; } = DefaultCharacterName;
     public string Language { get; set; } = "ko";
@@ -48,16 +50,24 @@ public sealed class PetSettings
 
     private static PetSettings? TryLoad(string path)
     {
-        try { return ReadSettings(path); }
+        try { return ReadSettings(path, out _); }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             return null;
         }
     }
 
-    private static PetSettings? ReadSettings(string path)
+    private static PetSettings? ReadSettings(string path, out string? json)
     {
-        try { return JsonSerializer.Deserialize<PetSettings>(File.ReadAllText(path)); }
+        json = null;
+        try
+        {
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            if (stream.Length > MaxFileBytes) return null;
+            using var reader = new StreamReader(stream, detectEncodingFromByteOrderMarks: true);
+            json = reader.ReadToEnd();
+            return JsonSerializer.Deserialize<PetSettings>(json);
+        }
         catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException or JsonException)
         {
             return null;
@@ -87,13 +97,19 @@ public sealed class PetSettings
         var dir = Path.GetDirectoryName(path)!;
         Directory.CreateDirectory(dir);
         var json = JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });
+        if (Encoding.UTF8.GetByteCount(json) > MaxFileBytes)
+            throw new IOException("Settings cannot exceed 256 KiB.");
+        var previous = ReadSettings(path, out var previousJson);
+        if (previous is not null && string.Equals(previousJson, json, StringComparison.Ordinal))
+            return;
+
         var temporaryPath = Path.Combine(dir, $".{Path.GetFileName(path)}.{Guid.NewGuid():N}.tmp");
         try
         {
             File.WriteAllText(temporaryPath, json);
             // Only a readable, valid primary may become the previous saved version.
             // Repairing a missing or malformed primary leaves the existing backup intact.
-            if (ReadSettings(path) is not null)
+            if (previous is not null)
                 File.Replace(temporaryPath, path, path + ".bak");
             else
                 File.Move(temporaryPath, path, overwrite: true);
