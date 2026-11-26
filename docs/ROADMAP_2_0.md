@@ -4,7 +4,7 @@ The project owner requested 100 meaningful improvements from the 1.0.2 baseline 
 
 ## Counting and evidence
 
-[1.7.0 is publicly verified](https://github.com/jinwovo/desktop-pet/releases/tag/v1.7.0) with P001–P070. The [Windows release run](https://github.com/jinwovo/desktop-pet/actions/runs/45738458189) passed. An independent download confirmed both archives, their SHA-256 sidecars, and isolated startup of the published executable. Earlier milestones are available in the [1.6.0 release](https://github.com/jinwovo/desktop-pet/releases/tag/v1.6.0) and [1.4.0 release audit](RELEASE_AUDIT_1_4.md).
+[1.8.0 is publicly verified](https://github.com/jinwovo/desktop-pet/releases/tag/v1.8.0) with P001–P080. The [Windows release run](https://github.com/jinwovo/desktop-pet/actions/runs/45753781392) passed. An independent download confirmed both archives, their SHA-256 sidecars, and isolated startup of the published executable. Earlier milestones are available in the [1.7.0 release](https://github.com/jinwovo/desktop-pet/releases/tag/v1.7.0) and [1.4.0 release audit](RELEASE_AUDIT_1_4.md).
 
 A verified patch changes product behavior or repairs a reproducible defect, identifies its changed source files and names the regression fixtures that passed. Documentation, version changes, release administration and repeated tests do not count as additional product patches. A patch may resolve related symptoms together. Review findings are checked against source and execution before acceptance.
 
