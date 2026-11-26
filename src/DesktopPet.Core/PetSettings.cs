@@ -104,9 +104,16 @@ public sealed class PetSettings
             return;
 
         var temporaryPath = Path.Combine(dir, $".{Path.GetFileName(path)}.{Guid.NewGuid():N}.tmp");
+        var created = false;
         try
         {
-            File.WriteAllText(temporaryPath, json);
+            using (var stream = new FileStream(temporaryPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+            {
+                created = true;
+                using (var writer = new StreamWriter(stream, new UTF8Encoding(false), leaveOpen: true))
+                    writer.Write(json);
+                stream.Flush(flushToDisk: true);
+            }
             // Only a readable, valid primary may become the previous saved version.
             // Repairing a missing or malformed primary leaves the existing backup intact.
             if (previous is not null)
@@ -116,7 +123,7 @@ public sealed class PetSettings
         }
         finally
         {
-            if (File.Exists(temporaryPath)) File.Delete(temporaryPath);
+            if (created && File.Exists(temporaryPath)) File.Delete(temporaryPath);
         }
     }
 }
