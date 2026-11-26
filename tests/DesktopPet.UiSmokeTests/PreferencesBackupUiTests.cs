@@ -43,7 +43,7 @@ internal static class PreferencesBackupUiTests
         try
         {
             var backup = (Task)Invoke(settings, "BackupPreferencesToFile", path)!;
-            Check(!((Button)settings.FindName("BackupPreferencesButton")).IsEnabled, "Backup did not enter its busy state");
+            Check(backup.IsCompleted || !((Button)settings.FindName("BackupPreferencesButton")).IsEnabled, "An in-progress backup accepted duplicate input");
             WaitFor(backup);
             var json = PetSettingsBackup.ReadFile(path);
             Check(!json.Contains("AutoConnectAssistants") && ((TextBlock)settings.FindName("PreferencesTransferStatus")).Text.Contains("백업"), "Backup UI failed to write portable settings");

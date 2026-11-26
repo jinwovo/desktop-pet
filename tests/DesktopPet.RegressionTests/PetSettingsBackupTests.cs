@@ -5,6 +5,28 @@ public static class PetSettingsBackupTests
 {
     public static IEnumerable<(string Name, Action Run)> Create()
     {
+        yield return ("Async portable backup captures preferences before later edits and respects cancellation", () =>
+        {
+            var path = Path.Combine(Path.GetTempPath(), "DesktopPet-backup-async-" + Guid.NewGuid().ToString("N") + ".json");
+            try
+            {
+                var settings = new PetSettings { FocusMinutes = 41 };
+                var save = PetSettingsBackup.SaveFileAsync(path, settings, CancellationToken.None);
+                settings.FocusMinutes = 57;
+                save.GetAwaiter().GetResult();
+                Check(PetSettingsBackup.ReadJson(PetSettingsBackup.ReadFile(path), new()).FocusMinutes == 41,
+                    "A later edit changed the captured portable backup");
+                var before = File.ReadAllBytes(path);
+                using var cancel = new CancellationTokenSource();
+                cancel.Cancel();
+                var cancelled = false;
+                try { PetSettingsBackup.SaveFileAsync(path, settings, cancel.Token).GetAwaiter().GetResult(); }
+                catch (OperationCanceledException) { cancelled = true; }
+                Check(cancelled && File.ReadAllBytes(path).SequenceEqual(before), "Cancellation overwrote an existing backup");
+            }
+            finally { File.Delete(path); }
+        });
+
         yield return ("Language preference is portable, bounded and preserves Korean for legacy settings", () =>
         {
             Check(JsonSerializer.Deserialize<PetSettings>("{}")!.Language == "ko", "Legacy language unexpectedly changed");
