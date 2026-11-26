@@ -9,6 +9,7 @@ param(
     [switch]$AddToStartup,
     [switch]$SkipStartMenuShortcut,
     [switch]$VerifyOnly,
+    [switch]$PassThru,
     [string]$PackageDirectory,
     [string]$PackageArchive,
     [string]$InstallDirectory = (Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'DesktopPet'),
@@ -66,10 +67,22 @@ finally {
 }
 
 $exePath = Join-Path $installRoot 'DesktopPet.App.exe'
+$shortcutState = 'Skipped'
+$startupState = 'Skipped'
 if (-not $SkipStartMenuShortcut) {
-    Set-DesktopPetStartMenuShortcut -ProgramsDirectory ([Environment]::GetFolderPath('Programs')) -Executable $exePath
+    $shortcutState = Set-DesktopPetStartMenuShortcut -ProgramsDirectory ([Environment]::GetFolderPath('Programs')) -Executable $exePath
 }
 if ($AddToStartup) {
-    Set-DesktopPetStartupRegistration -Executable $exePath | Out-Null
+    $startupState = Set-DesktopPetStartupRegistration -Executable $exePath
 }
 Write-Host "설치 완료: $exePath"
+if ($PassThru) {
+    [pscustomobject]@{
+        Version = $manifest.version
+        Deployment = $manifest.deployment
+        InstallDirectory = $installRoot
+        ExecutablePath = $exePath
+        StartMenuShortcut = $shortcutState
+        StartupRegistration = $startupState
+    }
+}

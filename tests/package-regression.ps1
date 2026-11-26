@@ -106,6 +106,14 @@ public static class $fixtureType { public static void Main() { } }
     Write-Host 'PASS Install and VerifyOnly accept a matching ZIP sidecar and reject a mismatched archive before publication'
     $passed++
 
+    $passThruTarget = Join-Path $testRoot 'automation-install'
+    $receipt = & $installer -InstallDirectory $passThruTarget -SkipStartMenuShortcut -PassThru
+    Assert-PackageTest ($receipt.Version -eq '0.4.0' -and $receipt.Deployment -eq 'self-contained-single-file' -and
+        $receipt.InstallDirectory -eq $passThruTarget -and [System.IO.File]::Exists($receipt.ExecutablePath) -and
+        $receipt.StartMenuShortcut -eq 'Skipped' -and $receipt.StartupRegistration -eq 'Skipped') 'Installation result did not describe the actual files or optional integration outcomes.'
+    Write-Host 'PASS PassThru reports installed version, executable and optional integration outcomes for automation'
+    $passed++
+
     $rigPublish = Join-Path $testRoot 'rig-publish'
     Copy-Item -LiteralPath $publish -Destination $rigPublish -Recurse
     $rigDefinition = [ordered]@{
@@ -321,7 +329,7 @@ public static class $fixtureType { public static void Main() { } }
     Assert-PackageTest ([System.IO.File]::ReadAllText((Join-Path $testRoot 'outside.txt')) -eq 'must remain') 'Uninstall escaped its root.'
     Write-Host 'PASS Uninstall rejects a manifest escaping the installation directory'
     $passed++
-    Write-Host "$passed/19 release packaging regression checks passed (synthetic binary and images, no runtime execution)"
+    Write-Host "$passed/20 release packaging regression checks passed (synthetic binary and images, no runtime execution)"
 }
 finally {
     $safeTestRoot = Assert-DesktopPetChildPath -Root (Join-Path $repoRoot '.local') -Path $testRoot
