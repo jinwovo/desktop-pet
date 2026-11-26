@@ -62,6 +62,8 @@ public partial class SettingsWindow : Window
         LoadFromPet();
         RenderFocusTimer();
         _pet.FocusTimerChanged += RenderFocusTimer;
+        _pet.SettingsSaveFailureChanged += RenderSettingsSaveFailure;
+        RenderSettingsSaveFailure();
         RefreshDurationPresetTooltips();
         _pet.RenderOptionsChanged += ApplyRenderOptions;
         ApplyRenderOptions(_pet.MaximumFps, _pet.ReducedMotion);
@@ -77,6 +79,7 @@ public partial class SettingsWindow : Window
             _characterImportCancellation?.Cancel();
             _preferencesTransferCancellation?.Cancel();
             _pet.FocusTimerChanged -= RenderFocusTimer;
+            _pet.SettingsSaveFailureChanged -= RenderSettingsSaveFailure;
             _pet.RenderOptionsChanged -= ApplyRenderOptions;
             UiText.LanguageChanged -= RefreshLanguage;
             _previewTimer.Stop();
@@ -697,6 +700,17 @@ public partial class SettingsWindow : Window
         try { Process.Start(new ProcessStartInfo("https://github.com/jinwovo/desktop-pet/releases") { UseShellExecute = true }); }
         catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
         { AboutStatusText.Text = UiText.Get("브라우저를 열지 못했어요."); }
+    }
+
+    private void RenderSettingsSaveFailure()
+    {
+        if (!_closed)
+            RetrySettingsSaveButton.Visibility = _pet.HasSettingsSaveFailure ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void RetrySettingsSave_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_closed) _pet.RetryFailedSettingsSave();
     }
 
     private void SetPreferencesTransferStatus(string key)

@@ -228,6 +228,8 @@
                     <Button x:Name="BackupPreferencesButton" Content="설정 백업" Padding="10,5" Click="BackupPreferences_Click"/>
                     <Button x:Name="RestorePreferencesButton" Content="설정 복원" Padding="10,5" Margin="8,0,0,0" Click="RestorePreferences_Click"/>
                 </WrapPanel>
+                <Button x:Name="RetrySettingsSaveButton" Content="변경한 설정 다시 저장" Visibility="Collapsed" HorizontalAlignment="Left"
+                        Padding="10,5" Margin="0,6,0,0" Click="RetrySettingsSave_Click"/>
                 <TextBlock x:Name="PreferencesTransferStatus" Text="화면·동작·시간 설정만 옮깁니다. AI 연결·훅 허용·개인 경로는 포함하지 않아요."
                            FontSize="11" Foreground="#777777" TextWrapping="Wrap" Margin="0,6,0,0"/>
             </StackPanel>

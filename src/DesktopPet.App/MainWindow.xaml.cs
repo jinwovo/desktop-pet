@@ -987,6 +987,15 @@ public partial class MainWindow : Window
         });
     }
 
+    internal bool HasSettingsSaveFailure => _settingsSaveFailed;
+    internal event Action? SettingsSaveFailureChanged;
+
+    internal void RetryFailedSettingsSave()
+    {
+        Dispatcher.VerifyAccess();
+        if (!_disposed && _settingsSaveFailed) SaveSettings();
+    }
+
     private void ScheduleSettingsSave()
     {
         _settingsDirty = true;
@@ -1007,12 +1016,14 @@ public partial class MainWindow : Window
         {
             _settings.Save(_settingsPath);
             _settingsDirty = false;
+            var wasFailed = _settingsSaveFailed;
             _settingsSaveFailed = false;
             if (_settingsSaveRetries > 0)
             {
                 _settingsSaveRetries = 0;
                 _settingsSaveTimer.Interval = SettingsSaveDebounce;
             }
+            if (wasFailed) SettingsSaveFailureChanged?.Invoke();
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -1026,7 +1037,8 @@ public partial class MainWindow : Window
             else if (!_settingsSaveFailed)
             {
                 _settingsSaveFailed = true;
-                OperationFailed?.Invoke("설정을 저장하지 못했습니다. 저장 폴더의 권한과 디스크 공간을 확인해주세요.");
+                SettingsSaveFailureChanged?.Invoke();
+                OperationFailed?.Invoke(UiText.Get("설정을 저장하지 못했습니다. 저장 폴더의 권한과 디스크 공간을 확인해주세요."));
             }
         }
     }

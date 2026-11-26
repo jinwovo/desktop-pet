@@ -286,6 +286,8 @@ public static class UiText
         ["00:00~23:59 사이 HH:mm 형식으로 입력해주세요."] = ("Enter HH:mm between 00:00 and 23:59.", "请输入 00:00 至 23:59 的 HH:mm 时间。"),
         ["같은 시작·종료 시간은 예약을 활성화하지 않아요."] = ("Equal start/end times leave the schedule inactive.", "起止相同则不启用时段。"),
         ["예약을 적용했어요. 미확인 알림은 계속 보관합니다."] = ("Schedule applied. Unread notifications stay saved.", "时段已应用，仍会保存未读通知。"),
+        ["변경한 설정 다시 저장"] = ("Retry saving changes", "重试保存更改"),
+        ["설정을 저장하지 못했습니다. 저장 폴더의 권한과 디스크 공간을 확인해주세요."] = ("Settings could not be saved. Check folder permissions and free disk space.", "无法保存设置。请检查文件夹权限和可用磁盘空间。"),
         ["설정을 백업하고 있어요…"] = ("Backing up settings…", "正在备份设置…"),
         ["설정 백업이 취소됐어요."] = ("Settings backup was canceled.", "设置备份已取消。"),
         ["설정을 복원하고 있어요…"] = ("Restoring settings…", "正在恢复设置…"),
