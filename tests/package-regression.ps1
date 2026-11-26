@@ -55,6 +55,22 @@ public static class $fixtureType { public static void Main() { } }
     Write-Host 'PASS Default ZIP metadata, version, bridge, tooling, file hashes and checksum sidecar'
     $passed++
 
+    $unusedInstall = Join-Path $testRoot 'unused-verify-install'
+    $installer = Join-Path $extracted 'install.ps1'
+    $verified = & $installer -VerifyOnly -InstallDirectory $unusedInstall -SkipStartMenuShortcut
+    Assert-PackageTest ($verified.version -eq '0.4.0' -and -not [System.IO.Directory]::Exists($unusedInstall)) 'Verification did not report package metadata or wrote to the install folder.'
+    $originalImage = Join-Path $extracted 'Assets\Characters\Companion\idle.png'
+    $originalBytes = [System.IO.File]::ReadAllBytes($originalImage)
+    try {
+        [System.IO.File]::AppendAllText($originalImage, 'corrupted')
+        Assert-PackageFailure { & $installer -VerifyOnly -InstallDirectory $unusedInstall }
+        Assert-PackageTest (-not [System.IO.Directory]::Exists($unusedInstall)) 'Invalid package verification created the installation folder.'
+    }
+    finally { [System.IO.File]::WriteAllBytes($originalImage, $originalBytes) }
+    Assert-PackageFailure { & (Join-Path $repoRoot 'scripts\install.ps1') -VerifyOnly }
+    Write-Host 'PASS Extracted installer verifies manifest and hashes in read-only mode, and rejects modified payloads and missing packages'
+    $passed++
+
     $rigPublish = Join-Path $testRoot 'rig-publish'
     Copy-Item -LiteralPath $publish -Destination $rigPublish -Recurse
     $rigDefinition = [ordered]@{
@@ -241,7 +257,7 @@ public static class $fixtureType { public static void Main() { } }
     Assert-PackageTest ([System.IO.File]::ReadAllText((Join-Path $testRoot 'outside.txt')) -eq 'must remain') 'Uninstall escaped its root.'
     Write-Host 'PASS Uninstall rejects a manifest escaping the installation directory'
     $passed++
-    Write-Host "$passed/14 release packaging regression checks passed (synthetic binary and images, no runtime execution)"
+    Write-Host "$passed/15 release packaging regression checks passed (synthetic binary and images, no runtime execution)"
 }
 finally {
     $safeTestRoot = Assert-DesktopPetChildPath -Root (Join-Path $repoRoot '.local') -Path $testRoot

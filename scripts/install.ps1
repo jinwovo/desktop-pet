@@ -8,6 +8,7 @@
 param(
     [switch]$AddToStartup,
     [switch]$SkipStartMenuShortcut,
+    [switch]$VerifyOnly,
     [string]$PackageDirectory,
     [string]$InstallDirectory = (Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'DesktopPet'),
     [switch]$FrameworkDependent
@@ -17,12 +18,18 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'Install-DesktopPetPayload.ps1')
 . (Join-Path $PSScriptRoot 'package-release.ps1') -FrameworkDependent:$FrameworkDependent
 
+if (-not $PackageDirectory -and [System.IO.File]::Exists((Join-Path $PSScriptRoot 'DesktopPet.release.json'))) {
+    $PackageDirectory = $PSScriptRoot
+}
+if ($VerifyOnly) {
+    if (-not $PackageDirectory) { throw 'Extract a DesktopPet release ZIP or pass its extracted folder with -PackageDirectory.' }
+    Test-DesktopPetReleasePayload -Directory $PackageDirectory
+    return
+}
+
 $installRoot = Get-DesktopPetInstallPath $InstallDirectory
 $temporaryRoot = $null
 try {
-    if (-not $PackageDirectory -and [System.IO.File]::Exists((Join-Path $PSScriptRoot 'DesktopPet.release.json'))) {
-        $PackageDirectory = $PSScriptRoot
-    }
     if (-not $PackageDirectory) {
         $temporaryRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('DesktopPet.install-package-' + [Guid]::NewGuid().ToString('N'))
         [System.IO.Directory]::CreateDirectory($temporaryRoot) | Out-Null
