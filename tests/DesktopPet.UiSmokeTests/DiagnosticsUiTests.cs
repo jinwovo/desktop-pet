@@ -13,6 +13,7 @@ internal static class DiagnosticsUiTests
     public static void Run(string root)
     {
         VerifyBackgroundSave(root);
+        VerifyCopyFeedback();
         var pet = new MainWindow(new CharacterLibrary(MainWindow.CharactersRoot, Path.Combine(root, "private-library-canary")), inboxDirectory: Path.Combine(root, "private-inbox-canary"));
         Set(pet, "_settings", new PetSettings { AutoConnectAssistants = false });
         Set(pet, "_brain", new PetBrain(new PlatformLayout(new[] { new Platform(0, 1920, 1080) }), 128, 122, 500, 958));
@@ -97,6 +98,40 @@ internal static class DiagnosticsUiTests
             UiText.SetLanguage(language);
         }
         Console.WriteLine("PASS Diagnostic export saves the reviewed snapshot on a worker and cancels pending writes on close");
+    }
+
+    private static void VerifyCopyFeedback()
+    {
+        var language = UiText.Language;
+        var attempts = 0;
+        string? copied = null;
+        var window = new DiagnosticWindow("initial report", () => "reviewed after refresh",
+            copyText: text =>
+            {
+                if (++attempts == 1) throw new System.Runtime.InteropServices.ExternalException("Simulated busy clipboard");
+                copied = text;
+            });
+        try
+        {
+            window.Show();
+            var copy = Descendants<Button>(window).Single(button => button.Name == "CopyDiagnosticButton");
+            var status = Descendants<TextBlock>(window).Single(block => block.Name == "DiagnosticSaveStatus");
+            copy.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Check(copied is null && attempts == 1 && status.Text == UiText.Get("진단 보고서를 복사하지 못했어요. 다시 시도해주세요."),
+                "A busy clipboard did not show recoverable feedback");
+            UiText.SetLanguage("zh-CN");
+            Check(status.Text == UiText.Get("진단 보고서를 복사하지 못했어요. 다시 시도해주세요."),
+                "Language change discarded the copy failure status");
+            Descendants<Button>(window).Single(button => button.Name == "RefreshDiagnosticButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            copy.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Check(copied == window.Report && copied == "reviewed after refresh" && attempts == 2 &&
+                status.Text == UiText.Get("진단 보고서를 복사했어요."), "Copy did not use the report currently shown");
+            window.Close();
+            copy.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Check(attempts == 2, "A closed window tried to copy diagnostic data");
+        }
+        finally { window.Close(); UiText.SetLanguage(language); }
+        Console.WriteLine("PASS Diagnostic copy uses the reviewed JSON, localizes busy feedback and supports retry without touching the real clipboard");
     }
 
     private static IEnumerable<T> Descendants<T>(DependencyObject node) where T : DependencyObject

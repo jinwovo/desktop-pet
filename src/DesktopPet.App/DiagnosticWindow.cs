@@ -18,7 +18,8 @@ public sealed class DiagnosticWindow : Window
     private bool _closed;
 
     public string Report { get; private set; }
-    public DiagnosticWindow(string report, Func<string> refreshReport, Action<string, string, CancellationToken>? writeReport = null)
+    public DiagnosticWindow(string report, Func<string> refreshReport,
+        Action<string, string, CancellationToken>? writeReport = null, Action<string>? copyText = null)
     {
         Report = report;
         _writeReport = writeReport ?? DiagnosticReport.SaveFile;
@@ -52,7 +53,24 @@ public sealed class DiagnosticWindow : Window
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or ArgumentException)
             { SetStatus("진단 정보를 읽지 못했어요."); }
         };
+        var copy = new Button { Name = "CopyDiagnosticButton", Content = "진단 복사",
+            Padding = new Thickness(12, 6, 12, 6), Margin = new Thickness(0, 0, 8, 0) };
+        var clipboardWriter = copyText ?? System.Windows.Clipboard.SetText;
+        copy.Click += (_, _) =>
+        {
+            if (_closed) return;
+            try
+            {
+                clipboardWriter(Report);
+                SetStatus("진단 보고서를 복사했어요.");
+            }
+            catch (System.Runtime.InteropServices.ExternalException)
+            {
+                SetStatus("진단 보고서를 복사하지 못했어요. 다시 시도해주세요.");
+            }
+        };
         actions.Children.Add(refresh);
+        actions.Children.Add(copy);
         actions.Children.Add(_save);
         footer.Children.Add(_status);
         footer.Children.Add(actions);

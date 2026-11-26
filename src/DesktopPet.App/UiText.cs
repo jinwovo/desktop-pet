@@ -57,6 +57,9 @@ public static class UiText
     }
     private static readonly Dictionary<string, (string English, string Chinese)> Translations = new(StringComparer.Ordinal)
     {
+        ["진단 복사"] = ("Copy report", "复制报告"),
+        ["진단 보고서를 복사했어요."] = ("Diagnostic report copied.", "已复制诊断报告。"),
+        ["진단 보고서를 복사하지 못했어요. 다시 시도해주세요."] = ("Could not copy the diagnostic report. Please retry.", "无法复制诊断报告。请重试。"),
         ["진단 보고서를 저장하고 있어요…"] = ("Saving the diagnostic report…", "正在保存诊断报告…"),
         ["진단 새로고침"] = ("Refresh report", "刷新报告"),
         ["Ctrl+F 검색 · Ctrl+L 초기화 · F5 새로고침"] = ("Ctrl+F Search · Ctrl+L Clear filters · F5 Refresh", "Ctrl+F 搜索 · Ctrl+L 重置筛选 · F5 刷新"),
