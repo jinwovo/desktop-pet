@@ -10,6 +10,7 @@ param(
     [switch]$SkipStartMenuShortcut,
     [switch]$VerifyOnly,
     [string]$PackageDirectory,
+    [string]$PackageArchive,
     [string]$InstallDirectory = (Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'DesktopPet'),
     [switch]$FrameworkDependent
 )
@@ -18,30 +19,35 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'Install-DesktopPetPayload.ps1')
 . (Join-Path $PSScriptRoot 'package-release.ps1') -FrameworkDependent:$FrameworkDependent
 
-if (-not $PackageDirectory -and [System.IO.File]::Exists((Join-Path $PSScriptRoot 'DesktopPet.release.json'))) {
+if ($PackageDirectory -and $PackageArchive) { throw 'Select either -PackageDirectory or -PackageArchive.' }
+if (-not $PackageDirectory -and -not $PackageArchive -and [System.IO.File]::Exists((Join-Path $PSScriptRoot 'DesktopPet.release.json'))) {
     $PackageDirectory = $PSScriptRoot
 }
-if ($VerifyOnly) {
-    if (-not $PackageDirectory) { throw 'Extract a DesktopPet release ZIP or pass its extracted folder with -PackageDirectory.' }
-    Test-DesktopPetReleasePayload -Directory $PackageDirectory
-    return
+if ($VerifyOnly -and -not $PackageDirectory -and -not $PackageArchive) {
+    throw 'Pass -PackageArchive with its SHA-256 sidecar, or use an extracted ZIP folder.'
 }
 
-$installRoot = Get-DesktopPetInstallPath $InstallDirectory
+$installRoot = if (-not $VerifyOnly) { Get-DesktopPetInstallPath $InstallDirectory }
 $temporaryRoot = $null
 try {
     if (-not $PackageDirectory) {
         $temporaryRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('DesktopPet.install-package-' + [Guid]::NewGuid().ToString('N'))
         [System.IO.Directory]::CreateDirectory($temporaryRoot) | Out-Null
-        $archiveRoot = Join-Path $temporaryRoot 'archives'
-        & (Join-Path $PSScriptRoot 'package-release.ps1') -OutputDirectory $archiveRoot -FrameworkDependent:$FrameworkDependent
-        $archives = @(Get-ChildItem -LiteralPath $archiveRoot -Filter '*.zip' -File)
-        if ($archives.Count -ne 1) { throw 'Expected exactly one release archive.' }
         $PackageDirectory = Join-Path $temporaryRoot 'extracted'
-        Add-Type -AssemblyName System.IO.Compression.FileSystem
-        [System.IO.Compression.ZipFile]::ExtractToDirectory($archives[0].FullName, $PackageDirectory)
+        if ($PackageArchive) {
+            Expand-DesktopPetVerifiedArchive -ArchivePath $PackageArchive -Destination $PackageDirectory
+        }
+        else {
+            $archiveRoot = Join-Path $temporaryRoot 'archives'
+            & (Join-Path $PSScriptRoot 'package-release.ps1') -OutputDirectory $archiveRoot -FrameworkDependent:$FrameworkDependent
+            $archives = @(Get-ChildItem -LiteralPath $archiveRoot -Filter '*.zip' -File)
+            if ($archives.Count -ne 1) { throw 'Expected exactly one release archive.' }
+            Add-Type -AssemblyName System.IO.Compression.FileSystem
+            [System.IO.Compression.ZipFile]::ExtractToDirectory($archives[0].FullName, $PackageDirectory)
+        }
     }
     $manifest = Test-DesktopPetReleasePayload -Directory $PackageDirectory
+    if ($VerifyOnly) { return $manifest }
     if ($manifest.requiresDotNetRuntime) { Write-Host 'Framework-dependent 배포: .NET 10 Desktop Runtime x64가 필요합니다.' }
     Write-Host "설치 중... ($installRoot, 알림과 사용자 캐릭터 보존)"
     $expectedVersion = $manifest.version

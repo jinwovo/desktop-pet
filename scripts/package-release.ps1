@@ -105,6 +105,38 @@ function ConvertTo-DesktopPetCanonicalReleasePath {
     return $RelativePath.Replace('/', '\')
 }
 
+function Expand-DesktopPetVerifiedArchive {
+    param(
+        [Parameter(Mandatory = $true)][string]$ArchivePath,
+        [Parameter(Mandatory = $true)][string]$Destination
+    )
+    $archive = [System.IO.Path]::GetFullPath($ArchivePath)
+    if ([System.IO.Path]::GetExtension($archive) -ne '.zip') { throw 'Select a DesktopPet release ZIP.' }
+    $sidecar = $archive + '.sha256'
+    if (-not [System.IO.File]::Exists($sidecar) -or (Get-Item -LiteralPath $sidecar).Length -gt 4096) {
+        throw "Keep the matching SHA-256 sidecar next to the release ZIP: $sidecar"
+    }
+    $expected = [System.IO.File]::ReadAllText($sidecar).Trim()
+    if ($expected -notmatch '^([0-9a-fA-F]{64})[ \t]+\*?([^\r\n]+)$' -or
+        $Matches[2] -ne [System.IO.Path]::GetFileName($archive)) {
+        throw 'The SHA-256 sidecar must name this release ZIP.'
+    }
+    $digest = $Matches[1]
+    Add-Type -AssemblyName System.IO.Compression
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $zipStream = [System.IO.File]::Open($archive, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::Read)
+    try {
+        if ((Get-FileHash -InputStream $zipStream -Algorithm SHA256).Hash -ne $digest) {
+            throw 'The ZIP does not match its SHA-256 sidecar. Download the release again.'
+        }
+        $zipStream.Position = 0
+        $zip = New-Object System.IO.Compression.ZipArchive($zipStream, [System.IO.Compression.ZipArchiveMode]::Read, $true)
+        try { [System.IO.Compression.ZipFileExtensions]::ExtractToDirectory($zip, $Destination) }
+        finally { $zip.Dispose() }
+    }
+    finally { $zipStream.Dispose() }
+}
+
 function Test-DesktopPetReleasePayload {
     param([Parameter(Mandatory = $true)][string]$Directory, [string]$ExpectedVersion, [string]$ExpectedDeployment)
     $root = Get-DesktopPetInstallPath $Directory

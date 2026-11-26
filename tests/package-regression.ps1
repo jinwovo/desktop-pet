@@ -90,6 +90,22 @@ public static class $fixtureType { public static void Main() { } }
     Write-Host 'PASS The user installer validates staged bytes before installing and rejects corrupted copies before changing active files'
     $passed++
 
+    $archiveInstall = Join-Path $testRoot 'archive-install'
+    $archiveCheck = & $installer -PackageArchive $package.Zip -VerifyOnly -InstallDirectory $archiveInstall -SkipStartMenuShortcut
+    Assert-PackageTest ($archiveCheck.version -eq '0.4.0' -and -not [System.IO.Directory]::Exists($archiveInstall)) 'Direct archive verification changed the installation.'
+    $oldSidecar = [System.IO.File]::ReadAllText($package.ChecksumFile)
+    try {
+        $unrelatedSidecar = ([string]('0' * 64)) + '  ' + [System.IO.Path]::GetFileName($package.Zip)
+        [System.IO.File]::WriteAllText($package.ChecksumFile, $unrelatedSidecar)
+        Assert-PackageFailure { & $installer -PackageArchive $package.Zip -InstallDirectory $archiveInstall -SkipStartMenuShortcut }
+        Assert-PackageTest (-not [System.IO.Directory]::Exists($archiveInstall)) 'Checksum rejection wrote an install folder.'
+    }
+    finally { [System.IO.File]::WriteAllText($package.ChecksumFile, $oldSidecar) }
+    & $installer -PackageArchive $package.Zip -InstallDirectory $archiveInstall -SkipStartMenuShortcut
+    Assert-PackageTest ([System.IO.File]::Exists((Join-Path $archiveInstall 'DesktopPet.App.exe'))) 'Direct archive installation did not publish its executable.'
+    Write-Host 'PASS Install and VerifyOnly accept a matching ZIP sidecar and reject a mismatched archive before publication'
+    $passed++
+
     $rigPublish = Join-Path $testRoot 'rig-publish'
     Copy-Item -LiteralPath $publish -Destination $rigPublish -Recurse
     $rigDefinition = [ordered]@{
@@ -305,7 +321,7 @@ public static class $fixtureType { public static void Main() { } }
     Assert-PackageTest ([System.IO.File]::ReadAllText((Join-Path $testRoot 'outside.txt')) -eq 'must remain') 'Uninstall escaped its root.'
     Write-Host 'PASS Uninstall rejects a manifest escaping the installation directory'
     $passed++
-    Write-Host "$passed/18 release packaging regression checks passed (synthetic binary and images, no runtime execution)"
+    Write-Host "$passed/19 release packaging regression checks passed (synthetic binary and images, no runtime execution)"
 }
 finally {
     $safeTestRoot = Assert-DesktopPetChildPath -Root (Join-Path $repoRoot '.local') -Path $testRoot
