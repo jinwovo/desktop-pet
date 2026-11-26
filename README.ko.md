@@ -16,7 +16,7 @@ AI 작업과 집중 시간에 조용히 함께하는 Windows 데스크톱 캐릭
 
 [2.0 로드맵과 100개 패치 진행 현황](docs/ROADMAP_2_0.md)
 
-1.9.0은 누적 90개 개선을 담았습니다. Windows에서 이전 실행이 남긴 잠금을 복구하고, 트레이 아이콘이 손상되면 기본 아이콘을 표시합니다. 설치 진단에는 실행 환경과 누락·손상된 기본 캐릭터가 표시됩니다.
+2.0.0은 검증된 개선 100개를 담았습니다. 방향을 바꿀 때 발 위치를 유지하고, 공중 동작 뒤에는 새로 발을 디딥니다. Claude·Codex 연결 창은 자동 설정이 끝나면 상태를 표시하며, 도구별 최근 완료 알림과 한국어·영어·중국어를 지원합니다.
 
 `DesktopPet.App.exe --help`에서 관리 명령을 확인할 수 있습니다. 설정의 진단 보고서는 내용을 확인한 뒤 새로고침하거나 복사하고, 로컬 파일로 저장할 수 있습니다.
 
@@ -215,7 +215,7 @@ powershell -NoProfile -File tests/package-regression.ps1
 공용 Windows x64 배포를 만들려면 다음을 실행합니다.
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 1.9.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 2.0.0
 ```
 
 `artifacts/releases/`에 self-contained ZIP과 SHA256을 만듭니다. 필요한 런타임 팩이 없으면 실패하며 배포 종류를 몰래 바꾸지 않습니다. [Windows 워크플로](.github/workflows/windows-release.yml)는 검사와 아티팩트 생성을 설정한 파일이며, 파일이 있다고 원격 빌드나 공개 릴리스가 성공했다는 뜻은 아닙니다.

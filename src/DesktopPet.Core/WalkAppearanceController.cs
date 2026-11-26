@@ -71,8 +71,12 @@ public sealed class WalkAppearanceController
         var validCycle = walkCycleDistancePx is double cycle && double.IsFinite(cycle) && cycle > 0;
         if (validCycle && distanceDeltaPx.HasValue) _distanceDriven = true;
         var speed = double.IsFinite(horizontalVelocityPxPerSec) ? Math.Abs(horizontalVelocityPxPerSec) : 0;
-        var movementFacingRight = _distanceDriven && distanceDeltaPx is double dx && double.IsFinite(dx) && Math.Abs(dx) > 0.000001
-            ? dx > 0 : speed > 0.5 ? horizontalVelocityPxPerSec > 0 : facingRight;
+        var movementFacingRight = speed > 0.5 ? horizontalVelocityPxPerSec > 0 : facingRight;
+        if (_distanceDriven && distanceDeltaPx is double dx && double.IsFinite(dx))
+        {
+            if (Math.Abs(dx) > 0.000001) movementFacingRight = dx > 0;
+            else if (_walking && speed > 0.5) movementFacingRight = FacingRight;
+        }
 
         if (state != PetState.Walk)
         {
@@ -107,6 +111,15 @@ public sealed class WalkAppearanceController
             IsSettling = false;
             SettleProgress = 1;
             View = WalkView.Front;
+            if (!resting)
+            {
+                GaitPhase = AnimationElapsedMs = 0;
+                _hasDistancePose = false;
+            }
+            else if (_hasDistancePose && FacingRight != facingRight)
+            {
+                GaitPhase = GroundedGait.ReversePhase(GaitPhase);
+            }
             _requestedFacingRight = FacingRight = facingRight;
             return;
         }

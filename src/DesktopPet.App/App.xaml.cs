@@ -84,7 +84,7 @@ public partial class App : System.Windows.Application
         }
         if (command == "--version")
         {
-            Console.WriteLine(typeof(App).Assembly.GetName().Version?.ToString() ?? "1.9.0");
+            Console.WriteLine(typeof(App).Assembly.GetName().Version?.ToString() ?? "2.0.0");
             Shutdown();
             return;
         }
@@ -187,22 +187,8 @@ public partial class App : System.Windows.Application
         try
         {
             _assistantService ??= CreateAssistantIntegrationService();
-            foreach (var provider in Enum.GetValues<AssistantProvider>())
-            {
-                if (!petWindow.AutoConnectAssistants) break;
-                var before = await Task.Run(() => _assistantService.GetStatus(provider));
-                if (!petWindow.AutoConnectAssistants || !before.Detected) continue;
-                var result = await Task.Run(() => _assistantService.Connect(provider));
-                if (result.Succeeded && result.Registered)
-                {
-                    try { CreateAssistantIntegrationHistory().Record(result); }
-                    catch
-                    {
-                        if (!before.HasOwnedRegistration) await Task.Run(() => _assistantService.Disconnect(provider));
-                        throw;
-                    }
-                }
-            }
+            await RunStartupAssistantLinksAsync(_assistantService, CreateAssistantIntegrationHistory(),
+                () => !Dispatcher.HasShutdownStarted && petWindow.AutoConnectAssistants);
         }
         catch (Exception ex) { System.Diagnostics.Trace.TraceError($"Assistant setup: {ex.Message}"); }
         finally
@@ -213,6 +199,33 @@ public partial class App : System.Windows.Application
                 petWindow.MarkAssistantSetupSeen();
                 ShowAssistantConnections();
             }
+        }
+    }
+
+    internal static async Task RunStartupAssistantLinksAsync(AssistantIntegrationService service,
+        AssistantIntegrationHistory history, Func<bool> shouldConnect)
+    {
+        foreach (var provider in Enum.GetValues<AssistantProvider>())
+        {
+            if (!shouldConnect()) return;
+            try
+            {
+                var before = await Task.Run(() => service.GetStatus(provider));
+                if (!shouldConnect()) return;
+                if (!before.Detected || !before.Succeeded) continue;
+                await Task.Run(() =>
+                {
+                    var result = service.Connect(provider);
+                    if (!result.Succeeded || !result.Registered) return;
+                    try { history.Record(result); }
+                    catch
+                    {
+                        if (!before.HasOwnedRegistration) service.Disconnect(provider);
+                        throw;
+                    }
+                });
+            }
+            catch (Exception ex) { System.Diagnostics.Trace.TraceError($"Assistant setup ({provider}): {ex.Message}"); }
         }
     }
 

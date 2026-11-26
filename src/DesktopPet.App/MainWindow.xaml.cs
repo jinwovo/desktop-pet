@@ -790,6 +790,10 @@ public partial class MainWindow : Window
     public event Action<bool>? PresentationVisibilityChanged;
     public event Action<string>? OperationFailed;
     public event Action<int>? PendingNotificationCountChanged;
+    private readonly Dictionary<string, DateTime> _lastAssistantReceipts = new(2, StringComparer.Ordinal);
+    internal DateTime? LastAssistantReceipt(string source) =>
+        _lastAssistantReceipts.TryGetValue(source, out var received) ? received : null;
+
     public event Action<string>? AssistantNotificationReceived;
     public event Action<bool>? AutoConnectAssistantsChanged;
 
@@ -1353,7 +1357,11 @@ public partial class MainWindow : Window
                 _seenNotificationIds.Remove(evicted);
             }
         }
-        if (notification.Source is "claude" or "codex") AssistantNotificationReceived?.Invoke(notification.Source);
+        if (notification.Source is "claude" or "codex")
+        {
+            _lastAssistantReceipts[notification.Source] = DateTime.Now;
+            AssistantNotificationReceived?.Invoke(notification.Source);
+        }
         _unreadNotifications.Add(delivery);
         var alreadyShowing = _bubble is { IsShowing: true };
         if (_activeNotification is null || _settings.AutoDismissNotifications && !_reviewingNotifications)

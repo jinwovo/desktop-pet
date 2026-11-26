@@ -78,6 +78,39 @@ public static class WalkEntryTests
             Check(Math.Abs(controller.AnimationElapsedMs - 50) < 1e-9, "Entry easing consumed legacy animation time");
         });
 
+        yield return ("Resting direction changes reflect the retained planted-foot phase", () =>
+        {
+            var controller = new WalkAppearanceController();
+            controller.Update(PetState.Walk, true, 100, 100, 0.09, distanceDeltaPx: 17, walkCycleDistancePx: 100);
+            controller.Update(PetState.Idle, true, 0, 100, 0, distanceDeltaPx: 0, walkCycleDistancePx: 100);
+            controller.Update(PetState.Idle, true, 0, 100, 0.2, distanceDeltaPx: 0, walkCycleDistancePx: 100);
+            controller.Update(PetState.Idle, false, 0, 100, 0.02, distanceDeltaPx: 0, walkCycleDistancePx: 100);
+            controller.Update(PetState.Walk, false, 0, 100, 0, distanceDeltaPx: 0, walkCycleDistancePx: 100);
+            Check(!controller.FacingRight && Math.Abs(controller.GaitPhase - GroundedGait.ReversePhase(0.17)) < 1e-9,
+                "The stored phase kept the old orientation after the rest-facing direction changed");
+        });
+
+        yield return ("Airborne interruption clears the previous grounded gait contact", () =>
+        {
+            var controller = new WalkAppearanceController();
+            controller.Update(PetState.Walk, true, 100, 100, 0.09, distanceDeltaPx: 31, walkCycleDistancePx: 100);
+            controller.Update(PetState.Falling, true, 0, 100, 0.03, distanceDeltaPx: 9, walkCycleDistancePx: 100);
+            controller.Update(PetState.Idle, true, 0, 100, 0.03, distanceDeltaPx: 0, walkCycleDistancePx: 100);
+            controller.Update(PetState.Walk, true, 100, 100, 0.03, distanceDeltaPx: 4, walkCycleDistancePx: 100);
+            Check(Math.Abs(controller.GaitPhase - 0.04) < 1e-9, "The first stride reused a contact from before the airborne state");
+        });
+
+        yield return ("Zero travel does not flip a distance-driven walk before the first reverse step", () =>
+        {
+            var controller = new WalkAppearanceController();
+            controller.Update(PetState.Walk, true, 100, 100, 0.2, distanceDeltaPx: 17, walkCycleDistancePx: 100);
+            var phase = controller.GaitPhase;
+            controller.Update(PetState.Walk, false, -100, 100, 0.01, distanceDeltaPx: 0, walkCycleDistancePx: 100);
+            Check(controller.FacingRight && controller.GaitPhase == phase, "A zero-travel frame flipped the planted pose");
+            controller.Update(PetState.Walk, false, -100, 100, 0.01, distanceDeltaPx: -2, walkCycleDistancePx: 100);
+            Check(!controller.FacingRight && controller.View == WalkView.Turn, "The first reversing step did not change facing");
+        });
+
         yield return ("Reset returns EntryWeight to 1", () =>
         {
             var controller = new WalkAppearanceController();

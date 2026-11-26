@@ -1248,75 +1248,115 @@
     },
     {
       "id": "P092",
-      "title": "Discovery pending: 2.0 acceptance and publication (92)",
-      "status": "planned",
+      "title": "Preserve grounded foot phase across resting turns",
+      "status": "verified",
       "milestone": "2.0.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.Core/WalkAppearanceController.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.RegressionTests/WalkEntryTests.cs"
+      ]
     },
     {
       "id": "P093",
-      "title": "Discovery pending: 2.0 acceptance and publication (93)",
-      "status": "planned",
+      "title": "Reset grounded gait contact after airborne interruptions",
+      "status": "verified",
       "milestone": "2.0.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.Core/WalkAppearanceController.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.RegressionTests/WalkEntryTests.cs"
+      ]
     },
     {
       "id": "P094",
-      "title": "Discovery pending: 2.0 acceptance and publication (94)",
-      "status": "planned",
+      "title": "Keep walking direction stable until measured travel reverses",
+      "status": "verified",
       "milestone": "2.0.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.Core/WalkAppearanceController.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.RegressionTests/WalkEntryTests.cs"
+      ]
     },
     {
       "id": "P095",
-      "title": "Discovery pending: 2.0 acceptance and publication (95)",
-      "status": "planned",
+      "title": "Synchronize connection status with automatic setup",
+      "status": "verified",
       "milestone": "2.0.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/AssistantConnectionsWindow.xaml.cs",
+        "src/DesktopPet.App/AssistantConnectionsWindow.xaml"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/Program.cs"
+      ]
     },
     {
       "id": "P096",
-      "title": "Discovery pending: 2.0 acceptance and publication (96)",
-      "status": "planned",
+      "title": "Synchronize the auto-connect checkbox during disconnection",
+      "status": "verified",
       "milestone": "2.0.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/AssistantConnectionsWindow.xaml.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/Program.cs"
+      ]
     },
     {
       "id": "P097",
-      "title": "Discovery pending: 2.0 acceptance and publication (97)",
-      "status": "planned",
+      "title": "Localize the assistant connection window",
+      "status": "verified",
       "milestone": "2.0.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/AssistantConnectionsWindow.xaml.cs",
+        "src/DesktopPet.App/UiText.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/Program.cs"
+      ]
     },
     {
       "id": "P098",
-      "title": "Discovery pending: 2.0 acceptance and publication (98)",
-      "status": "planned",
+      "title": "Move assistant connection journaling off the UI thread",
+      "status": "verified",
       "milestone": "2.0.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/AssistantConnectionsWindow.xaml.cs",
+        "src/DesktopPet.App/App.xaml.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/Program.cs"
+      ]
     },
     {
       "id": "P099",
-      "title": "Discovery pending: 2.0 acceptance and publication (99)",
-      "status": "planned",
+      "title": "Continue automatic setup after one assistant fails",
+      "status": "verified",
       "milestone": "2.0.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/App.xaml.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/Program.cs"
+      ]
     },
     {
       "id": "P100",
-      "title": "Discovery pending: 2.0 acceptance and publication (100)",
-      "status": "planned",
+      "title": "Retain the latest assistant completion in the current run",
+      "status": "verified",
       "milestone": "2.0.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/MainWindow.xaml.cs",
+        "src/DesktopPet.App/AssistantConnectionsWindow.xaml.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/Program.cs"
+      ]
     }
   ]
 }

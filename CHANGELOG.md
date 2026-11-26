@@ -1,7 +1,16 @@
 # Changelog
 
-## Unreleased (2.0.0 development)
+## 2.0.0 — evolution patches P091–P100
 
+- P100 Show the last received completion for each assistant when reopening the connection panel, including after the notification is read.
+- P099 Handle setup failures per provider so a failed Claude operation cannot skip Codex. Roll back a new unrecorded hook.
+- P098 Run setup-record saves, removals and rollback on a worker. A started operation can finish after the connection window closes.
+- P097 Translate connection controls, status and feedback live in Korean, English and Simplified Chinese.
+- P096 Disable and synchronize the auto-connect control while connection changes are pending, including when the window closes mid-disconnect.
+- P095 Read Claude and Codex status after automatic setup and keep repeated refreshes from replacing an in-flight operation.
+- P094 Keep a planted walking pose during a zero-travel frame with nonzero velocity. Follow the next real step or an explicit stop-and-turn.
+- P093 Start a fresh stride after a fall, jump or drag interrupts grounded contact.
+- P092 Reflect the retained gait phase when the resting character changes direction before its next walk.
 - P091 Refresh the monitor picker when display work areas change. Keep the current monitor when it remains available and ask the user to choose again after it disappears.
 
 ## 1.9.0 — evolution patches P081–P090

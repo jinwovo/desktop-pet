@@ -197,4 +197,22 @@ P089 Capture the displayed report for the write and cancel pending publication w
 
 P090 Copy the displayed diagnostic JSON on request and show a localized retry if the clipboard is busy.
 
-P091 refreshes the Settings monitor picker when Windows reports display changes. A native WPF fixture first reproduces a stale list, then verifies attachment and reordering, removal without automatic reselection, preserved Settings drafts and focus state, and no updates after the window closes. The fixture supplies work areas to the real dispatcher callback. Included in 2.0.0 development.
+P091 refreshes the Settings monitor picker when Windows reports display changes. A native WPF fixture first reproduces a stale list, then verifies attachment and reordering, removal without automatic reselection, preserved Settings drafts and focus state, and no updates after the window closes. The fixture supplies work areas to the real dispatcher callback. Included in 2.0.0.
+
+P092 Reflect the retained gait phase when the resting character changes direction before its next walk.
+
+P093 Start a fresh stride after a fall, jump or drag interrupts grounded contact.
+
+P094 Keep a planted walking pose during a zero-travel frame with nonzero velocity. Follow the next real step or an explicit stop-and-turn.
+
+P095 Read Claude and Codex status after automatic setup and keep repeated refreshes from replacing an in-flight operation.
+
+P096 Disable and synchronize the auto-connect control while connection changes are pending, including when the window closes mid-disconnect.
+
+P097 Translate connection controls, status and feedback live in Korean, English and Simplified Chinese.
+
+P098 Run setup-record saves, removals and rollback on a worker. A started operation can finish after the connection window closes.
+
+P099 Handle setup failures per provider so a failed Claude operation cannot skip Codex. Roll back a new unrecorded hook.
+
+P100 Show the last received completion for each assistant when reopening the connection panel, including after the notification is read.

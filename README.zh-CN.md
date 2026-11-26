@@ -16,7 +16,7 @@
 
 [2.0 路线图与 100 次改进进度](docs/ROADMAP_2_0.md)
 
-1.9.0 累计包含 90 项经过验证的改进。Windows 启动时可恢复遗留的实例锁，并在托盘图标不可用时显示系统图标。安装诊断显示架构及缺失或损坏的内置角色。
+2.0.0 累计包含 100 项经过验证的改进。转向时保持脚部位置，离地后重新开始迈步。Claude 和 Codex 连接窗口会等待自动设置完成，并显示每个工具最近一次完成通知，支持韩语、英语和简体中文。
 
 运行 `DesktopPet.App.exe --help` 查看维护命令。在设置中可刷新、复制或保存已预览的诊断报告。
 
@@ -210,7 +210,7 @@ powershell -NoProfile -File tests/package-regression.ps1
 构建公开 Windows x64 包：
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 1.9.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 2.0.0
 ```
 
 输出位于 `artifacts/releases/`，包含 self-contained ZIP 与 SHA256 文件。缺少运行时包时构建会失败，不会静默切换为其他部署方式。[Windows 工作流](.github/workflows/windows-release.yml)配置了测试与构建产物；存在该文件不等于远程构建已通过或版本已经发布。

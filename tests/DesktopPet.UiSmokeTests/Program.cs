@@ -556,10 +556,12 @@ internal static class Program
         throw new Exception("Invalid character was accepted");
     }
 
-    private static void WaitForOperation(AssistantConnectionsWindow window)
+    private static void WaitForOperation(AssistantConnectionsWindow window) => PumpConnectionTask((Task)Get(window, "_operation")!);
+
+    private static void PumpConnectionTask(Task task)
     {
         var deadline = DateTime.UtcNow.AddSeconds(10);
-        while (!((Task)Get(window, "_operation")!).IsCompleted)
+        while (!task.IsCompleted)
         {
             Check(DateTime.UtcNow < deadline, "Connection window operation timed out");
             var frame = new DispatcherFrame();
@@ -567,7 +569,7 @@ internal static class Program
             Dispatcher.PushFrame(frame);
             Thread.Sleep(5);
         }
-        ((Task)Get(window, "_operation")!).GetAwaiter().GetResult();
+        task.GetAwaiter().GetResult();
     }
 
     private static void VerifyMotionWalking(MotionPreviewWindow window)
@@ -878,6 +880,45 @@ internal static class Program
         File.WriteAllText(hook, "param($Source,$RegistrationId)");
         var history = new AssistantIntegrationHistory(Path.Combine(home, "history.json"));
         var service = new AssistantIntegrationService(home, hook);
+        var setupGate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var startupWindow = new AssistantConnectionsWindow(service, pet, () => setupGate.Task);
+        startupWindow.Show();
+        try
+        {
+            var setupRefresh = (Task)Get(startupWindow, "_operation")!;
+            var refreshButton = (Button)startupWindow.FindName("RefreshButton");
+            Check(!setupRefresh.IsCompleted && !refreshButton.IsEnabled &&
+                !((Button)startupWindow.FindName("ClaudeConnectButton")).IsEnabled,
+                "The connection panel did not wait for automatic setup before its first status read");
+            Invoke(startupWindow, "Refresh_Click", refreshButton, new RoutedEventArgs());
+            Check(ReferenceEquals(setupRefresh, Get(startupWindow, "_operation")), "Refresh replaced a pending connection operation");
+            Check(service.Connect(AssistantProvider.Claude).Registered, "Could not simulate completed startup setup");
+            setupGate.SetResult();
+            WaitForOperation(startupWindow);
+            Check(((TextBlock)startupWindow.FindName("ClaudeStatusText")).Text == UiText.Get(service.GetStatus(AssistantProvider.Claude).Detail),
+                "The first status read missed a registration completed during setup");
+            Check(((TextBlock)startupWindow.FindName("ClaudeReceiptText")).Text.Length > 0 &&
+                ((TextBlock)startupWindow.FindName("CodexReceiptText")).Text.Length > 0,
+                "The connection panel lost assistant receipts delivered before it opened");
+
+            var language = UiText.Language;
+            try
+            {
+                UiText.SetLanguage("en");
+                Check(startupWindow.Title == "DesktopPet · AI Connections" &&
+                    ((TextBlock)startupWindow.FindName("ClaudeStatusText")).Text.StartsWith("Connected") &&
+                    ((TextBlock)startupWindow.FindName("CodexReceiptText")).Text.StartsWith("Completion received"),
+                    "English connection labels, live status or receipt were not translated");
+                UiText.SetLanguage("zh-CN");
+                Check((string)((Button)startupWindow.FindName("ClaudeConnectButton")).Content == "连接" &&
+                    ((TextBlock)startupWindow.FindName("CodexReceiptText")).Text.StartsWith("已收到完成通知"),
+                    "Chinese connection controls or receipt were not translated");
+            }
+            finally { UiText.SetLanguage(language); }
+            Console.WriteLine("PASS Connection status waits for startup, preserves prior completion receipts and relocalizes in place");
+        }
+        finally { setupGate.TrySetResult(); startupWindow.Close(); }
+
         var window = new AssistantConnectionsWindow(service, history: history);
         window.Show();
         try
@@ -912,14 +953,20 @@ internal static class Program
         var pendingStartup = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var preferences = (PetSettings)Get(pet, "_settings")!;
         preferences.AutoConnectAssistants = true;
-        var closingWindow = new AssistantConnectionsWindow(service, pet, () => pendingStartup.Task);
+        var startupPending = false;
+        var closingWindow = new AssistantConnectionsWindow(service, pet, () => startupPending ? pendingStartup.Task : Task.CompletedTask);
         closingWindow.Show();
         try
         {
             WaitForOperation(closingWindow);
+            startupPending = true;
             Invoke(closingWindow, "Disconnect_Click", closingWindow.FindName("ClaudeDisconnectButton"), new RoutedEventArgs());
-            Check(!preferences.AutoConnectAssistants && service.GetStatus(AssistantProvider.Claude).Registered,
-                "Disconnect did not disable auto-connect before waiting for startup");
+            var autoConnect = (CheckBox)closingWindow.FindName("AutoConnectCheck");
+            Check(!preferences.AutoConnectAssistants && service.GetStatus(AssistantProvider.Claude).Registered &&
+                !autoConnect.IsEnabled && autoConnect.IsChecked == false,
+                "Disconnect did not disable and synchronize auto-connect before waiting for startup");
+            autoConnect.IsChecked = true;
+            Check(!preferences.AutoConnectAssistants, "A disabled control re-enabled auto-connect during disconnection");
             ((DispatcherTimer)Get(pet, "_settingsSaveTimer")!).Stop();
             Set(pet, "_settingsDirty", false);
             closingWindow.Close();
@@ -950,6 +997,79 @@ internal static class Program
             Console.WriteLine("PASS Journal failure during a connection upgrade preserves the existing owned registration");
         }
         finally { upgradeWindow.Close(); }
+
+        VerifyStartupProviderIsolation(folder, hook);
+        VerifyConnectionJournalWorker(folder, hook);
+    }
+
+    private static void VerifyStartupProviderIsolation(string folder, string hook)
+    {
+        var home = Path.Combine(folder, "isolated-startup-profiles");
+        Directory.CreateDirectory(Path.Combine(home, ".claude"));
+        Directory.CreateDirectory(Path.Combine(home, ".codex"));
+        var service = new AssistantIntegrationService(home, hook);
+        var path = Path.Combine(home, "history.json");
+        File.WriteAllText(path, "{");
+        var history = new AssistantIntegrationHistory(path);
+        var method = typeof(App).GetMethod("RunStartupAssistantLinksAsync", BindingFlags.NonPublic | BindingFlags.Static)!;
+        var checks = 0;
+        Func<bool> continueSetup = () =>
+        {
+            if (++checks == 3)
+            {
+                Check(!service.GetStatus(AssistantProvider.Claude).Registered &&
+                    File.ReadAllText(path) == "{", "Startup journal failure did not roll back only the new registration");
+                File.Delete(path);
+            }
+            return true;
+        };
+        var task = (Task)method.Invoke(null, [service, history, continueSetup])!;
+        PumpConnectionTask(task);
+        Check(service.GetStatus(AssistantProvider.Codex).Registered &&
+            history.GetProfiles().Single().Provider == AssistantProvider.Codex,
+            "Failure processing the first assistant prevented automatic setup of the second");
+        Console.WriteLine("PASS An automatic setup failure rolls back the new registration and still processes the other assistant");
+    }
+
+    private static void VerifyConnectionJournalWorker(string folder, string hook)
+    {
+        var home = Path.Combine(folder, "gated-connection-worker");
+        Directory.CreateDirectory(home);
+        var service = new AssistantIntegrationService(home, hook);
+        using var entered = new ManualResetEventSlim();
+        using var release = new ManualResetEventSlim();
+        var onDispatcher = false;
+        var dispatcher = Dispatcher.CurrentDispatcher;
+        Action<string> duringWrite = _ =>
+        {
+            onDispatcher = dispatcher.CheckAccess();
+            entered.Set();
+            if (!release.Wait(TimeSpan.FromSeconds(5))) throw new TimeoutException("Fixture journal was not released");
+        };
+        var history = (AssistantIntegrationHistory)Activator.CreateInstance(typeof(AssistantIntegrationHistory),
+            BindingFlags.NonPublic | BindingFlags.Instance, null, [Path.Combine(home, "history.json"), duringWrite], null)!;
+        var window = new AssistantConnectionsWindow(service, history: history);
+        window.Show();
+        try
+        {
+            WaitForOperation(window);
+            Invoke(window, "Connect_Click", window.FindName("ClaudeConnectButton"), new RoutedEventArgs());
+            var deadline = DateTime.UtcNow.AddSeconds(4);
+            while (!entered.IsSet)
+            {
+                Check(DateTime.UtcNow < deadline, "Connection did not reach the journal write");
+                dispatcher.Invoke(() => { }, DispatcherPriority.Background);
+                Thread.Sleep(5);
+            }
+            Check(!onDispatcher && !((Task)Get(window, "_operation")!).IsCompleted,
+                "Connection journal I/O ran on the WPF dispatcher");
+            window.Close();
+            release.Set();
+            WaitForOperation(window);
+            Check(history.GetProfiles().Single().Provider == AssistantProvider.Claude, "Closing the window interrupted journal publication");
+            Console.WriteLine("PASS Connection journaling runs off the WPF dispatcher and finishes after window closure");
+        }
+        finally { release.Set(); window.Close(); WaitForOperation(window); }
     }
 
     internal static void SaveWindowSnapshot(Window window, string fileName)
