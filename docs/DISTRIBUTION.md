@@ -43,6 +43,16 @@ powershell -NoProfile -File ./install.ps1 -AddToStartup
 
 설치하지 않고 사용하던 폴더를 옮기기 전에는 **AI 연결 → 연결 해제**로 이전 경로를 정리한다. 새 위치에서 실행해 연결하면 기존 DesktopPet 훅을 현재 스크립트 경로로 갱신한다. Codex는 바뀐 정의를 다시 검토해야 할 수 있다.
 
+ZIP을 풀어 둔 폴더에서 설치 전 검사만 하려면 `./install.ps1 -VerifyOnly`를 실행한다. 최신 설치 스크립트가 있으면 `-PackageArchive`로 ZIP을 직접 지정할 수 있다. GitHub에서 함께 받은 동일 이름의 `.zip.sha256` 파일을 ZIP 옆에 둔다.
+
+```powershell
+./install.ps1 -PackageArchive "C:/Downloads/DesktopPet-1.8.0-win-x64.zip" -VerifyOnly
+./install.ps1 -PackageArchive "C:/Downloads/DesktopPet-1.8.0-win-x64.zip" -SkipStartMenuShortcut -PassThru
+./uninstall.ps1 -WhatIf
+```
+
+`-PassThru`는 설치 버전, 실행 파일 경로와 바로가기·자동 실행 등록 결과를 반환한다. 이전 업데이트의 복구 폴더가 남아 있으면 표시된 폴더를 보존한다.
+
 ## 제작자 빌드
 
 지원 중인 .NET 10 LTS를 사용한다. 기존 .NET 8은 2026-11-10 지원이 종료되었다. [Microsoft 지원 정책](https://dotnet.microsoft.com/en-us/platform/support/policy/dotnet-core)

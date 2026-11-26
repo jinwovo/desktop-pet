@@ -1,6 +1,13 @@
 # Changelog
 
-## Unreleased (1.8.0 development)
+## 1.8.0 — evolution patches P071–P080
+
+- P080 Use -PassThru to return the installed release, executable path and optional Windows integration results.
+- P079 Accept -PackageArchive and validate the adjacent SHA-256 sidecar before extracting the same open archive and checking its contents.
+- P078 Report a startup registration failure separately from app installation and preserve existing unrelated startup entries.
+- P077 Stop managed operations on a folder containing an interrupted installer transaction. Show the retained recovery path for the user.
+- P076 Validate the files copied to the staging area before changing the active installation.
+- P075 Stop before overwriting a conflicting unmanaged file. Files that match the package can become managed on the first install.
 
 - P074 Protect the current settings, previous backup and staging files from claiming or removal by installed payload inventories.
 - P073 Support the Windows PowerShell -WhatIf preview before disconnecting assistants, deleting managed files or changing shortcuts.

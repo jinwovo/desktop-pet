@@ -16,9 +16,9 @@ AI 작업과 집중 시간에 조용히 함께하는 Windows 데스크톱 캐릭
 
 [2.0 로드맵과 100개 패치 진행 현황](docs/ROADMAP_2_0.md)
 
-1.7.0은 누적 70개 개선을 담았습니다. 설정 파일이 없거나 손상되면 이전 설정으로 복구하고, 저장이 막히면 자동 재시도와 수동 다시 저장을 제공합니다. 설정 백업과 복원은 백그라운드에서 진행됩니다.
+1.8.0은 누적 80개 개선을 담았습니다. 설치 전 ZIP과 임시 복사본을 검증하고, 기존 사용자 파일을 보존하며, 시작 메뉴와 자동 실행 등록 결과를 별도로 안내합니다.
 
-**1.8.0 개발판**은 `install.ps1 -VerifyOnly`로 압축을 푼 ZIP을 검사하고, `-SkipStartMenuShortcut`으로 시작 메뉴 바로가기 생성을 생략할 수 있습니다. `uninstall.ps1 -WhatIf`로 제거를 미리 확인할 수 있으며, 사용자 지정 설치 폴더의 설정과 복구 파일도 보존합니다.
+압축을 푼 패키지는 `install.ps1 -VerifyOnly`로 확인할 수 있습니다. `-PackageArchive`로 ZIP을 지정할 때는 옆에 해당 SHA-256 파일을 둡니다. `-PassThru`는 설치 결과를 구조화해 반환하고, `uninstall.ps1 -WhatIf`는 제거를 미리 보여줍니다.
 
 
 DesktopPet은 로컬 Claude Code·Codex의 응답 완료를 알려주고, 25분 집중·5분 휴식 타이머와 캐릭터 가져오기를 제공하는 바탕화면 펫입니다. 걷는 동안 캐시한 몸·발 그림을 연속으로 움직이고 실제 이동 거리에 보폭을 맞춥니다.
@@ -213,7 +213,7 @@ powershell -NoProfile -File tests/package-regression.ps1
 공용 Windows x64 배포를 만들려면 다음을 실행합니다.
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 1.7.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 1.8.0
 ```
 
 `artifacts/releases/`에 self-contained ZIP과 SHA256을 만듭니다. 필요한 런타임 팩이 없으면 실패하며 배포 종류를 몰래 바꾸지 않습니다. [Windows 워크플로](.github/workflows/windows-release.yml)는 검사와 아티팩트 생성을 설정한 파일이며, 파일이 있다고 원격 빌드나 공개 릴리스가 성공했다는 뜻은 아닙니다.

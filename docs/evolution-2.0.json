@@ -1035,51 +1035,80 @@
     },
     {
       "id": "P075",
-      "title": "Discovery pending: Distribution and maintenance (75)",
-      "status": "planned",
+      "title": "Preserve unmanaged installation conflicts",
+      "status": "verified",
       "milestone": "1.8.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "scripts/Install-DesktopPetPayload.ps1"
+      ],
+      "checks": [
+        "tests/install-regression.ps1"
+      ]
     },
     {
       "id": "P076",
-      "title": "Discovery pending: Distribution and maintenance (76)",
-      "status": "planned",
+      "title": "Validate staged release contents before installing",
+      "status": "verified",
       "milestone": "1.8.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "scripts/install.ps1",
+        "scripts/Install-DesktopPetPayload.ps1"
+      ],
+      "checks": [
+        "tests/package-regression.ps1"
+      ]
     },
     {
       "id": "P077",
-      "title": "Discovery pending: Distribution and maintenance (77)",
-      "status": "planned",
+      "title": "Preserve interrupted installer recovery data",
+      "status": "verified",
       "milestone": "1.8.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "scripts/Install-DesktopPetPayload.ps1",
+        "scripts/uninstall.ps1"
+      ],
+      "checks": [
+        "tests/package-regression.ps1"
+      ]
     },
     {
       "id": "P078",
-      "title": "Discovery pending: Distribution and maintenance (78)",
-      "status": "planned",
+      "title": "Keep the application installed if optional startup registration fails",
+      "status": "verified",
       "milestone": "1.8.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "scripts/install.ps1",
+        "scripts/Install-DesktopPetPayload.ps1"
+      ],
+      "checks": [
+        "tests/install-regression.ps1"
+      ]
     },
     {
       "id": "P079",
-      "title": "Discovery pending: Distribution and maintenance (79)",
-      "status": "planned",
+      "title": "Install or verify a release directly from its ZIP",
+      "status": "verified",
       "milestone": "1.8.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "scripts/install.ps1",
+        "scripts/package-release.ps1"
+      ],
+      "checks": [
+        "tests/package-regression.ps1"
+      ]
     },
     {
       "id": "P080",
-      "title": "Discovery pending: Distribution and maintenance (80)",
-      "status": "planned",
+      "title": "Report structured installer results",
+      "status": "verified",
       "milestone": "1.8.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "scripts/install.ps1",
+        "scripts/Install-DesktopPetPayload.ps1"
+      ],
+      "checks": [
+        "tests/package-regression.ps1"
+      ]
     },
     {
       "id": "P081",

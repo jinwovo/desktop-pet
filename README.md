@@ -16,9 +16,9 @@ A quiet desktop companion for AI work, focused sessions, and a less empty taskba
 
 [2.0 roadmap and 100-patch progress](docs/ROADMAP_2_0.md)
 
-1.7.0 brings the total to 70 verified improvements. DesktopPet recovers valid preferences when the main file is missing or damaged, retries blocked writes and offers a manual retry in Settings. Portable backup and restore run in the background.
+1.8.0 brings the total to 80 verified improvements. The installer verifies ZIPs and their staged contents, preserves conflicting user files and reports optional Windows integration separately.
 
-**1.8.0 development** adds `install.ps1 -VerifyOnly` for validating an extracted ZIP, `-SkipStartMenuShortcut` for installation without a shortcut, and `uninstall.ps1 -WhatIf` to preview removal. The installer also preserves local settings recovery files in custom install folders.
+Use `install.ps1 -VerifyOnly` to check an extracted package or supply `-PackageArchive` with its adjacent SHA-256 sidecar. Use `-PassThru` for structured installation results and `uninstall.ps1 -WhatIf` to preview removal.
 
 
 DesktopPet is a Windows desktop pet with gentle completion notifications for local Claude Code and Codex, a 25/5 focus timer, and importable character packs. Its live walking renderer moves cached body and foot layers continuously, using actual travel distance to keep a planted foot from sliding.
@@ -209,7 +209,7 @@ The suites use fixture directories and do not register hooks in your real assist
 To create a public Windows x64 package:
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 1.7.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 1.8.0
 ```
 
 The output is a self-contained ZIP and a SHA256 sidecar under `artifacts/releases/`. Missing runtime packs cause a build failure; the script does not silently change deployment type. The [Windows workflow](.github/workflows/windows-release.yml) is configured to run checks and create artifacts; its presence does not imply a successful remote build or a published release.
