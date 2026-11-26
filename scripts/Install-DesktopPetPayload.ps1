@@ -69,6 +69,16 @@ function Assert-DesktopPetPayloadRelativePath {
     }
 }
 
+function Assert-DesktopPetNoPendingInstallRecovery {
+    param([Parameter(Mandatory = $true)][string]$InstallRoot)
+    if (-not [System.IO.Directory]::Exists($InstallRoot)) { return }
+    $pending = Get-ChildItem -LiteralPath $InstallRoot -Force -Directory -Filter '.desktop-pet-install-*' |
+        Where-Object Name -match '^\.desktop-pet-install-[0-9a-f]{32}$' | Select-Object -First 1
+    if ($pending) {
+        throw "A previous DesktopPet update left recovery files at '$($pending.FullName)'. Keep this folder and use another installation directory until the recovery is resolved."
+    }
+}
+
 function Set-DesktopPetStartMenuShortcut {
     [CmdletBinding()]
     param([string]$ProgramsDirectory, [Parameter(Mandatory = $true)][string]$Executable)
@@ -141,6 +151,7 @@ function Invoke-DesktopPetPayloadUpdate {
     }
     Assert-DesktopPetNoReparsePoint $sourceRoot
     Assert-DesktopPetNoReparsePoint $installRoot
+    Assert-DesktopPetNoPendingInstallRecovery $installRoot
     if (-not [System.IO.File]::Exists((Join-Path $sourceRoot 'DesktopPet.App.exe'))) {
         throw 'The published payload must contain DesktopPet.App.exe.'
     }

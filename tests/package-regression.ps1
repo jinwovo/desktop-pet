@@ -240,6 +240,18 @@ public static class $fixtureType { public static void Main() { } }
     Write-Host 'PASS Manifest traversal and untracked payload files are rejected'
     $passed++
 
+    $recovering = Join-Path $testRoot 'interrupted-update'
+    $pending = '.desktop-pet-install-' + [Guid]::NewGuid().ToString('N')
+    Write-PackageFile $recovering 'DesktopPet.App.exe' 'installed application'
+    Write-PackageFile $recovering '.desktop-pet-manifest.json' '{"version":1,"files":["DesktopPet.App.exe"]}'
+    Write-PackageFile $recovering ($pending + '\backup\DesktopPet.App.exe') 'previous release'
+    Assert-PackageFailure { Install-DesktopPetPayload -PublishDirectory $extracted -InstallDirectory $recovering }
+    Assert-PackageFailure { Remove-DesktopPetInstalledPayload -Directory $recovering }
+    Assert-PackageTest ([System.IO.File]::ReadAllText((Join-Path $recovering 'DesktopPet.App.exe')) -eq 'installed application' -and
+        [System.IO.File]::ReadAllText((Join-Path $recovering ($pending + '\backup\DesktopPet.App.exe'))) -eq 'previous release') 'A retry changed the installed or recovery payload.'
+    Write-Host 'PASS Install and uninstall preserve retained installer recovery directories'
+    $passed++
+
     $dryRunRoot = Join-Path $testRoot 'dry-run'
     Write-PackageFile $dryRunRoot 'DesktopPet.App.exe' 'managed application'
     Write-PackageFile $dryRunRoot 'inbox\pending.json' 'unread'
@@ -293,7 +305,7 @@ public static class $fixtureType { public static void Main() { } }
     Assert-PackageTest ([System.IO.File]::ReadAllText((Join-Path $testRoot 'outside.txt')) -eq 'must remain') 'Uninstall escaped its root.'
     Write-Host 'PASS Uninstall rejects a manifest escaping the installation directory'
     $passed++
-    Write-Host "$passed/17 release packaging regression checks passed (synthetic binary and images, no runtime execution)"
+    Write-Host "$passed/18 release packaging regression checks passed (synthetic binary and images, no runtime execution)"
 }
 finally {
     $safeTestRoot = Assert-DesktopPetChildPath -Root (Join-Path $repoRoot '.local') -Path $testRoot

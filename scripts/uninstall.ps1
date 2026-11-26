@@ -39,6 +39,7 @@ function Invoke-DesktopPetPayloadRemoval {
     $root = Get-DesktopPetInstallPath $Directory
     Assert-DesktopPetNoReparsePoint $root
     if (-not [System.IO.Directory]::Exists($root)) { return }
+    Assert-DesktopPetNoPendingInstallRecovery $root
     $exePath = Join-Path $root 'DesktopPet.App.exe'
     foreach ($process in @(Get-Process -Name 'DesktopPet.App' -ErrorAction SilentlyContinue)) {
         $processPath = $null
