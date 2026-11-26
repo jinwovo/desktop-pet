@@ -6,6 +6,7 @@ internal static class InstallationCheckUiTests
 {
     public static void Run(string root)
     {
+        VerifySingleInstanceRecovery();
         var installation = Path.Combine(root, "private-installation-canary");
         var png = Path.Combine(MainWindow.CharactersRoot, "Companion", "idle.png");
         foreach (var name in new[] { "Companion", "Nimbus", "Ember" })
@@ -54,5 +55,33 @@ internal static class InstallationCheckUiTests
         Check(!missing.HasHookBridge && missing.Errors.Contains("MissingOrLinkedHookBridge"), "Missing hook bridge passed installation check");
         Console.WriteLine("PASS Read-only installation check validates all original resources, detects corrupt PNGs/missing bridge and emits sanitized JSON without creating profile data");
     }
+    private static void VerifySingleInstanceRecovery()
+    {
+        var name = @"Local\DesktopPet.UiSmoke." + Guid.NewGuid().ToString("N");
+        using var observer = new Mutex(false, name);
+        var method = typeof(App).GetMethod("TryAcquireInstanceMutex",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!;
+        Mutex? Acquire() => (Mutex?)method.Invoke(null, new object[] { name });
+        using var mutex = Acquire();
+        Check(mutex is not null, "Existing unowned instance mutex prevented startup");
+        var competing = Task.Run(() =>
+        {
+            using var candidate = Acquire();
+            candidate?.ReleaseMutex();
+            return candidate is null;
+        }).GetAwaiter().GetResult();
+        Check(competing, "An active instance was not excluded");
+        mutex!.ReleaseMutex();
+
+        using var abandoned = new Mutex(false, name);
+        var owner = new Thread(() => abandoned.WaitOne());
+        owner.Start();
+        Check(owner.Join(TimeSpan.FromSeconds(5)), "Mutex owner did not exit");
+        using var recovered = Acquire();
+        Check(recovered is not null, "Abandoned instance mutex prevented startup");
+        recovered!.ReleaseMutex();
+        Console.WriteLine("PASS Single instance acquisition handles live, unowned and abandoned mutexes");
+    }
+
     private static void Check(bool condition, string message) { if (!condition) throw new Exception(message); }
 }

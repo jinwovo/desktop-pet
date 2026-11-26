@@ -14,7 +14,6 @@ public partial class App : System.Windows.Application
     private SettingsWindow? _settingsWindow;
     private double _dpiScale = 1.0;
     private System.Threading.Mutex? _instanceMutex;
-    private bool _ownsInstanceMutex;
     private AssistantIntegrationService? _assistantService;
     private AssistantConnectionsWindow? _assistantWindow;
     private bool _assistantSetupRunning;
@@ -88,8 +87,8 @@ public partial class App : System.Windows.Application
             Shutdown();
             return;
         }
-        _instanceMutex = new System.Threading.Mutex(true, @"Local\DesktopPet.App", out _ownsInstanceMutex);
-        if (!_ownsInstanceMutex)
+        _instanceMutex = TryAcquireInstanceMutex(@"Local\DesktopPet.App");
+        if (_instanceMutex is null)
         {
             Shutdown();
             return;
@@ -249,6 +248,27 @@ public partial class App : System.Windows.Application
         }
     }
 
+    internal static System.Threading.Mutex? TryAcquireInstanceMutex(string name)
+    {
+        var mutex = new System.Threading.Mutex(false, name);
+        try
+        {
+            if (mutex.WaitOne(0)) return mutex;
+        }
+        catch (AbandonedMutexException)
+        {
+            // WaitOne transfers ownership to this process even when the previous owner exited.
+            return mutex;
+        }
+        catch
+        {
+            mutex.Dispose();
+            throw;
+        }
+        mutex.Dispose();
+        return null;
+    }
+
     protected override void OnExit(ExitEventArgs e)
     {
         UiText.LanguageChanged -= RefreshTrayLanguage;
@@ -256,7 +276,7 @@ public partial class App : System.Windows.Application
         (MainWindow as MainWindow)?.DisposeResources();
         _windowFallService?.Dispose();
         _trayIcon?.Dispose();
-        if (_ownsInstanceMutex) _instanceMutex?.ReleaseMutex();
+        _instanceMutex?.ReleaseMutex();
         _instanceMutex?.Dispose();
         base.OnExit(e);
     }
