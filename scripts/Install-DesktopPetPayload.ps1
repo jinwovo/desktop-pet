@@ -170,6 +170,11 @@ function Invoke-DesktopPetPayloadUpdate {
         $previousFiles = @($previousManifest.files)
         foreach ($relativePath in $previousFiles) { Assert-DesktopPetPayloadRelativePath $relativePath }
     }
+    $managedPaths = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::OrdinalIgnoreCase)
+    foreach ($relativePath in $previousFiles) {
+        [void]$managedPaths.Add($relativePath.Replace('/', '\'))
+    }
+    $previousFiles = @($managedPaths)
     $obsoleteFiles = @($previousFiles | Where-Object { $newFiles -notcontains $_ } | Sort-Object -Unique)
     $touchedFiles = @(@($newFiles) + @($obsoleteFiles) + @($manifestName) | Sort-Object -Unique)
     foreach ($relativePath in $touchedFiles) {
@@ -184,6 +189,12 @@ function Invoke-DesktopPetPayloadUpdate {
                 $probe.Dispose()
             }
             catch { throw "Cannot update '$targetPath'. Close DesktopPet and other programs using this file, then retry. $($_.Exception.Message)" }
+            if ($relativePath -ne $manifestName -and -not $managedPaths.Contains($relativePath) -and $newFiles -contains $relativePath) {
+                $incomingPath = Join-Path $sourceRoot $relativePath
+                if ((Get-FileHash -LiteralPath $incomingPath -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath $targetPath -Algorithm SHA256).Hash) {
+                    throw "An existing file is not managed by DesktopPet: $targetPath. Use another installation folder or move that file before retrying."
+                }
+            }
         }
     }
 

@@ -25,6 +25,20 @@ $testRoot = Join-Path (Join-Path (Split-Path -Parent $PSScriptRoot) '.local') ('
 [System.IO.Directory]::CreateDirectory($testRoot) | Out-Null
 $passed = 0
 try {
+    $collisionSource = Join-Path $testRoot 'collision-source'
+    $collisionInstall = Join-Path $testRoot 'collision-install'
+    Write-TestFile $collisionSource 'DesktopPet.App.exe' 'new application'
+    Write-TestFile $collisionSource 'Assets\theme.txt' 'official theme'
+    Write-TestFile $collisionInstall 'Assets\theme.txt' 'personal theme'
+    Assert-InstallFails { Install-DesktopPetPayload -PublishDirectory $collisionSource -InstallDirectory $collisionInstall }
+    Assert-Test ([System.IO.File]::ReadAllText((Join-Path $collisionInstall 'Assets\theme.txt')) -eq 'personal theme' -and
+        -not [System.IO.File]::Exists((Join-Path $collisionInstall 'DesktopPet.App.exe'))) 'Unmanaged conflict wrote part of the incoming package.'
+    Write-TestFile $collisionInstall 'Assets\theme.txt' 'official theme'
+    Install-DesktopPetPayload -PublishDirectory $collisionSource -InstallDirectory $collisionInstall
+    Assert-Test ([System.IO.File]::Exists((Join-Path $collisionInstall '.desktop-pet-manifest.json'))) 'Identical unpacked files could not be adopted.'
+    Write-Host 'PASS Conflicting unmanaged files stay intact and identical files can be adopted'
+    $passed++
+
     $publishRoot = Join-Path $testRoot 'publish'
     $installRoot = Join-Path $testRoot 'installed'
     Write-TestFile $publishRoot 'DesktopPet.App.exe' 'version 1'
@@ -174,7 +188,7 @@ try {
     }
     Write-Host 'PASS Published junctions are rejected without touching their target'
     $passed++
-    Write-Host "$passed/10 installation regression checks passed"
+    Write-Host "$passed/11 installation regression checks passed"
 }
 finally {
     $safeTestRoot = Assert-DesktopPetChildPath -Root (Join-Path (Split-Path -Parent $PSScriptRoot) '.local') -Path $testRoot
