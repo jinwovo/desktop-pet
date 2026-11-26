@@ -359,6 +359,40 @@ public partial class MainWindow : Window
         if (missing) candidate.CharacterName = CurrentCharacterName;
         var presentation = candidate.CharacterName.Equals(CurrentCharacterName, StringComparison.OrdinalIgnoreCase)
             ? null : CharacterPresentation.Load(ResolveCharacterFolder(candidate.CharacterName));
+        ApplyRestoredPreferences(candidate, presentation);
+        return missing;
+    }
+
+    internal async Task<(bool Applied, bool MissingCharacter)> RestorePreferencesFileAsync(string path, CancellationToken cancellation)
+    {
+        Dispatcher.VerifyAccess();
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        var revision = _characterSwitchRevision;
+        var activePresentation = CurrentPresentation;
+        var currentName = CurrentCharacterName;
+        var baselineName = _settings.CharacterName;
+        var prepared = await Task.Run(() =>
+        {
+            cancellation.ThrowIfCancellationRequested();
+            var json = PetSettingsBackup.ReadFile(path);
+            var requested = PetSettingsBackup.ReadJson(json, new PetSettings { CharacterName = baselineName }).CharacterName;
+            var missing = !_characterLibrary.GetNames(cancellation).Contains(requested, StringComparer.OrdinalIgnoreCase);
+            var presentation = missing || string.Equals(currentName, requested, StringComparison.OrdinalIgnoreCase)
+                ? null : _characterLoader(_characterLibrary.Resolve(requested), cancellation);
+            return (Json: json, Requested: requested, Missing: missing, Presentation: presentation);
+        }, cancellation);
+        if (cancellation.IsCancellationRequested || _disposed || revision != _characterSwitchRevision ||
+            !ReferenceEquals(activePresentation, CurrentPresentation)) return (false, false);
+
+        var candidate = PetSettingsBackup.ReadJson(prepared.Json, _settings);
+        if (!string.Equals(candidate.CharacterName, prepared.Requested, StringComparison.OrdinalIgnoreCase))
+            return (false, false);
+        ApplyRestoredPreferences(candidate, prepared.Presentation);
+        return (true, prepared.Missing);
+    }
+
+    private void ApplyRestoredPreferences(PetSettings candidate, CharacterPresentation? presentation)
+    {
         // All untrusted JSON and replacement artwork are validated before changing live state.
         CancelCharacterSwitch();
         _settings = candidate;
@@ -380,7 +414,6 @@ public partial class MainWindow : Window
         WindowFallEnabledChanged?.Invoke(CanUseWindowFall);
         SynchronizeFocusTimer();
         ScheduleSettingsSave();
-        return missing;
     }
 
     public void SetVisible(bool visible)

@@ -52,10 +52,10 @@ internal static class SettingsFeedbackUiTests
 
             var path=Path.Combine(root,"feedback-restore.json");
             PetSettingsBackup.SaveFile(path,new PetSettings{CharacterName="Companion",Visible=false,Language="en",FocusMinutes=50,BreakMinutes=10});
-            Invoke(settings,"RestorePreferencesFromFile",path);
+            PreferencesBackupUiTests.WaitFor((Task)Invoke(settings, "RestorePreferencesFromFile", path)!);
             Check(focus.Text==""&&quiet.Text==UiText.Get(QuietHelp)&&pet.FocusMinutes==50&&timer.Snapshot==active,"Validated restore kept stale Apply feedback");
             Locales("",QuietHelp,"restored");
-            Draft("bad","10","invalid","08:00");Apply();File.WriteAllText(path,"invalid JSON");Invoke(settings,"RestorePreferencesFromFile",path);
+            Draft("bad","10","invalid","08:00");Apply();File.WriteAllText(path,"invalid JSON");PreferencesBackupUiTests.WaitFor((Task)Invoke(settings, "RestorePreferencesFromFile", path)!);
             Check(focus.Text==UiText.Get(FocusError)&&quiet.Text==UiText.Get(QuietError)&&pet.FocusMinutes==50,"Rejected restore erased validation feedback");
             Locales(FocusError,QuietError,"rejected");
             settings.Close();var closed=(focus.Text,quiet.Text);var before=pet.FocusMinutes;
@@ -69,7 +69,7 @@ internal static class SettingsFeedbackUiTests
     private sealed class Clock:TimeProvider{public override long TimestampFrequency=>TimeSpan.TicksPerSecond;public override long GetTimestamp()=>0;}
     private static object? Get(object o,string n)=>o.GetType().GetField(n,BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(o);
     private static void Set(object o,string n,object value)=>o.GetType().GetField(n,BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(o,value);
-    private static void Invoke(object o,string n,params object[] args)=>o.GetType().GetMethod(n,BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(o,args);
+    private static object? Invoke(object o,string n,params object[] args)=>o.GetType().GetMethod(n,BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(o,args);
     private static void Pump(){var f=new DispatcherFrame();Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Background,new Action(()=>f.Continue=false));Dispatcher.PushFrame(f);}
     private static void Check(bool ok,string message){if(!ok)throw new Exception(message);}
 }

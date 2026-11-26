@@ -50,12 +50,12 @@ internal static class SettingsDraftLocaleUiTests
             var path=Path.Combine(root,"draft-restore.json");
             PetSettingsBackup.SaveFile(path,new PetSettings{CharacterName="Companion",Visible=false,Language="en",FocusMinutes=50,BreakMinutes=10,
                 QuietHoursStartMinute=60,QuietHoursEndMinute=120,AutoConnectAssistants=false});
-            Invoke(settings,"RestorePreferencesFromFile",path);
+            PreferencesBackupUiTests.WaitFor((Task)Invoke(settings, "RestorePreferencesFromFile", path)!);
             Check(boxes.Select(x=>x.Text).SequenceEqual(new[]{"50","10","01:00","02:00"})&&pet.FocusMinutes==50&&timer.Snapshot==active,
                 "Explicit backup restore retained stale drafts instead of restored preferences");
             Check(((CheckBox)settings.FindName("QuietHoursCheck")).IsChecked==false&&!pet.QuietHoursEnabled,"Explicit restore retained a stale quiet-hours choice");
             Draft("77","bad","2","");((CheckBox)settings.FindName("QuietHoursCheck")).IsChecked=true;
-            File.WriteAllText(path,"not valid JSON");Invoke(settings,"RestorePreferencesFromFile",path);
+            File.WriteAllText(path,"not valid JSON");PreferencesBackupUiTests.WaitFor((Task)Invoke(settings, "RestorePreferencesFromFile", path)!);
             Check(boxes.Select(x=>x.Text).SequenceEqual(new[]{"77","bad","2",""})&&pet.FocusMinutes==50&&timer.Snapshot==active,
                 "Rejected backup replaced unapplied drafts or the active session");
             Check(((CheckBox)settings.FindName("QuietHoursCheck")).IsChecked==true&&!pet.QuietHoursEnabled,"Rejected backup replaced or applied the pending schedule choice");
@@ -68,7 +68,7 @@ internal static class SettingsDraftLocaleUiTests
     private sealed class Clock:TimeProvider{public override long TimestampFrequency=>TimeSpan.TicksPerSecond;public override long GetTimestamp()=>0;}
     private static object? Get(object o,string n)=>o.GetType().GetField(n,BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(o);
     private static void Set(object o,string n,object value)=>o.GetType().GetField(n,BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(o,value);
-    private static void Invoke(object o,string n,params object[] args)=>o.GetType().GetMethod(n,BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(o,args);
+    private static object? Invoke(object o,string n,params object[] args)=>o.GetType().GetMethod(n,BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(o,args);
     private static void Pump(){var f=new DispatcherFrame();Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Background,new Action(()=>f.Continue=false));Dispatcher.PushFrame(f);}
     private static void Check(bool ok,string message){if(!ok)throw new Exception(message);}
 }

@@ -286,6 +286,8 @@ public static class UiText
         ["00:00~23:59 사이 HH:mm 형식으로 입력해주세요."] = ("Enter HH:mm between 00:00 and 23:59.", "请输入 00:00 至 23:59 的 HH:mm 时间。"),
         ["같은 시작·종료 시간은 예약을 활성화하지 않아요."] = ("Equal start/end times leave the schedule inactive.", "起止相同则不启用时段。"),
         ["예약을 적용했어요. 미확인 알림은 계속 보관합니다."] = ("Schedule applied. Unread notifications stay saved.", "时段已应用，仍会保存未读通知。"),
+        ["설정을 복원하고 있어요…"] = ("Restoring settings…", "正在恢复设置…"),
+        ["설정 복원이 취소됐어요."] = ("Settings restore was canceled.", "设置恢复已取消。"),
         ["설정을 백업했어요. AI 연결 정보는 포함하지 않았습니다."] = ("Settings backed up. AI connection data is excluded.", "已备份设置，不包含 AI 连接信息。"),
         ["백업하지 못했어요. 저장 위치와 권한을 확인해주세요."] = ("Backup failed. Check the destination and permissions.", "备份失败，请检查位置与权限。"),
         ["설정을 복원했어요. 설치되지 않은 캐릭터 대신 현재 친구를 유지합니다."] = ("Settings restored. The missing character was replaced by your current pet.", "设置已恢复；未安装的角色保留为当前宠物。"),

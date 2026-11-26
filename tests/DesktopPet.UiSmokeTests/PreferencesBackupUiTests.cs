@@ -13,7 +13,23 @@ internal static class PreferencesBackupUiTests
     {
         var originalLanguage = UiText.Language;
         UiText.SetLanguage("ko");
-        var pet = new MainWindow(new CharacterLibrary(MainWindow.CharactersRoot, Path.Combine(root, "backup-custom")), inboxDirectory: Path.Combine(root, "backup-inbox"));
+        using var entered = new ManualResetEventSlim();
+        using var release = new ManualResetEventSlim();
+        CancellationToken restoreToken = default;
+        var dispatcherThread = Environment.CurrentManagedThreadId;
+        var decodeThread = 0;
+        var pet = new MainWindow(new CharacterLibrary(MainWindow.CharactersRoot, Path.Combine(root, "backup-custom")),
+            inboxDirectory: Path.Combine(root, "backup-inbox"), characterLoader: (folder, token) =>
+            {
+                if (Path.GetFileName(folder) == "Ember")
+                {
+                    decodeThread = Environment.CurrentManagedThreadId;
+                    restoreToken = token;
+                    entered.Set();
+                    Check(release.Wait(TimeSpan.FromSeconds(15)), "Backup decoder did not receive its fixture release");
+                }
+                return CharacterPresentation.Load(folder);
+            });
         var loaded = (RoutedEventHandler)Delegate.CreateDelegate(typeof(RoutedEventHandler), pet, typeof(MainWindow).GetMethod("MainWindow_Loaded", BindingFlags.Instance | BindingFlags.NonPublic)!);
         pet.Loaded -= loaded;
         Set(pet, "_settings", new PetSettings { Visible = false, AutoConnectAssistants = false, AssistantSetupSeen = true });
@@ -34,7 +50,7 @@ internal static class PreferencesBackupUiTests
             var source = new PetSettings { CharacterName = "Nimbus", Visible = false, ScaleMultiplier = 1.5, MaximumFps = 30,
                 ReducedMotion = true, FocusMinutes = 50, BreakMinutes = 10, AutoConnectAssistants = true };
             PetSettingsBackup.SaveFile(path, source);
-            Invoke(settings, "RestorePreferencesFromFile", path);
+            PreferencesBackupUiTests.WaitFor((Task)Invoke(settings, "RestorePreferencesFromFile", path)!);
             Check(pet.CurrentCharacterName == "Nimbus" && pet.MaximumFps == 30 && pet.ReducedMotion && pet.FocusMinutes == 50 &&
                 pet.FocusSnapshot.Remaining == remaining && !pet.AutoConnectAssistants && pet.AssistantSetupSeen &&
                 ((ComboBox)settings.FindName("CharacterCombo")).SelectedItem is "Nimbus", "Restore failed live wiring, reset active timer or changed assistant registration preference");
@@ -42,12 +58,12 @@ internal static class PreferencesBackupUiTests
 
             source.CharacterName = "Not installed";
             PetSettingsBackup.SaveFile(path, source);
-            Invoke(settings, "RestorePreferencesFromFile", path);
+            PreferencesBackupUiTests.WaitFor((Task)Invoke(settings, "RestorePreferencesFromFile", path)!);
             Check(pet.CurrentCharacterName == "Nimbus" && ((TextBlock)settings.FindName("PreferencesTransferStatus")).Text.Contains("현재 친구"), "Unavailable backup character did not retain current pet");
             var before = JsonSerializer.Serialize(Get(pet, "_settings"));
             var physical = (brain.X, brain.Y, brain.State);
             File.WriteAllText(path, "{\"schemaVersion\":1,\"product\":\"DesktopPet\",\"preferences\":{\"AutoConnectAssistants\":true}}");
-            Invoke(settings, "RestorePreferencesFromFile", path);
+            PreferencesBackupUiTests.WaitFor((Task)Invoke(settings, "RestorePreferencesFromFile", path)!);
             Check(before == JsonSerializer.Serialize(Get(pet, "_settings")) && physical == (brain.X, brain.Y, brain.State) &&
                 ((TextBlock)settings.FindName("PreferencesTransferStatus")).Text.Contains("못했"), "Invalid backup partly changed the pet");
             foreach (var locale in new[] { "en", "zh-CN", "ko" })
@@ -57,13 +73,40 @@ internal static class PreferencesBackupUiTests
                     "Language change replaced the latest preference restore feedback with the initial hint");
             }
             Console.WriteLine("PASS Missing backup characters retain current pet and rejected connection fields cannot partly change preferences or physical pose");
+            source.CharacterName = "Ember";
+            PetSettingsBackup.SaveFile(path, source);
+            var restoring = (Task)Invoke(settings, "RestorePreferencesFromFile", path)!;
+            Check(entered.Wait(TimeSpan.FromSeconds(10)) && decodeThread != dispatcherThread &&
+                !restoring.IsCompleted && !((Button)settings.FindName("RestorePreferencesButton")).IsEnabled,
+                "Restore did not prepare replacement artwork on a worker or allowed duplicate input");
+            settings.Close();
+            Check(restoreToken.IsCancellationRequested, "Closing Settings did not cancel restore ownership");
+            release.Set();
+            WaitFor(restoring);
+            Check(pet.CurrentCharacterName == "Nimbus" && before == JsonSerializer.Serialize(Get(pet, "_settings")),
+                "A late restore applied to a closed Settings window");
+            Console.WriteLine("PASS File restore prepares artwork off the UI thread and closing discards late results");
         }
         finally
         {
+            release.Set();
             save.Stop(); Set(pet, "_settingsDirty", false);
             settings.Close(); pet.DisposeResources();
             UiText.SetLanguage(originalLanguage);
         }
+    }
+    internal static void WaitFor(Task operation)
+    {
+        var timeout = System.Diagnostics.Stopwatch.StartNew();
+        while (!operation.IsCompleted && timeout.Elapsed < TimeSpan.FromSeconds(20))
+        {
+            var frame = new DispatcherFrame();
+            Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() => frame.Continue = false));
+            Dispatcher.PushFrame(frame);
+            Thread.Sleep(5);
+        }
+        Check(operation.IsCompleted, "Timed out waiting for the preference operation");
+        operation.GetAwaiter().GetResult();
     }
     private static object? Get(object obj, string name) => obj.GetType().GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(obj);
     private static void Set(object obj, string name, object value) => obj.GetType().GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(obj, value);

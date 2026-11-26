@@ -134,6 +134,7 @@ internal static class CharacterSwitchUiTests
         var pet = new MainWindow(new CharacterLibrary(MainWindow.CharactersRoot, Path.Combine(root, "switch-cancel-import-custom")),
             inboxDirectory: Path.Combine(root, "switch-cancel-import-inbox"), characterLoader: (folder, token) =>
             {
+                if (Path.GetFileName(folder) != "Nimbus") return CharacterPresentation.Load(folder, cancellationToken: token);
                 decoderToken = token; entered.Set();
                 if (!release.Wait(TimeSpan.FromSeconds(15))) throw new TimeoutException("Pending selection was never released");
                 return CharacterPresentation.Load(folder);
@@ -155,7 +156,7 @@ internal static class CharacterSwitchUiTests
             selection = settings.CharacterSelectionOperation; Until(() => entered.IsSet);
             var backup = Path.Combine(root, "switch-ui-restore.json");
             PetSettingsBackup.SaveFile(backup, new PetSettings { CharacterName="Ember", Visible=false, QuietMode=true, Language="en" });
-            Invoke(settings, "RestorePreferencesFromFile", backup);
+            PreferencesBackupUiTests.WaitFor((Task)Invoke(settings, "RestorePreferencesFromFile", backup)!);
             Check(decoderToken.IsCancellationRequested && combo.SelectedItem is "Ember" && pet.CurrentCharacterName == "Ember" &&
                 ReferenceEquals(pet.CurrentPresentation, Get(settings, "_previewPresentation")),
                 "Backup restore kept a superseded pending character in the Settings combo or preview");
@@ -316,6 +317,6 @@ internal static class CharacterSwitchUiTests
     }
     private static object? Get(object o, string name) => o.GetType().GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(o);
     private static void Set(object o, string name, object? value) => o.GetType().GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(o,value);
-    private static void Invoke(object o, string name, params object[] args) => o.GetType().GetMethod(name, BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(o,args);
+    private static object? Invoke(object o, string name, params object[] args) => o.GetType().GetMethod(name, BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(o,args);
     private static void Check(bool value, string message) { if (!value) throw new Exception(message); }
 }

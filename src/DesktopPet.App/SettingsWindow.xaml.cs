@@ -21,6 +21,7 @@ public partial class SettingsWindow : Window
     private const string QuietHoursHelpKey = "로컬 시간 HH:mm. 자정을 넘길 수 있고 같은 시간은 예약하지 않아요.";
     private string _focusDurationStatusKey = "";
     private string? _preferencesTransferStatusKey;
+    private CancellationTokenSource? _preferencesTransferCancellation;
     private string _quietHoursStatusKey = QuietHoursHelpKey;
     private bool _characterImportBusy;
     private Task _characterImportOperation = Task.CompletedTask;
@@ -74,6 +75,7 @@ public partial class SettingsWindow : Window
             ++_characterSelectionRevision;
             _characterSelectionCancellation?.Cancel();
             _characterImportCancellation?.Cancel();
+            _preferencesTransferCancellation?.Cancel();
             _pet.FocusTimerChanged -= RenderFocusTimer;
             _pet.RenderOptionsChanged -= ApplyRenderOptions;
             UiText.LanguageChanged -= RefreshLanguage;
@@ -535,6 +537,7 @@ public partial class SettingsWindow : Window
     private async Task RunCharacterImportAsync(Func<Task<string?>> import)
     {
         if (_characterImportBusy || _closed) return;
+        _preferencesTransferCancellation?.Cancel();
         ++_characterSelectionRevision;
         _characterSelectionCancellation?.Cancel();
         _loading = true;
@@ -728,26 +731,44 @@ public partial class SettingsWindow : Window
         }
     }
 
-    private void RestorePreferences_Click(object sender, RoutedEventArgs e)
+    private async void RestorePreferences_Click(object sender, RoutedEventArgs e)
     {
+        if (_closed || _characterImportBusy || _preferencesTransferCancellation is not null) return;
         var dialog = new Microsoft.Win32.OpenFileDialog { Title = UiText.Get("설정 복원"), Filter = "DesktopPet 설정 (*.json)|*.json", Multiselect = false };
-        if (dialog.ShowDialog(this) == true) RestorePreferencesFromFile(dialog.FileName);
+        if (dialog.ShowDialog(this) == true) await RestorePreferencesFromFile(dialog.FileName);
     }
 
-    private void RestorePreferencesFromFile(string path)
+    private async Task RestorePreferencesFromFile(string path)
     {
+        if (_closed || _characterImportBusy || _preferencesTransferCancellation is not null) return;
+        using var cancellation = new CancellationTokenSource();
+        _preferencesTransferCancellation = cancellation;
+        BackupPreferencesButton.IsEnabled = RestorePreferencesButton.IsEnabled = false;
+        SetPreferencesTransferStatus("설정을 복원하고 있어요…");
         try
         {
-            var missing = _pet.RestorePreferencesJson(PetSettingsBackup.ReadFile(path));
+            var (applied, missing) = await _pet.RestorePreferencesFileAsync(path, cancellation.Token);
+            if (_closed || cancellation.IsCancellationRequested) return;
+            if (!applied)
+            {
+                SetPreferencesTransferStatus("설정 복원이 취소됐어요.");
+                return;
+            }
             ++_characterSelectionRevision;
             _characterSelectionCancellation?.Cancel();
             LoadFromPet();
             RenderFocusTimer();
             SetPreferencesTransferStatus(missing ? "설정을 복원했어요. 설치되지 않은 캐릭터 대신 현재 친구를 유지합니다." : "설정을 복원했어요. AI 연결과 진행 중인 집중 시간은 유지합니다.");
         }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
         {
-            SetPreferencesTransferStatus("복원하지 못했어요. 백업 형식과 캐릭터 파일을 확인해주세요.");
+            if (!_closed) SetPreferencesTransferStatus("복원하지 못했어요. 백업 형식과 캐릭터 파일을 확인해주세요.");
+        }
+        finally
+        {
+            _preferencesTransferCancellation = null;
+            if (!_closed) BackupPreferencesButton.IsEnabled = RestorePreferencesButton.IsEnabled = true;
         }
     }
 
