@@ -34,8 +34,9 @@ public static class DiagnosticReport
         }, new JsonSerializerOptions { WriteIndented = true });
     }
 
-    public static void SaveFile(string path, string report)
+    public static void SaveFile(string path, string report, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         if (string.IsNullOrWhiteSpace(report) || Encoding.UTF8.GetByteCount(report) > 64 * 1024)
             throw new InvalidDataException("Diagnostic report is empty or too large.");
         var full = Path.GetFullPath(path);
@@ -49,6 +50,7 @@ public static class DiagnosticReport
                 using var writer = new StreamWriter(stream, new UTF8Encoding(false));
                 writer.Write(report);
             }
+            cancellationToken.ThrowIfCancellationRequested();
             File.Move(temporary, full, overwrite: true);
         }
         finally { if (created && File.Exists(temporary)) File.Delete(temporary); }

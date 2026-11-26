@@ -12,6 +12,7 @@ internal static class DiagnosticsUiTests
 {
     public static void Run(string root)
     {
+        VerifyBackgroundSave(root);
         var pet = new MainWindow(new CharacterLibrary(MainWindow.CharactersRoot, Path.Combine(root, "private-library-canary")), inboxDirectory: Path.Combine(root, "private-inbox-canary"));
         Set(pet, "_settings", new PetSettings { AutoConnectAssistants = false });
         Set(pet, "_brain", new PetBrain(new PlatformLayout(new[] { new Platform(0, 1920, 1080) }), 128, 122, 500, 958));
@@ -50,6 +51,54 @@ internal static class DiagnosticsUiTests
             settings.Close(); ((DispatcherTimer)Get(pet, "_settingsSaveTimer")!).Stop(); Set(pet, "_settingsDirty", false); pet.DisposeResources();
         }
     }
+    private static void VerifyBackgroundSave(string root)
+    {
+        using var entered = new ManualResetEventSlim();
+        using var release = new ManualResetEventSlim();
+        var dispatcher = Environment.CurrentManagedThreadId;
+        var usedWorker = false;
+        var language = UiText.Language;
+        var window = new DiagnosticWindow("reviewed", () => "refreshed", (path, snapshot, token) =>
+        {
+            usedWorker = Environment.CurrentManagedThreadId != dispatcher;
+            entered.Set();
+            if (!release.Wait(TimeSpan.FromSeconds(15))) throw new IOException("Fixture did not release the writer.");
+            DiagnosticReport.SaveFile(path, snapshot, token);
+        });
+        Task? operation = null;
+        try
+        {
+            window.Show();
+            var path = Path.Combine(root, "diagnostic-reviewed.json");
+            operation = (Task)Invoke(window, "SaveReportAsync", path, window.Report)!;
+            Check(entered.Wait(TimeSpan.FromSeconds(10)) && usedWorker && !operation.IsCompleted, "Diagnostic save blocked the UI thread");
+            Descendants<Button>(window).Single(button => button.Name == "RefreshDiagnosticButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            UiText.SetLanguage("en");
+            Check(window.Report == "refreshed" && !Descendants<Button>(window).Single(button => button.Name == "SaveDiagnosticButton").IsEnabled,
+                "In-progress save didn't retain its operation while refreshing");
+            release.Set();
+            PreferencesBackupUiTests.WaitFor(operation);
+            Check(File.ReadAllText(path) == "reviewed", "Refreshing changed the report being saved");
+
+            entered.Reset(); release.Reset();
+            var cancelledPath = Path.Combine(root, "diagnostic-cancelled.json");
+            operation = (Task)Invoke(window, "SaveReportAsync", cancelledPath, window.Report)!;
+            Check(entered.Wait(TimeSpan.FromSeconds(10)), "Second diagnostic save did not start");
+            window.Close();
+            release.Set();
+            PreferencesBackupUiTests.WaitFor(operation);
+            Check(!File.Exists(cancelledPath), "Closing caused a late diagnostic file publication");
+        }
+        finally
+        {
+            release.Set();
+            window.Close();
+            if (operation is not null) PreferencesBackupUiTests.WaitFor(operation);
+            UiText.SetLanguage(language);
+        }
+        Console.WriteLine("PASS Diagnostic export saves the reviewed snapshot on a worker and cancels pending writes on close");
+    }
+
     private static IEnumerable<T> Descendants<T>(DependencyObject node) where T : DependencyObject
     {
         for (var i = 0; i < VisualTreeHelper.GetChildrenCount(node); i++)
