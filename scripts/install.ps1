@@ -44,7 +44,12 @@ try {
     $manifest = Test-DesktopPetReleasePayload -Directory $PackageDirectory
     if ($manifest.requiresDotNetRuntime) { Write-Host 'Framework-dependent 배포: .NET 10 Desktop Runtime x64가 필요합니다.' }
     Write-Host "설치 중... ($installRoot, 알림과 사용자 캐릭터 보존)"
-    Install-DesktopPetPayload -PublishDirectory $PackageDirectory -InstallDirectory $installRoot
+    $expectedVersion = $manifest.version
+    $expectedDeployment = $manifest.deployment
+    Install-DesktopPetPayload -PublishDirectory $PackageDirectory -InstallDirectory $installRoot -ValidateStagedPayload {
+        param($stagedPackage)
+        Test-DesktopPetReleasePayload -Directory $stagedPackage -ExpectedVersion $expectedVersion -ExpectedDeployment $expectedDeployment
+    }
 }
 finally {
     if ($temporaryRoot -and [System.IO.Directory]::Exists($temporaryRoot)) {

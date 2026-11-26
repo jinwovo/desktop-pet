@@ -71,6 +71,25 @@ public static class $fixtureType { public static void Main() { } }
     Write-Host 'PASS Extracted installer verifies manifest and hashes in read-only mode, and rejects modified payloads and missing packages'
     $passed++
 
+    $stageInstall = Join-Path $testRoot 'validated-install'
+    & $installer -InstallDirectory $stageInstall -SkipStartMenuShortcut
+    $activeExe = Join-Path $stageInstall 'DesktopPet.App.exe'
+    $activeBefore = [System.IO.File]::ReadAllBytes($activeExe)
+    $installManifest = Join-Path $stageInstall '.desktop-pet-manifest.json'
+    $managedBefore = [System.IO.File]::ReadAllText($installManifest)
+    Assert-PackageFailure {
+        Install-DesktopPetPayload -PublishDirectory $extracted -InstallDirectory $stageInstall -ValidateStagedPayload {
+            param($stagedPackage)
+            [System.IO.File]::AppendAllText((Join-Path $stagedPackage 'Assets\Characters\Companion\walk.png'), 'mismatch')
+            Test-DesktopPetReleasePayload -Directory $stagedPackage
+        }
+    }
+    Assert-PackageTest ([Convert]::ToBase64String([System.IO.File]::ReadAllBytes($activeExe)) -eq [Convert]::ToBase64String($activeBefore) -and
+        [System.IO.File]::ReadAllText($installManifest) -eq $managedBefore -and
+        @(Get-ChildItem -LiteralPath $stageInstall -Force -Filter '.desktop-pet-install-*').Count -eq 0) 'Failed staging validation changed the active install or leaked its transaction.'
+    Write-Host 'PASS The user installer validates staged bytes before installing and rejects corrupted copies before changing active files'
+    $passed++
+
     $rigPublish = Join-Path $testRoot 'rig-publish'
     Copy-Item -LiteralPath $publish -Destination $rigPublish -Recurse
     $rigDefinition = [ordered]@{
@@ -274,7 +293,7 @@ public static class $fixtureType { public static void Main() { } }
     Assert-PackageTest ([System.IO.File]::ReadAllText((Join-Path $testRoot 'outside.txt')) -eq 'must remain') 'Uninstall escaped its root.'
     Write-Host 'PASS Uninstall rejects a manifest escaping the installation directory'
     $passed++
-    Write-Host "$passed/16 release packaging regression checks passed (synthetic binary and images, no runtime execution)"
+    Write-Host "$passed/17 release packaging regression checks passed (synthetic binary and images, no runtime execution)"
 }
 finally {
     $safeTestRoot = Assert-DesktopPetChildPath -Root (Join-Path $repoRoot '.local') -Path $testRoot

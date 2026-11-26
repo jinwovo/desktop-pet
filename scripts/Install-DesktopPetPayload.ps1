@@ -103,7 +103,8 @@ function Install-DesktopPetPayload {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)][string]$PublishDirectory,
-        [Parameter(Mandatory = $true)][string]$InstallDirectory
+        [Parameter(Mandatory = $true)][string]$InstallDirectory,
+        [scriptblock]$ValidateStagedPayload
     )
     $root = Get-DesktopPetInstallPath $InstallDirectory
     $hasher = [System.Security.Cryptography.SHA256]::Create()
@@ -115,7 +116,7 @@ function Install-DesktopPetPayload {
         try { $ownsMutex = $mutex.WaitOne(0) }
         catch [System.Threading.AbandonedMutexException] { $ownsMutex = $true }
         if (-not $ownsMutex) { throw 'Another DesktopPet update is already using this installation directory.' }
-        Invoke-DesktopPetPayloadUpdate -PublishDirectory $PublishDirectory -InstallDirectory $root
+        Invoke-DesktopPetPayloadUpdate -PublishDirectory $PublishDirectory -InstallDirectory $root -ValidateStagedPayload $ValidateStagedPayload
     }
     finally {
         if ($ownsMutex) { $mutex.ReleaseMutex() }
@@ -127,7 +128,8 @@ function Invoke-DesktopPetPayloadUpdate {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)][string]$PublishDirectory,
-        [Parameter(Mandatory = $true)][string]$InstallDirectory
+        [Parameter(Mandatory = $true)][string]$InstallDirectory,
+        [scriptblock]$ValidateStagedPayload
     )
     $ErrorActionPreference = 'Stop'
     $sourceRoot = Get-DesktopPetInstallPath $PublishDirectory
@@ -214,6 +216,9 @@ function Invoke-DesktopPetPayloadUpdate {
             $stagePath = Assert-DesktopPetChildPath -Root $stageRoot -Path (Join-Path $stageRoot $relativePath)
             [System.IO.Directory]::CreateDirectory([System.IO.Path]::GetDirectoryName($stagePath)) | Out-Null
             [System.IO.File]::Copy((Join-Path $sourceRoot $relativePath), $stagePath)
+        }
+        if ($null -ne $ValidateStagedPayload) {
+            & $ValidateStagedPayload $stageRoot | Out-Null
         }
         $manifestJson = [ordered]@{ version = 1; files = @($newFiles) } | ConvertTo-Json -Depth 4
         [System.IO.File]::WriteAllText((Join-Path $stageRoot $manifestName), $manifestJson,
