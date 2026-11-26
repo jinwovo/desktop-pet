@@ -10,6 +10,7 @@ namespace DesktopPet.App;
 public partial class App : System.Windows.Application
 {
     private WinForms.NotifyIcon? _trayIcon;
+    private System.Drawing.Icon? _trayImage;
     private WindowFallService? _windowFallService;
     private SettingsWindow? _settingsWindow;
     private double _dpiScale = 1.0;
@@ -110,9 +111,10 @@ public partial class App : System.Windows.Application
         petWindow.PresentationVisibilityChanged += shown => OnWindowFallEnabledChanged(shown && petWindow.CanUseWindowFall);
 
         var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico");
+        _trayImage = LoadTrayIcon(iconPath);
         _trayIcon = new WinForms.NotifyIcon
         {
-            Icon = File.Exists(iconPath) ? new System.Drawing.Icon(iconPath) : System.Drawing.SystemIcons.Application,
+            Icon = _trayImage,
             Visible = true,
             Text = "DesktopPet",
             ContextMenuStrip = BuildTrayMenu(petWindow),
@@ -248,6 +250,15 @@ public partial class App : System.Windows.Application
         }
     }
 
+    internal static System.Drawing.Icon LoadTrayIcon(string path)
+    {
+        try { return new System.Drawing.Icon(path); }
+        catch (Exception ex) when (ex is IOException or ArgumentException or UnauthorizedAccessException or System.Runtime.InteropServices.ExternalException)
+        {
+            return (System.Drawing.Icon)System.Drawing.SystemIcons.Application.Clone();
+        }
+    }
+
     internal static System.Threading.Mutex? TryAcquireInstanceMutex(string name)
     {
         var mutex = new System.Threading.Mutex(false, name);
@@ -276,6 +287,7 @@ public partial class App : System.Windows.Application
         (MainWindow as MainWindow)?.DisposeResources();
         _windowFallService?.Dispose();
         _trayIcon?.Dispose();
+        _trayImage?.Dispose();
         _instanceMutex?.ReleaseMutex();
         _instanceMutex?.Dispose();
         base.OnExit(e);

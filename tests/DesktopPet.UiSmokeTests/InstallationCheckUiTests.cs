@@ -7,6 +7,7 @@ internal static class InstallationCheckUiTests
     public static void Run(string root)
     {
         VerifySingleInstanceRecovery();
+        VerifyTrayIconFallback(root);
         var installation = Path.Combine(root, "private-installation-canary");
         var png = Path.Combine(MainWindow.CharactersRoot, "Companion", "idle.png");
         foreach (var name in new[] { "Companion", "Nimbus", "Ember" })
@@ -55,6 +56,20 @@ internal static class InstallationCheckUiTests
         Check(!missing.HasHookBridge && missing.Errors.Contains("MissingOrLinkedHookBridge"), "Missing hook bridge passed installation check");
         Console.WriteLine("PASS Read-only installation check validates all original resources, detects corrupt PNGs/missing bridge and emits sanitized JSON without creating profile data");
     }
+    private static void VerifyTrayIconFallback(string root)
+    {
+        var load = typeof(App).GetMethod("LoadTrayIcon", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!;
+        var damaged = Path.Combine(root, "damaged-tray.ico");
+        File.WriteAllText(damaged, "not an icon");
+        foreach (var path in new[] { damaged, Path.Combine(root, "missing-tray.ico") })
+        {
+            using var icon = (System.Drawing.Icon)load.Invoke(null, new object[] { path })!;
+            Check(icon.Handle != IntPtr.Zero && icon.Size == System.Drawing.SystemIcons.Application.Size,
+                "Missing or malformed tray artwork prevented loading a usable fallback icon");
+        }
+        Console.WriteLine("PASS The tray can use a system icon when packaged artwork is missing or damaged");
+    }
+
     private static void VerifySingleInstanceRecovery()
     {
         var name = @"Local\DesktopPet.UiSmoke." + Guid.NewGuid().ToString("N");
