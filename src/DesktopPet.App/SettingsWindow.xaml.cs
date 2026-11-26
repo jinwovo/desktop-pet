@@ -711,23 +711,38 @@ public partial class SettingsWindow : Window
             PreferencesTransferStatus.Text = UiText.Get(key);
     }
 
-    private void BackupPreferences_Click(object sender, RoutedEventArgs e)
+    private async void BackupPreferences_Click(object sender, RoutedEventArgs e)
     {
+        if (_closed || _preferencesTransferCancellation is not null) return;
         var dialog = new Microsoft.Win32.SaveFileDialog { Title = UiText.Get("설정 백업"), Filter = "DesktopPet 설정 (*.json)|*.json",
             FileName = "DesktopPet-preferences.json", DefaultExt = ".json", AddExtension = true, OverwritePrompt = true };
-        if (dialog.ShowDialog(this) == true) BackupPreferencesToFile(dialog.FileName);
+        if (dialog.ShowDialog(this) == true) await BackupPreferencesToFile(dialog.FileName);
     }
 
-    private void BackupPreferencesToFile(string path)
+    private async Task BackupPreferencesToFile(string path)
     {
+        if (_closed || _preferencesTransferCancellation is not null) return;
+        using var cancellation = new CancellationTokenSource();
+        _preferencesTransferCancellation = cancellation;
+        BackupPreferencesButton.IsEnabled = RestorePreferencesButton.IsEnabled = false;
+        SetPreferencesTransferStatus("설정을 백업하고 있어요…");
         try
         {
-            _pet.SavePreferencesBackup(path);
-            SetPreferencesTransferStatus("설정을 백업했어요. AI 연결 정보는 포함하지 않았습니다.");
+            await _pet.SavePreferencesBackupAsync(path, cancellation.Token);
+            if (!_closed) SetPreferencesTransferStatus("설정을 백업했어요. AI 연결 정보는 포함하지 않았습니다.");
+        }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+        {
+            if (!_closed) SetPreferencesTransferStatus("설정 백업이 취소됐어요.");
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or System.Text.Json.JsonException)
         {
-            SetPreferencesTransferStatus("백업하지 못했어요. 저장 위치와 권한을 확인해주세요.");
+            if (!_closed) SetPreferencesTransferStatus("백업하지 못했어요. 저장 위치와 권한을 확인해주세요.");
+        }
+        finally
+        {
+            _preferencesTransferCancellation = null;
+            if (!_closed) BackupPreferencesButton.IsEnabled = RestorePreferencesButton.IsEnabled = true;
         }
     }
 
@@ -748,8 +763,8 @@ public partial class SettingsWindow : Window
         try
         {
             var (applied, missing) = await _pet.RestorePreferencesFileAsync(path, cancellation.Token);
-            if (_closed || cancellation.IsCancellationRequested) return;
-            if (!applied)
+            if (_closed) return;
+            if (!applied || cancellation.IsCancellationRequested)
             {
                 SetPreferencesTransferStatus("설정 복원이 취소됐어요.");
                 return;
@@ -760,7 +775,10 @@ public partial class SettingsWindow : Window
             RenderFocusTimer();
             SetPreferencesTransferStatus(missing ? "설정을 복원했어요. 설치되지 않은 캐릭터 대신 현재 친구를 유지합니다." : "설정을 복원했어요. AI 연결과 진행 중인 집중 시간은 유지합니다.");
         }
-        catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+        {
+            if (!_closed) SetPreferencesTransferStatus("설정 복원이 취소됐어요.");
+        }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
         {
             if (!_closed) SetPreferencesTransferStatus("복원하지 못했어요. 백업 형식과 캐릭터 파일을 확인해주세요.");

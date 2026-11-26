@@ -67,9 +67,19 @@ public static class PetSettingsBackup
     }
 
     public static void SaveFile(string path, PetSettings settings)
+        => WriteFile(Path.GetFullPath(path), WriteJson(settings), CancellationToken.None);
+
+    public static Task SaveFileAsync(string path, PetSettings settings, CancellationToken cancellationToken)
     {
-        var json = WriteJson(settings);
+        cancellationToken.ThrowIfCancellationRequested();
         var full = Path.GetFullPath(path);
+        var json = WriteJson(settings);
+        return Task.Run(() => WriteFile(full, json, cancellationToken), cancellationToken);
+    }
+
+    private static void WriteFile(string full, string json, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
         var temporary = Path.Combine(Path.GetDirectoryName(full)!, ".desktop-pet-preferences-" + Guid.NewGuid().ToString("N") + ".tmp");
         var created = false;
         try
@@ -80,6 +90,7 @@ public static class PetSettingsBackup
                 using var writer = new StreamWriter(stream, new UTF8Encoding(false));
                 writer.Write(json);
             }
+            cancellationToken.ThrowIfCancellationRequested();
             File.Move(temporary, full, overwrite: true);
         }
         finally { if (created && File.Exists(temporary)) File.Delete(temporary); }

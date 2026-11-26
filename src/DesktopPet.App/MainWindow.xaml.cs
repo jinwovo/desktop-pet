@@ -342,6 +342,13 @@ public partial class MainWindow : Window
 
     public void SavePreferencesBackup(string path) => PetSettingsBackup.SaveFile(path, _settings);
 
+    internal Task SavePreferencesBackupAsync(string path, CancellationToken cancellationToken)
+    {
+        Dispatcher.VerifyAccess();
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        return PetSettingsBackup.SaveFileAsync(path, _settings, cancellationToken);
+    }
+
     public string CreateDiagnosticReport() => DiagnosticReport.Create(typeof(App).Assembly.GetName().Version!.ToString(),
         new PetDiagnosticSnapshot(_character.FolderPath.StartsWith(_characterLibrary.CustomRoot + Path.DirectorySeparatorChar,
             StringComparison.OrdinalIgnoreCase) ? CharacterStorageKind.Imported : CharacterStorageKind.Bundled,

@@ -42,9 +42,20 @@ internal static class PreferencesBackupUiTests
         var path = Path.Combine(root, "portable-preferences.json");
         try
         {
-            Invoke(settings, "BackupPreferencesToFile", path);
+            var backup = (Task)Invoke(settings, "BackupPreferencesToFile", path)!;
+            Check(!((Button)settings.FindName("BackupPreferencesButton")).IsEnabled, "Backup did not enter its busy state");
+            WaitFor(backup);
             var json = PetSettingsBackup.ReadFile(path);
             Check(!json.Contains("AutoConnectAssistants") && ((TextBlock)settings.FindName("PreferencesTransferStatus")).Text.Contains("백업"), "Backup UI failed to write portable settings");
+            using (var locked = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                WaitFor((Task)Invoke(settings, "BackupPreferencesToFile", path)!);
+                Check(PetSettingsBackup.ReadFile(path) == json &&
+                    ((Button)settings.FindName("BackupPreferencesButton")).IsEnabled &&
+                    ((TextBlock)settings.FindName("PreferencesTransferStatus")).Text == UiText.Get("백업하지 못했어요. 저장 위치와 권한을 확인해주세요."),
+                    "Failed worker backup changed the existing file or did not restore the button");
+            }
+            Check(!Directory.EnumerateFiles(root, ".desktop-pet-preferences-*.tmp").Any(), "Failed backup leaked a staging file");
             pet.StartFocusTimer();
             var remaining = pet.FocusSnapshot.Remaining;
             var source = new PetSettings { CharacterName = "Nimbus", Visible = false, ScaleMultiplier = 1.5, MaximumFps = 30,
