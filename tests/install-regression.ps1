@@ -108,6 +108,9 @@ try {
     Write-TestFile $userDataInstall '.desktop-pet-manifest.json' '{"version":1,"files":["DesktopPet.App.exe"]}'
     $userFiles = @(
         'Characters\Personal\character.json',
+        'settings.json',
+        'settings.json.bak',
+        '.settings.json.fixture.tmp',
         'assistant-connections.json',
         'assistant-connections.json.fixture.bak',
         'assistant-connections.json.fixture.tmp',
@@ -128,7 +131,7 @@ try {
         }
     }
     Assert-DesktopPetPayloadRelativePath 'Assets/Characters/Companion/idle.png'
-    Write-Host 'PASS Payload cannot claim custom Characters or assistant journals and recovery files through case/slash aliases'
+    Write-Host 'PASS Payload cannot claim custom Characters or settings, assistant journals and recovery files through case/slash aliases'
     $passed++
 
     $safePublish = Join-Path $userDataRoot 'safe-publish'

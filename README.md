@@ -18,6 +18,8 @@ A quiet desktop companion for AI work, focused sessions, and a less empty taskba
 
 1.7.0 brings the total to 70 verified improvements. DesktopPet recovers valid preferences when the main file is missing or damaged, retries blocked writes and offers a manual retry in Settings. Portable backup and restore run in the background.
 
+**1.8.0 development** adds `install.ps1 -VerifyOnly` for validating an extracted ZIP, `-SkipStartMenuShortcut` for installation without a shortcut, and `uninstall.ps1 -WhatIf` to preview removal. The installer also preserves local settings recovery files in custom install folders.
+
 
 DesktopPet is a Windows desktop pet with gentle completion notifications for local Claude Code and Codex, a 25/5 focus timer, and importable character packs. Its live walking renderer moves cached body and foot layers continuously, using actual travel distance to keep a planted foot from sliding.
 

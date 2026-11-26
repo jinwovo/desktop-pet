@@ -58,6 +58,9 @@ function Assert-DesktopPetPayloadRelativePath {
         }
     }
     if ($segments[0] -eq 'inbox' -or $segments[0] -eq 'Characters' -or
+        $segments[0] -eq 'settings.json' -or
+        $segments[0].StartsWith('settings.json.', [System.StringComparison]::OrdinalIgnoreCase) -or
+        $segments[0].StartsWith('.settings.json.', [System.StringComparison]::OrdinalIgnoreCase) -or
         $segments[0] -eq 'assistant-connections.json' -or
         $segments[0].StartsWith('assistant-connections.json.', [System.StringComparison]::OrdinalIgnoreCase) -or
         $segments[0] -eq '.desktop-pet-manifest.json' -or

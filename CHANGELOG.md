@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased (1.8.0 development)
+
+- P074 Protect the current settings, previous backup and staging files from claiming or removal by installed payload inventories.
+- P073 Support the Windows PowerShell -WhatIf preview before disconnecting assistants, deleting managed files or changing shortcuts.
+- P072 Expose -VerifyOnly to check an extracted release manifest, version and file hashes without installing the app.
+- P071 Create missing Start Menu folders when possible. Preserve unrelated shortcuts and report the installed executable when shortcut creation fails. Add an explicit switch to skip it.
+
 ## 1.7.0 — evolution patches P061–P070
 
 - P070 Expose a localized retry button after settings cannot be saved. A successful retry saves the pending preferences and hides the button.

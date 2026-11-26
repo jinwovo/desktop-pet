@@ -183,6 +183,9 @@ public static class $fixtureType { public static void Main() { } }
 
     $reservedUserPaths = @(
         'Characters\Personal\character.json',
+        'settings.json',
+        'settings.json.bak',
+        '.settings.json.fixture.tmp',
         'assistant-connections.json',
         'assistant-connections.json.fixture.bak',
         'assistant-connections.json.fixture.tmp',
@@ -234,6 +237,7 @@ public static class $fixtureType { public static void Main() { } }
     Write-PackageFile $installed 'inbox\pending.json' '{"message":"preserve"}'
     Write-PackageFile $installed 'Assets\Characters\MyPet\custom.txt' 'preserve custom'
     Write-PackageFile $installed 'Characters\Personal\character.json' 'preserve imported character'
+    Write-PackageFile $installed 'settings.json.bak' 'preserve preferences recovery'
     Write-PackageFile $installed 'assistant-connections.json' 'preserve assistant journal'
     Write-PackageFile $installed 'assistant-connections.json.fixture.bak' 'preserve assistant recovery'
     Write-PackageFile $installed 'user-note.txt' 'preserve unrelated'
@@ -244,6 +248,7 @@ public static class $fixtureType { public static void Main() { } }
     Assert-PackageTest ([System.IO.File]::Exists((Join-Path $installed 'inbox\pending.json'))) 'Uninstall deleted pending notification.'
     Assert-PackageTest ([System.IO.File]::Exists((Join-Path $installed 'Assets\Characters\MyPet\custom.txt'))) 'Uninstall deleted custom character.'
     Assert-PackageTest ([System.IO.File]::ReadAllText((Join-Path $installed 'Characters\Personal\character.json')) -eq 'preserve imported character') 'Uninstall deleted imported user character.'
+    Assert-PackageTest ([System.IO.File]::ReadAllText((Join-Path $installed 'settings.json.bak')) -eq 'preserve preferences recovery') 'Uninstall deleted settings recovery.'
     Assert-PackageTest ([System.IO.File]::ReadAllText((Join-Path $installed 'assistant-connections.json')) -eq 'preserve assistant journal') 'Uninstall deleted the assistant journal.'
     Assert-PackageTest ([System.IO.File]::ReadAllText((Join-Path $installed 'assistant-connections.json.fixture.bak')) -eq 'preserve assistant recovery') 'Uninstall deleted assistant journal recovery.'
     Assert-PackageTest ([System.IO.File]::Exists((Join-Path $installed 'user-note.txt'))) 'Uninstall deleted unmanaged file.'
@@ -260,7 +265,7 @@ public static class $fixtureType { public static void Main() { } }
         Assert-PackageTest ([System.IO.File]::ReadAllText((Join-Path $installed 'DesktopPet.App.exe')) -eq 'managed app must survive rejected removal') 'Uninstall changed app before rejecting a user-data claim.'
         Assert-PackageTest ([System.IO.File]::ReadAllText((Join-Path $installed '.desktop-pet-manifest.json')) -eq $reservedManifest) 'Rejected user-data manifest was removed or rewritten.'
     }
-    Write-Host 'PASS Uninstall rejects forged manifests claiming custom Characters or assistant journals and recovery files'
+    Write-Host 'PASS Uninstall rejects forged manifests claiming custom Characters or settings, assistant journals and recovery files'
     $passed++
 
     Write-PackageFile $installed '.desktop-pet-manifest.json' '{"version":1,"files":["..\\outside.txt"]}'

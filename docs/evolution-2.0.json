@@ -985,35 +985,53 @@
     },
     {
       "id": "P071",
-      "title": "Discovery pending: Distribution and maintenance (71)",
-      "status": "planned",
+      "title": "Keep installation usable when the Start Menu shortcut cannot be created",
+      "status": "verified",
       "milestone": "1.8.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "scripts/install.ps1",
+        "scripts/Install-DesktopPetPayload.ps1"
+      ],
+      "checks": [
+        "tests/install-regression.ps1"
+      ]
     },
     {
       "id": "P072",
-      "title": "Discovery pending: Distribution and maintenance (72)",
-      "status": "planned",
+      "title": "Verify extracted packages before installing",
+      "status": "verified",
       "milestone": "1.8.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "scripts/install.ps1"
+      ],
+      "checks": [
+        "tests/package-regression.ps1"
+      ]
     },
     {
       "id": "P073",
-      "title": "Discovery pending: Distribution and maintenance (73)",
-      "status": "planned",
+      "title": "Preview removal without changing the installation",
+      "status": "verified",
       "milestone": "1.8.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "scripts/uninstall.ps1"
+      ],
+      "checks": [
+        "tests/package-regression.ps1"
+      ]
     },
     {
       "id": "P074",
-      "title": "Discovery pending: Distribution and maintenance (74)",
-      "status": "planned",
+      "title": "Preserve local settings and recovery files in custom install folders",
+      "status": "verified",
       "milestone": "1.8.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "scripts/Install-DesktopPetPayload.ps1"
+      ],
+      "checks": [
+        "tests/install-regression.ps1",
+        "tests/package-regression.ps1"
+      ]
     },
     {
       "id": "P075",

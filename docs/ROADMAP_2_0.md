@@ -156,3 +156,11 @@ P068 Read the portable backup and load any replacement artwork on a worker. Appl
 P069 Capture portable preferences before starting a worker write. Show progress, keep existing files on a write failure and cancel pending writes when Settings closes.
 
 P070 Expose a localized retry button after settings cannot be saved. A successful retry saves the pending preferences and hides the button.
+
+P071 Create missing Start Menu folders when possible. Preserve unrelated shortcuts and report the installed executable when shortcut creation fails. Add an explicit switch to skip it.
+
+P072 Expose -VerifyOnly to check an extracted release manifest, version and file hashes without installing the app.
+
+P073 Support the Windows PowerShell -WhatIf preview before disconnecting assistants, deleting managed files or changing shortcuts.
+
+P074 Protect the current settings, previous backup and staging files from claiming or removal by installed payload inventories.
