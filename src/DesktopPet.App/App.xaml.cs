@@ -22,14 +22,22 @@ public partial class App : System.Windows.Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
-        if (e.Args.Contains("--check-install", StringComparer.Ordinal))
+        var command = e.Args.Length == 1 ? e.Args[0] : null;
+        if (e.Args.Length > 0 && command is not ("--check-install" or "--disconnect-assistants" or "--version"))
+        {
+            Console.Error.WriteLine("DesktopPet accepts one maintenance option: --check-install, --version or --disconnect-assistants.");
+            Shutdown(64);
+            return;
+        }
+
+        if (command == "--check-install")
         {
             var result = InstallationCheck.Inspect(AppContext.BaseDirectory);
             Console.WriteLine(result.ToJson());
             Shutdown(result.ResourcesValid ? 0 : 2);
             return;
         }
-        if (e.Args.Contains("--disconnect-assistants", StringComparer.Ordinal))
+        if (command == "--disconnect-assistants")
         {
             try
             {
@@ -59,7 +67,7 @@ public partial class App : System.Windows.Application
             catch { Shutdown(2); }
             return;
         }
-        if (e.Args.Contains("--version", StringComparer.Ordinal))
+        if (command == "--version")
         {
             Console.WriteLine(typeof(App).Assembly.GetName().Version?.ToString() ?? "1.8.0");
             Shutdown();

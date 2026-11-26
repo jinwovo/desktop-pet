@@ -1,4 +1,4 @@
-param([Parameter(Mandatory=$true)][string]$ApplicationPath)
+﻿param([Parameter(Mandatory=$true)][string]$ApplicationPath)
 $ErrorActionPreference='Stop'
 $repoRoot=Split-Path -Parent $PSScriptRoot
 . (Join-Path $repoRoot 'scripts\Install-DesktopPetPayload.ps1')
@@ -32,8 +32,27 @@ function Invoke-ReadOnlyCheck([string]$Exe,[bool]$ExpectedValid) {
     foreach ($profile in $profileRoots.Values) { Assert-Check (-not (Test-Path -LiteralPath $profile)) 'Read-only check created profile or hook data.' }
     return $report
 }
+function Invoke-MaintenanceCommand([string]$Exe,[string]$Arguments) {
+    $start=New-Object Diagnostics.ProcessStartInfo
+    $start.FileName=$Exe; $start.Arguments=$Arguments; $start.UseShellExecute=$false
+    $start.CreateNoWindow=$true
+    $start.RedirectStandardOutput=$true; $start.RedirectStandardError=$true
+    $process=[Diagnostics.Process]::Start($start)
+    try {
+        $stdout=$process.StandardOutput.ReadToEndAsync(); $stderr=$process.StandardError.ReadToEndAsync()
+        if (-not $process.WaitForExit(30000)) { $process.Kill(); throw 'Owned maintenance child timed out.' }
+        [pscustomobject]@{ Exit=$process.ExitCode; Text=$stdout.GetAwaiter().GetResult(); ErrorText=$stderr.GetAwaiter().GetResult() }
+    }
+    finally { $process.Dispose() }
+}
 try {
     foreach ($name in $overrides.Keys) { $previous[$name]=[Environment]::GetEnvironmentVariable($name,'Process'); [Environment]::SetEnvironmentVariable($name,$overrides[$name],'Process') }
+    foreach ($command in '--version --check-install', '--unknown-option') {
+        $bad=Invoke-MaintenanceCommand $application $command
+        Assert-Check ($bad.Exit -eq 64 -and !$bad.Text -and $bad.ErrorText.Contains('maintenance option')) 'Invalid CLI input was treated as a launch or maintenance command.'
+    }
+    foreach ($profile in $profileRoots.Values) { Assert-Check (-not (Test-Path -LiteralPath $profile)) 'Invalid CLI input created profile data.' }
+    Write-Output 'PASS Unknown and mixed maintenance options return a usage error without opening the application'
     $valid=Invoke-ReadOnlyCheck $application $true
     Assert-Check ($valid.ValidatedCharacters -eq $valid.CharacterCount -and $valid.HasOriginalCollection -and $valid.HasHookBridge) 'Complete resource validation was skipped.'
     Write-Output 'PASS Actual executable validates resources without creating isolated profile or hook files'
@@ -70,7 +89,7 @@ try {
     Assert-Check ($script:disconnectCalls -eq 1 -and -not [IO.File]::Exists((Join-Path $installed 'DesktopPet.App.exe'))) 'Owned removal failed.'
     foreach ($relative in $canaries) { Assert-Check ([IO.File]::ReadAllText((Join-Path $installed $relative)) -eq 'USER_DATA_CANARY') 'Removal changed user data.' }
     Write-Output 'PASS Actual managed removal preserves user data (disconnect child stubbed; no real assistant config touched)'
-    Write-Output '4/4 actual installation-check and payload lifecycle groups passed'
+    Write-Output '5/5 actual installation-check and payload lifecycle groups passed'
 }
 finally {
     foreach ($name in $previous.Keys) { [Environment]::SetEnvironmentVariable($name,$previous[$name],'Process') }
