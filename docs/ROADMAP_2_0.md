@@ -144,3 +144,15 @@ P062 Retry failed settings writes after 2, 4 and 8 seconds while the app is runn
 P063 Limit local settings files to 256 KiB and fall back when the primary exceeds that size. Preserve BOM-aware decoding of previous settings.
 
 P064 Skip an unchanged write so the recovery copy keeps the older distinct version.
+
+P065 Flush the staged settings file before replacing the current file and clean only the staging file created by this save.
+
+P066 When startup uses a valid recovery copy, schedule a write of the recovered settings after initialization succeeds. Preserve the recovery copy during repair.
+
+P067 Keep the latest backup or restore result visible when the Settings language changes.
+
+P068 Read the portable backup and load any replacement artwork on a worker. Apply only a live request and preserve settings if a closed window or newer character choice supersedes it.
+
+P069 Capture portable preferences before starting a worker write. Show progress, keep existing files on a write failure and cancel pending writes when Settings closes.
+
+P070 Expose a localized retry button after settings cannot be saved. A successful retry saves the pending preferences and hides the button.

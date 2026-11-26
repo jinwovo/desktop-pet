@@ -903,51 +903,85 @@
     },
     {
       "id": "P065",
-      "title": "Discovery pending: Recovery and durable preferences (65)",
-      "status": "planned",
+      "title": "Flush staged settings data before publishing",
+      "status": "verified",
       "milestone": "1.7.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.Core/PetSettings.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.RegressionTests/Program.cs"
+      ]
     },
     {
       "id": "P066",
-      "title": "Discovery pending: Recovery and durable preferences (66)",
-      "status": "planned",
+      "title": "Repair the primary file after a successful recovery startup",
+      "status": "verified",
       "milestone": "1.7.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.Core/PetSettings.cs",
+        "src/DesktopPet.App/MainWindow.xaml.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/SettingsSaveRecoveryUiTests.cs"
+      ]
     },
     {
       "id": "P067",
-      "title": "Discovery pending: Recovery and durable preferences (67)",
-      "status": "planned",
+      "title": "Retain and translate the latest preference transfer feedback",
+      "status": "verified",
       "milestone": "1.7.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/SettingsWindow.xaml.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/PreferencesBackupUiTests.cs"
+      ]
     },
     {
       "id": "P068",
-      "title": "Discovery pending: Recovery and durable preferences (68)",
-      "status": "planned",
+      "title": "Prepare preference restoration off the UI thread",
+      "status": "verified",
       "milestone": "1.7.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/MainWindow.xaml.cs",
+        "src/DesktopPet.App/SettingsWindow.xaml.cs",
+        "src/DesktopPet.App/UiText.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/PreferencesBackupUiTests.cs",
+        "tests/DesktopPet.UiSmokeTests/CharacterSwitchUiTests.cs"
+      ]
     },
     {
       "id": "P069",
-      "title": "Discovery pending: Recovery and durable preferences (69)",
-      "status": "planned",
+      "title": "Write portable preference backups off the UI thread",
+      "status": "verified",
       "milestone": "1.7.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.Core/PetSettingsBackup.cs",
+        "src/DesktopPet.App/MainWindow.xaml.cs",
+        "src/DesktopPet.App/SettingsWindow.xaml.cs",
+        "src/DesktopPet.App/UiText.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/PreferencesBackupUiTests.cs"
+      ]
     },
     {
       "id": "P070",
-      "title": "Discovery pending: Recovery and durable preferences (70)",
-      "status": "planned",
+      "title": "Offer a manual retry in Settings after automatic attempts fail",
+      "status": "verified",
       "milestone": "1.7.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/MainWindow.xaml.cs",
+        "src/DesktopPet.App/SettingsWindow.xaml.cs",
+        "src/DesktopPet.App/SettingsWindow.xaml",
+        "src/DesktopPet.App/UiText.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/SettingsSaveRecoveryUiTests.cs"
+      ]
     },
     {
       "id": "P071",
