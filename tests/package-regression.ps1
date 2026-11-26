@@ -34,7 +34,16 @@ using System.Reflection;
 [assembly: AssemblyFileVersion("0.4.0.0")]
 public static class $fixtureType { public static void Main() { } }
 "@
-    Add-Type -TypeDefinition $fixtureSource -OutputAssembly (Join-Path $publish 'DesktopPet.App.exe') -OutputType ConsoleApplication
+    $parameters = New-Object System.CodeDom.Compiler.CompilerParameters
+    $parameters.CompilerOptions = '/platform:x64'
+    $parameters.GenerateExecutable = $true
+    $parameters.OutputAssembly = Join-Path $publish 'DesktopPet.App.exe'
+    $compiler = New-Object Microsoft.CSharp.CSharpCodeProvider
+    try {
+        $compiled = $compiler.CompileAssemblyFromSource($parameters, [string[]]@($fixtureSource))
+        Assert-PackageTest (-not $compiled.Errors.HasErrors) ('Synthetic x64 fixture failed to compile: ' + ($compiled.Errors -join '; '))
+    }
+    finally { $compiler.Dispose() }
     Write-PackageFile $publish 'Assets\Characters\Companion\character.json' '{"name":"Companion","frames":{"idle":["idle.png"],"walk":["walk.png"]}}'
     Write-PackageFile $publish 'Assets\Characters\Companion\idle.png' 'synthetic image placeholder'
     Write-PackageFile $publish 'Assets\Characters\Companion\walk.png' 'synthetic walk placeholder'
@@ -112,6 +121,22 @@ public static class $fixtureType { public static void Main() { } }
         $receipt.InstallDirectory -eq $passThruTarget -and [System.IO.File]::Exists($receipt.ExecutablePath) -and
         $receipt.StartMenuShortcut -eq 'Skipped' -and $receipt.StartupRegistration -eq 'Skipped') 'Installation result did not describe the actual files or optional integration outcomes.'
     Write-Host 'PASS PassThru reports installed version, executable and optional integration outcomes for automation'
+    $passed++
+
+    $wrongArch = Join-Path $testRoot 'wrong-architecture'
+    Copy-Item -LiteralPath $publish -Destination $wrongArch -Recurse
+    $wrongExe = Join-Path $wrongArch 'DesktopPet.App.exe'
+    $bytes = [IO.File]::ReadAllBytes($wrongExe)
+    $coff = [BitConverter]::ToInt32($bytes, 0x3c) + 4
+    $bytes[$coff] = 0x4c; $bytes[$coff + 1] = 0x01
+    [IO.File]::WriteAllBytes($wrongExe, $bytes)
+    $failed = $false
+    try {
+        New-DesktopPetReleasePackage -PublishDirectory $wrongArch -DestinationDirectory (Join-Path $testRoot 'wrong-release') -ReleaseVersion '0.4.0' | Out-Null
+    }
+    catch { $failed = $_.Exception.Message.Contains('Windows x64 executable') }
+    Assert-PackageTest $failed 'A mismatched PE machine was accepted for win-x64.'
+    Write-Host 'PASS Win-x64 packaging rejects a mismatched executable machine'
     $passed++
 
     $rigPublish = Join-Path $testRoot 'rig-publish'
@@ -329,7 +354,7 @@ public static class $fixtureType { public static void Main() { } }
     Assert-PackageTest ([System.IO.File]::ReadAllText((Join-Path $testRoot 'outside.txt')) -eq 'must remain') 'Uninstall escaped its root.'
     Write-Host 'PASS Uninstall rejects a manifest escaping the installation directory'
     $passed++
-    Write-Host "$passed/20 release packaging regression checks passed (synthetic binary and images, no runtime execution)"
+    Write-Host "$passed/21 release packaging regression checks passed (synthetic binary and images, no runtime execution)"
 }
 finally {
     $safeTestRoot = Assert-DesktopPetChildPath -Root (Join-Path $repoRoot '.local') -Path $testRoot

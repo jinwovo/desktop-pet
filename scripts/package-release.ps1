@@ -137,6 +137,23 @@ function Expand-DesktopPetVerifiedArchive {
     finally { $zipStream.Dispose() }
 }
 
+function Assert-DesktopPetX64Executable {
+    param([Parameter(Mandatory = $true)][string]$Executable)
+    $stream = [System.IO.File]::OpenRead($Executable)
+    try {
+        $reader = New-Object System.IO.BinaryReader($stream)
+        if ($stream.Length -lt 64 -or $reader.ReadUInt16() -ne 0x5A4D) { throw 'The release executable is not a Windows PE image.' }
+        $stream.Position = 0x3C
+        $header = $reader.ReadInt32()
+        if ($header -lt 64 -or $header -gt $stream.Length - 6) { throw 'The Windows executable header is incomplete.' }
+        $stream.Position = $header
+        if ($reader.ReadUInt32() -ne 0x4550 -or $reader.ReadUInt16() -ne 0x8664) {
+            throw 'The win-x64 release must contain a Windows x64 executable.'
+        }
+    }
+    finally { $stream.Dispose() }
+}
+
 function Test-DesktopPetReleasePayload {
     param([Parameter(Mandatory = $true)][string]$Directory, [string]$ExpectedVersion, [string]$ExpectedDeployment)
     $root = Get-DesktopPetInstallPath $Directory
@@ -173,7 +190,9 @@ function Test-DesktopPetReleasePayload {
     }
     if (-not $seen.SetEquals($actualFiles)) { throw 'Release contains files absent from its manifest.' }
     $numeric = ($manifest.version -split '-')[0] + '.0'
-    $versionInfo = [System.Diagnostics.FileVersionInfo]::GetVersionInfo((Join-Path $root $manifest.entryPoint))
+    $entryPoint = Join-Path $root $manifest.entryPoint
+    Assert-DesktopPetX64Executable -Executable $entryPoint
+    $versionInfo = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($entryPoint)
     $actual = '{0}.{1}.{2}.{3}' -f $versionInfo.FileMajorPart,$versionInfo.FileMinorPart,$versionInfo.FileBuildPart,$versionInfo.FilePrivatePart
     if ($actual -ne $numeric) { throw "Executable file version '$actual' does not match release '$numeric'." }
     return $manifest
