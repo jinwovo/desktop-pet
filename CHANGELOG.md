@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased (1.9.0 development)
+
+- P081 List the missing or damaged original characters in the installation report and show only a count for invalid optional characters.
+
 ## 1.8.0 — evolution patches P071–P080
 
 - P080 Use -PassThru to return the installed release, executable path and optional Windows integration results.

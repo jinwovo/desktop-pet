@@ -176,3 +176,5 @@ P078 Report a startup registration failure separately from app installation and 
 P079 Accept -PackageArchive and validate the adjacent SHA-256 sidecar before extracting the same open archive and checking its contents.
 
 P080 Use -PassThru to return the installed release, executable path and optional Windows integration results.
+
+P081 adds separate lists of missing and invalid original character names to the local installation report. A native fixture confirms that the optional character count cannot disclose folders or paths. The original exit codes and JSON fields still apply.

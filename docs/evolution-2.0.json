@@ -1112,11 +1112,15 @@
     },
     {
       "id": "P081",
-      "title": "Discovery pending: Compatibility and release hardening (81)",
-      "status": "planned",
+      "title": "Identify missing or damaged original characters in installation diagnostics",
+      "status": "verified",
       "milestone": "1.9.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/InstallationCheck.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/InstallationCheckUiTests.cs"
+      ]
     },
     {
       "id": "P082",

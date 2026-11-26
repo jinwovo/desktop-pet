@@ -5,7 +5,9 @@ using DesktopPet.Core;
 namespace DesktopPet.App;
 
 public sealed record InstallationCheckResult(string AppVersion, bool ResourcesValid, int CharacterCount, int ValidatedCharacters,
-    bool HasOriginalCollection, bool HasHookBridge, IReadOnlyList<string> Errors)
+    bool HasOriginalCollection, bool HasHookBridge, IReadOnlyList<string> Errors,
+    IReadOnlyList<string> MissingOriginalCharacters, IReadOnlyList<string> InvalidOriginalCharacters,
+    int InvalidOptionalCharacterCount)
 {
     public string ToJson() => JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });
 }
@@ -13,12 +15,16 @@ public sealed record InstallationCheckResult(string AppVersion, bool ResourcesVa
 /// <summary>Read-only CLI check. No settings, user libraries, assistant profiles, inbox, mutex or windows are opened.</summary>
 public static class InstallationCheck
 {
+    private static readonly string[] OriginalCharacters = ["Companion", "Ember", "Nimbus"];
     public static InstallationCheckResult Inspect(string baseDirectory)
     {
         var version = typeof(App).Assembly.GetName().Version!.ToString();
         var errors = new HashSet<string>(StringComparer.Ordinal);
         var characters = Array.Empty<string>();
         var validated = 0;
+        var missingOriginals = Array.Empty<string>();
+        var invalidOriginals = new HashSet<string>(StringComparer.Ordinal);
+        var invalidOptionalCount = 0;
         var originals = false;
         var bridge = false;
         try
@@ -36,13 +42,21 @@ public static class InstallationCheck
                 else
                 {
                     var names = characters.Select(Path.GetFileName).ToHashSet(StringComparer.OrdinalIgnoreCase);
-                    originals = new[] { "Companion", "Nimbus", "Ember" }.All(names.Contains);
+                    missingOriginals = OriginalCharacters.Where(name => !names.Contains(name)).ToArray();
+                    originals = missingOriginals.Length == 0;
                     if (!originals) errors.Add("MissingOriginalCollection");
                     foreach (var character in characters)
                     {
                         try { _ = CharacterPresentation.Load(character, includeRasterGait: true); validated++; }
                         catch (Exception ex) when (ex is InvalidDataException or IOException or UnauthorizedAccessException or ArgumentException)
-                        { errors.Add("InvalidCharacterResources"); }
+                        {
+                            errors.Add("InvalidCharacterResources");
+                            var folderName = Path.GetFileName(character);
+                            var original = Array.Find(OriginalCharacters,
+                                name => string.Equals(name, folderName, StringComparison.OrdinalIgnoreCase));
+                            if (original is null) invalidOptionalCount++;
+                            else invalidOriginals.Add(original);
+                        }
                     }
                 }
             }
@@ -52,7 +66,8 @@ public static class InstallationCheck
             errors.Add("UnreadableInstallation"); // Do not include the local path or exception text.
         }
         return new(version, errors.Count == 0 && originals && bridge && characters.Length > 0, characters.Length, validated,
-            originals, bridge, errors.OrderBy(value => value, StringComparer.Ordinal).ToArray());
+            originals, bridge, errors.OrderBy(value => value, StringComparer.Ordinal).ToArray(),
+            missingOriginals, invalidOriginals.OrderBy(name => name, StringComparer.Ordinal).ToArray(), invalidOptionalCount);
     }
     private static bool IsUnlinked(string path)
     {

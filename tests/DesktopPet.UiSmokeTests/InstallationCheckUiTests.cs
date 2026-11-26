@@ -27,6 +27,20 @@ internal static class InstallationCheckUiTests
         var broken = InstallationCheck.Inspect(installation);
         Check(!broken.ResourcesValid && broken.ValidatedCharacters == 2 && broken.Errors.Contains("InvalidCharacterResources") && !broken.ToJson().Contains("private-installation-canary"),
             "Corrupt installation was accepted or exposed its path");
+        var privateCard = Path.Combine(installation, "Assets", "Characters", "private-character-canary");
+        Directory.CreateDirectory(privateCard);
+        File.WriteAllText(Path.Combine(privateCard, "character.json"), "{");
+        var missingOriginal = Path.Combine(installation, "Assets", "Characters", "Ember");
+        File.Delete(Path.Combine(missingOriginal, "idle.png"));
+        File.Delete(Path.Combine(missingOriginal, "character.json"));
+        Directory.Delete(missingOriginal);
+        var details = InstallationCheck.Inspect(installation);
+        Check(!details.ResourcesValid && !details.HasOriginalCollection &&
+            details.InvalidOriginalCharacters.SequenceEqual(new[] { "Nimbus" }) &&
+            details.MissingOriginalCharacters.SequenceEqual(new[] { "Ember" }) &&
+            details.InvalidOptionalCharacterCount == 1 &&
+            !details.ToJson().Contains("private-character-canary") && !details.ToJson().Contains(installation),
+            "Installation detail did not distinguish package names safely");
         File.Delete(hook);
         var missing = InstallationCheck.Inspect(installation);
         Check(!missing.HasHookBridge && missing.Errors.Contains("MissingOrLinkedHookBridge"), "Missing hook bridge passed installation check");
