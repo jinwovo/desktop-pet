@@ -218,6 +218,18 @@ public static class $fixtureType { public static void Main() { } }
     Write-Host 'PASS Manifest traversal and untracked payload files are rejected'
     $passed++
 
+    $dryRunRoot = Join-Path $testRoot 'dry-run'
+    Write-PackageFile $dryRunRoot 'DesktopPet.App.exe' 'managed application'
+    Write-PackageFile $dryRunRoot 'inbox\pending.json' 'unread'
+    Write-PackageFile $dryRunRoot '.desktop-pet-manifest.json' '{"version":1,"files":["DesktopPet.App.exe"]}'
+    Write-PackageFile $dryRunRoot 'DesktopPet.release.json' 'This fixture must never be parsed or launched'
+    & (Join-Path $repoRoot 'scripts\uninstall.ps1') -InstallDirectory $dryRunRoot -WhatIf
+    Assert-PackageTest ([System.IO.File]::ReadAllText((Join-Path $dryRunRoot 'DesktopPet.App.exe')) -eq 'managed application' -and
+        [System.IO.File]::Exists((Join-Path $dryRunRoot '.desktop-pet-manifest.json')) -and
+        [System.IO.File]::ReadAllText((Join-Path $dryRunRoot 'inbox\pending.json')) -eq 'unread') 'Uninstall preview modified the deployment.'
+    Write-Host 'PASS Uninstall -WhatIf leaves the payload and unread data intact and skips assistant disconnect'
+    $passed++
+
     $installed = Join-Path $testRoot 'installed'
     Write-PackageFile $installed 'inbox\pending.json' '{"message":"preserve"}'
     Write-PackageFile $installed 'Assets\Characters\MyPet\custom.txt' 'preserve custom'
@@ -257,7 +269,7 @@ public static class $fixtureType { public static void Main() { } }
     Assert-PackageTest ([System.IO.File]::ReadAllText((Join-Path $testRoot 'outside.txt')) -eq 'must remain') 'Uninstall escaped its root.'
     Write-Host 'PASS Uninstall rejects a manifest escaping the installation directory'
     $passed++
-    Write-Host "$passed/15 release packaging regression checks passed (synthetic binary and images, no runtime execution)"
+    Write-Host "$passed/16 release packaging regression checks passed (synthetic binary and images, no runtime execution)"
 }
 finally {
     $safeTestRoot = Assert-DesktopPetChildPath -Root (Join-Path $repoRoot '.local') -Path $testRoot

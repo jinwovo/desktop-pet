@@ -5,6 +5,7 @@
     User notifications, preferences, custom characters and unrelated processes are preserved.
     Close DesktopPet from its tray menu before uninstalling. Dot-sourcing only loads functions.
 #>
+[CmdletBinding(SupportsShouldProcess = $true)]
 param(
     [string]$InstallDirectory = (Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'DesktopPet')
 )
@@ -97,6 +98,7 @@ function Invoke-DesktopPetPayloadRemoval {
 
 if ($MyInvocation.InvocationName -ne '.') {
     $installRoot = Get-DesktopPetInstallPath $InstallDirectory
+    if (-not $PSCmdlet.ShouldProcess($installRoot, 'Remove the managed DesktopPet installation and disconnect its assistant hooks')) { return }
     $exePath = Join-Path $installRoot 'DesktopPet.App.exe'
     Remove-DesktopPetInstalledPayload -Directory $installRoot
     $shortcutPath = Join-Path ([Environment]::GetFolderPath('Programs')) 'DesktopPet.lnk'
