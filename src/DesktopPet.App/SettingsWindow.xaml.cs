@@ -20,6 +20,7 @@ public partial class SettingsWindow : Window
     private bool _closed;
     private const string QuietHoursHelpKey = "로컬 시간 HH:mm. 자정을 넘길 수 있고 같은 시간은 예약하지 않아요.";
     private string _focusDurationStatusKey = "";
+    private string? _preferencesTransferStatusKey;
     private string _quietHoursStatusKey = QuietHoursHelpKey;
     private bool _characterImportBusy;
     private Task _characterImportOperation = Task.CompletedTask;
@@ -213,6 +214,7 @@ public partial class SettingsWindow : Window
         QuietEndBox.Text = quietEndDraft;
         QuietHoursCheck.IsChecked = quietEnabledDraft;
         RenderDurationFeedback();
+        RenderPreferencesTransferStatus();
         if (_characterSelectionCancellation is { IsCancellationRequested: false })
             CharacterHint.Text = UiText.Get("캐릭터를 불러오고 있어요…");
         RenderFocusTimer();
@@ -694,6 +696,18 @@ public partial class SettingsWindow : Window
         { AboutStatusText.Text = UiText.Get("브라우저를 열지 못했어요."); }
     }
 
+    private void SetPreferencesTransferStatus(string key)
+    {
+        _preferencesTransferStatusKey = key;
+        RenderPreferencesTransferStatus();
+    }
+
+    private void RenderPreferencesTransferStatus()
+    {
+        if (!_closed && _preferencesTransferStatusKey is { } key)
+            PreferencesTransferStatus.Text = UiText.Get(key);
+    }
+
     private void BackupPreferences_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new Microsoft.Win32.SaveFileDialog { Title = UiText.Get("설정 백업"), Filter = "DesktopPet 설정 (*.json)|*.json",
@@ -706,11 +720,11 @@ public partial class SettingsWindow : Window
         try
         {
             _pet.SavePreferencesBackup(path);
-            PreferencesTransferStatus.Text = UiText.Get("설정을 백업했어요. AI 연결 정보는 포함하지 않았습니다.");
+            SetPreferencesTransferStatus("설정을 백업했어요. AI 연결 정보는 포함하지 않았습니다.");
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or System.Text.Json.JsonException)
         {
-            PreferencesTransferStatus.Text = UiText.Get("백업하지 못했어요. 저장 위치와 권한을 확인해주세요.");
+            SetPreferencesTransferStatus("백업하지 못했어요. 저장 위치와 권한을 확인해주세요.");
         }
     }
 
@@ -729,11 +743,11 @@ public partial class SettingsWindow : Window
             _characterSelectionCancellation?.Cancel();
             LoadFromPet();
             RenderFocusTimer();
-            PreferencesTransferStatus.Text = missing ? UiText.Get("설정을 복원했어요. 설치되지 않은 캐릭터 대신 현재 친구를 유지합니다.") : UiText.Get("설정을 복원했어요. AI 연결과 진행 중인 집중 시간은 유지합니다.");
+            SetPreferencesTransferStatus(missing ? "설정을 복원했어요. 설치되지 않은 캐릭터 대신 현재 친구를 유지합니다." : "설정을 복원했어요. AI 연결과 진행 중인 집중 시간은 유지합니다.");
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
         {
-            PreferencesTransferStatus.Text = UiText.Get("복원하지 못했어요. 백업 형식과 캐릭터 파일을 확인해주세요.");
+            SetPreferencesTransferStatus("복원하지 못했어요. 백업 형식과 캐릭터 파일을 확인해주세요.");
         }
     }
 

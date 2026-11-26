@@ -11,6 +11,8 @@ internal static class PreferencesBackupUiTests
 {
     public static void Run(string root)
     {
+        var originalLanguage = UiText.Language;
+        UiText.SetLanguage("ko");
         var pet = new MainWindow(new CharacterLibrary(MainWindow.CharactersRoot, Path.Combine(root, "backup-custom")), inboxDirectory: Path.Combine(root, "backup-inbox"));
         var loaded = (RoutedEventHandler)Delegate.CreateDelegate(typeof(RoutedEventHandler), pet, typeof(MainWindow).GetMethod("MainWindow_Loaded", BindingFlags.Instance | BindingFlags.NonPublic)!);
         pet.Loaded -= loaded;
@@ -48,12 +50,19 @@ internal static class PreferencesBackupUiTests
             Invoke(settings, "RestorePreferencesFromFile", path);
             Check(before == JsonSerializer.Serialize(Get(pet, "_settings")) && physical == (brain.X, brain.Y, brain.State) &&
                 ((TextBlock)settings.FindName("PreferencesTransferStatus")).Text.Contains("못했"), "Invalid backup partly changed the pet");
+            foreach (var locale in new[] { "en", "zh-CN", "ko" })
+            {
+                UiText.SetLanguage(locale);
+                Check(((TextBlock)settings.FindName("PreferencesTransferStatus")).Text == UiText.Get("복원하지 못했어요. 백업 형식과 캐릭터 파일을 확인해주세요."),
+                    "Language change replaced the latest preference restore feedback with the initial hint");
+            }
             Console.WriteLine("PASS Missing backup characters retain current pet and rejected connection fields cannot partly change preferences or physical pose");
         }
         finally
         {
             save.Stop(); Set(pet, "_settingsDirty", false);
             settings.Close(); pet.DisposeResources();
+            UiText.SetLanguage(originalLanguage);
         }
     }
     private static object? Get(object obj, string name) => obj.GetType().GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(obj);
