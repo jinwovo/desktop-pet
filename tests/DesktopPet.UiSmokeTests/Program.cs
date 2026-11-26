@@ -22,6 +22,11 @@ internal static class Program
         MainWindow? pet = null;
         try
         {
+            if (args.Contains("--settings-recovery-only"))
+            {
+                SettingsSaveRecoveryUiTests.Run(folder);
+                return 0;
+            }
             if (args.Contains("--walk-entry-only"))
             {
                 WalkEntryUiTests.Run(folder, args.Contains("--capture"));
@@ -457,6 +462,7 @@ internal static class Program
             FocusTimerUiTests.Run(folder);
             FocusExtensionUiTests.Run(folder, args.Contains("--capture"));
             FocusCountUiTests.Run(folder, args.Contains("--capture"));
+            SettingsSaveRecoveryUiTests.Run(folder);
             SettingsDraftLocaleUiTests.Run(folder);
             SettingsFeedbackUiTests.Run(folder, args.Contains("--capture"));
             FocusPresetUiTests.Run(folder, args.Contains("--capture"));

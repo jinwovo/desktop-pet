@@ -44,13 +44,17 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer _duplicateCleanupTimer = new() { Interval = TimeSpan.FromSeconds(5) };
     private bool _reviewingNotifications;
     private InboxNotification? _activeNotification;
-    private readonly DispatcherTimer _settingsSaveTimer = new() { Interval = TimeSpan.FromMilliseconds(400) };
+    private static readonly TimeSpan SettingsSaveDebounce = TimeSpan.FromMilliseconds(400);
+    private const int SettingsSaveRetryLimit = 3;
+    private readonly DispatcherTimer _settingsSaveTimer = new() { Interval = SettingsSaveDebounce };
+    private readonly string? _settingsPath;
     private readonly DispatcherTimer _notificationPopupTimer = new();
     private readonly HashSet<(string Source, string EventId)> _seenNotificationIds = new();
     private readonly Queue<(string Source, string EventId)> _recentNotificationIds = new();
     private readonly HashSet<(string Source, string EventId)> _unreadNotificationIds = new();
     private bool _settingsDirty;
     private bool _settingsSaveFailed;
+    private int _settingsSaveRetries;
     private bool _disposed;
 
     private CharacterDefinition _character = null!;
@@ -93,7 +97,7 @@ public partial class MainWindow : Window
 
     public MainWindow(CharacterLibrary? characterLibrary, FocusTimer? focusTimer = null, string? inboxDirectory = null, TimeProvider? quietClock = null,
         Func<IReadOnlyList<DesktopRect>>? workAreasProvider = null,
-        Func<string, CancellationToken, CharacterPresentation>? characterLoader = null)
+        Func<string, CancellationToken, CharacterPresentation>? characterLoader = null, string? settingsPath = null)
     {
         _characterLibrary = characterLibrary ?? new CharacterLibrary(CharactersRoot, Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DesktopPet", "Characters"));
@@ -102,6 +106,7 @@ public partial class MainWindow : Window
         _quietClock = quietClock ?? TimeProvider.System;
         _workAreasProvider = workAreasProvider;
         _inboxDirectory = Path.GetFullPath(inboxDirectory ?? NotificationInbox.DefaultFolder);
+        _settingsPath = settingsPath is null ? null : Path.GetFullPath(settingsPath);
         InitializeComponent();
         _poseTransition = new PoseTransitionPresenter(PetImage, PreviousPetImage, FlipTransform);
         PetWindowBehavior.Attach(this);
@@ -135,7 +140,7 @@ public partial class MainWindow : Window
     private void InitializePet()
     {
         _dpiScale = VisualTreeHelper.GetDpi(this).DpiScaleX;
-        _settings = PetSettings.Load();
+        _settings = PetSettings.Load(_settingsPath);
         UiText.SetLanguage(_settings.Language);
         _framePacer.MaximumFps = _settings.MaximumFps;
         _focusTimer.ConfigureDurations(TimeSpan.FromMinutes(_settings.FocusMinutes), TimeSpan.FromMinutes(_settings.BreakMinutes));
@@ -945,6 +950,11 @@ public partial class MainWindow : Window
     {
         _settingsDirty = true;
         _settingsSaveTimer.Stop();
+        if (_settingsSaveRetries > 0)
+        {
+            _settingsSaveRetries = 0;
+            _settingsSaveTimer.Interval = SettingsSaveDebounce;
+        }
         _settingsSaveTimer.Start();
     }
 
@@ -954,16 +964,29 @@ public partial class MainWindow : Window
         if (!_settingsDirty) return;
         try
         {
-            _settings.Save();
+            _settings.Save(_settingsPath);
             _settingsDirty = false;
             _settingsSaveFailed = false;
+            if (_settingsSaveRetries > 0)
+            {
+                _settingsSaveRetries = 0;
+                _settingsSaveTimer.Interval = SettingsSaveDebounce;
+            }
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             Trace.TraceError($"Settings save: {ex}");
-            if (!_settingsSaveFailed)
+            if (!_disposed && _settingsSaveRetries < SettingsSaveRetryLimit)
+            {
+                // Retry at 2, 4 and 8 seconds while the app is running.
+                _settingsSaveTimer.Interval = TimeSpan.FromSeconds(2 << _settingsSaveRetries++);
+                _settingsSaveTimer.Start();
+            }
+            else if (!_settingsSaveFailed)
+            {
+                _settingsSaveFailed = true;
                 OperationFailed?.Invoke("설정을 저장하지 못했습니다. 저장 폴더의 권한과 디스크 공간을 확인해주세요.");
-            _settingsSaveFailed = true;
+            }
         }
     }
 
