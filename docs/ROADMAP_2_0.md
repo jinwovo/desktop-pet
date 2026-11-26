@@ -178,3 +178,21 @@ P079 Accept -PackageArchive and validate the adjacent SHA-256 sidecar before ext
 P080 Use -PassThru to return the installed release, executable path and optional Windows integration results.
 
 P081 adds separate lists of missing and invalid original character names to the local installation report. A native fixture confirms that the optional character count cannot disclose folders or paths. The original exit codes and JSON fields still apply.
+
+P082 Include the operating system and process architectures in the local installation report.
+
+P083 Reject invalid command lines with a usage error before opening the app, inspecting resources or disconnecting assistants.
+
+P084 Expose read-only --help with commands and exit codes.
+
+P085 Acquire an available named mutex and continue after an abandoned owner. An active owner still excludes a second instance.
+
+P086 Use a system icon when the packaged tray icon is absent, inaccessible or damaged. Release the owned icon on shutdown.
+
+P087 Reject a mismatched Windows executable before publishing or accepting a win-x64 package.
+
+P088 Update the reviewed diagnostic JSON from the current pet without reopening Settings.
+
+P089 Capture the displayed report for the write and cancel pending publication when the window closes. Feedback follows the UI language.
+
+P090 Copy the displayed diagnostic JSON on request and show a localized retry if the clipboard is busy.

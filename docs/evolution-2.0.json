@@ -1124,75 +1124,114 @@
     },
     {
       "id": "P082",
-      "title": "Discovery pending: Compatibility and release hardening (82)",
-      "status": "planned",
+      "title": "Report Windows and executable architectures separately",
+      "status": "verified",
       "milestone": "1.9.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/InstallationCheck.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/InstallationCheckUiTests.cs"
+      ]
     },
     {
       "id": "P083",
-      "title": "Discovery pending: Compatibility and release hardening (83)",
-      "status": "planned",
+      "title": "Reject unknown or mixed maintenance options",
+      "status": "verified",
       "milestone": "1.9.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/App.xaml.cs"
+      ],
+      "checks": [
+        "tests/installation-check-regression.ps1"
+      ]
     },
     {
       "id": "P084",
-      "title": "Discovery pending: Compatibility and release hardening (84)",
-      "status": "planned",
+      "title": "Document maintenance options in executable help",
+      "status": "verified",
       "milestone": "1.9.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/App.xaml.cs"
+      ],
+      "checks": [
+        "tests/installation-check-regression.ps1"
+      ]
     },
     {
       "id": "P085",
-      "title": "Discovery pending: Compatibility and release hardening (85)",
-      "status": "planned",
+      "title": "Recover an unowned or abandoned single-instance lock",
+      "status": "verified",
       "milestone": "1.9.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/App.xaml.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/InstallationCheckUiTests.cs"
+      ]
     },
     {
       "id": "P086",
-      "title": "Discovery pending: Compatibility and release hardening (86)",
-      "status": "planned",
+      "title": "Start with a fallback if tray artwork cannot be loaded",
+      "status": "verified",
       "milestone": "1.9.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/App.xaml.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/InstallationCheckUiTests.cs"
+      ]
     },
     {
       "id": "P087",
-      "title": "Discovery pending: Compatibility and release hardening (87)",
-      "status": "planned",
+      "title": "Validate the executable machine in win-x64 packages",
+      "status": "verified",
       "milestone": "1.9.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "scripts/package-release.ps1"
+      ],
+      "checks": [
+        "tests/package-regression.ps1"
+      ]
     },
     {
       "id": "P088",
-      "title": "Discovery pending: Compatibility and release hardening (88)",
-      "status": "planned",
+      "title": "Refresh an open diagnostic report on request",
+      "status": "verified",
       "milestone": "1.9.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/DiagnosticWindow.cs",
+        "src/DesktopPet.App/SettingsWindow.xaml.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/DiagnosticsUiTests.cs"
+      ]
     },
     {
       "id": "P089",
-      "title": "Discovery pending: Compatibility and release hardening (89)",
-      "status": "planned",
+      "title": "Save reviewed diagnostics off the UI thread",
+      "status": "verified",
       "milestone": "1.9.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/DiagnosticWindow.cs",
+        "src/DesktopPet.Core/DiagnosticReport.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/DiagnosticsUiTests.cs"
+      ]
     },
     {
       "id": "P090",
-      "title": "Discovery pending: Compatibility and release hardening (90)",
-      "status": "planned",
+      "title": "Copy the currently reviewed diagnostic report",
+      "status": "verified",
       "milestone": "1.9.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/DiagnosticWindow.cs",
+        "src/DesktopPet.App/UiText.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/DiagnosticsUiTests.cs"
+      ]
     },
     {
       "id": "P091",

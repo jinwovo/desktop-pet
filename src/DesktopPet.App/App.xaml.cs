@@ -84,7 +84,7 @@ public partial class App : System.Windows.Application
         }
         if (command == "--version")
         {
-            Console.WriteLine(typeof(App).Assembly.GetName().Version?.ToString() ?? "1.8.0");
+            Console.WriteLine(typeof(App).Assembly.GetName().Version?.ToString() ?? "1.9.0");
             Shutdown();
             return;
         }

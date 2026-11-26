@@ -1,6 +1,16 @@
 # Changelog
 
-## Unreleased (1.9.0 development)
+## 1.9.0 — evolution patches P081–P090
+
+- P090 Copy the displayed diagnostic JSON on request and show a localized retry if the clipboard is busy.
+- P089 Capture the displayed report for the write and cancel pending publication when the window closes. Feedback follows the UI language.
+- P088 Update the reviewed diagnostic JSON from the current pet without reopening Settings.
+- P087 Reject a mismatched Windows executable before publishing or accepting a win-x64 package.
+- P086 Use a system icon when the packaged tray icon is absent, inaccessible or damaged. Release the owned icon on shutdown.
+- P085 Acquire an available named mutex and continue after an abandoned owner. An active owner still excludes a second instance.
+- P084 Expose read-only --help with commands and exit codes.
+- P083 Reject invalid command lines with a usage error before opening the app, inspecting resources or disconnecting assistants.
+- P082 Include the operating system and process architectures in the local installation report.
 
 - P081 List the missing or damaged original characters in the installation report and show only a count for invalid optional characters.
 

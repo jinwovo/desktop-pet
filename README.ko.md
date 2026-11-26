@@ -16,7 +16,9 @@ AI 작업과 집중 시간에 조용히 함께하는 Windows 데스크톱 캐릭
 
 [2.0 로드맵과 100개 패치 진행 현황](docs/ROADMAP_2_0.md)
 
-1.8.0은 누적 80개 개선을 담았습니다. 설치 전 ZIP과 임시 복사본을 검증하고, 기존 사용자 파일을 보존하며, 시작 메뉴와 자동 실행 등록 결과를 별도로 안내합니다.
+1.9.0은 누적 90개 개선을 담았습니다. Windows에서 이전 실행이 남긴 잠금을 복구하고, 트레이 아이콘이 손상되면 기본 아이콘을 표시합니다. 설치 진단에는 실행 환경과 누락·손상된 기본 캐릭터가 표시됩니다.
+
+`DesktopPet.App.exe --help`에서 관리 명령을 확인할 수 있습니다. 설정의 진단 보고서는 내용을 확인한 뒤 새로고침하거나 복사하고, 로컬 파일로 저장할 수 있습니다.
 
 압축을 푼 패키지는 `install.ps1 -VerifyOnly`로 확인할 수 있습니다. `-PackageArchive`로 ZIP을 지정할 때는 옆에 해당 SHA-256 파일을 둡니다. `-PassThru`는 설치 결과를 구조화해 반환하고, `uninstall.ps1 -WhatIf`는 제거를 미리 보여줍니다.
 
@@ -213,7 +215,7 @@ powershell -NoProfile -File tests/package-regression.ps1
 공용 Windows x64 배포를 만들려면 다음을 실행합니다.
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 1.8.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 1.9.0
 ```
 
 `artifacts/releases/`에 self-contained ZIP과 SHA256을 만듭니다. 필요한 런타임 팩이 없으면 실패하며 배포 종류를 몰래 바꾸지 않습니다. [Windows 워크플로](.github/workflows/windows-release.yml)는 검사와 아티팩트 생성을 설정한 파일이며, 파일이 있다고 원격 빌드나 공개 릴리스가 성공했다는 뜻은 아닙니다.

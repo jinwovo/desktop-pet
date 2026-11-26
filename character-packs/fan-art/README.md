@@ -25,7 +25,7 @@ Folder import accepts an individual character folder, not the collection parent.
 ## Build the collection
 
 ```powershell
-powershell -NoProfile -File scripts/package-character-packs.ps1 -Version 1.8.0
+powershell -NoProfile -File scripts/package-character-packs.ps1 -Version 1.9.0
 ```
 
 The script validates `catalog.json`, character identities, safe PNG references, dimensions and image budgets. It copies only the six packs' declared files, this README, the notice, provenance and catalog; source masters and unreferenced files stay out of the import ZIP. A SHA256 sidecar and per-file inventory accompany the fresh archive under `artifacts/character-packs/`. Existing outputs are never overwritten.

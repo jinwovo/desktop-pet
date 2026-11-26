@@ -16,7 +16,9 @@ A quiet desktop companion for AI work, focused sessions, and a less empty taskba
 
 [2.0 roadmap and 100-patch progress](docs/ROADMAP_2_0.md)
 
-1.8.0 brings the total to 80 verified improvements. The installer verifies ZIPs and their staged contents, preserves conflicting user files and reports optional Windows integration separately.
+1.9.0 brings the total to 90 verified improvements. Windows startup recovers a stale instance lock and uses a fallback tray icon. Installation checks report the architecture and known missing or damaged characters.
+
+Run `DesktopPet.App.exe --help` for maintenance commands. In Settings, a diagnostic report can be refreshed, copied or saved locally from the reviewed preview.
 
 Use `install.ps1 -VerifyOnly` to check an extracted package or supply `-PackageArchive` with its adjacent SHA-256 sidecar. Use `-PassThru` for structured installation results and `uninstall.ps1 -WhatIf` to preview removal.
 
@@ -209,7 +211,7 @@ The suites use fixture directories and do not register hooks in your real assist
 To create a public Windows x64 package:
 
 ```powershell
-powershell -NoProfile -File scripts/package-release.ps1 -Version 1.8.0
+powershell -NoProfile -File scripts/package-release.ps1 -Version 1.9.0
 ```
 
 The output is a self-contained ZIP and a SHA256 sidecar under `artifacts/releases/`. Missing runtime packs cause a build failure; the script does not silently change deployment type. The [Windows workflow](.github/workflows/windows-release.yml) is configured to run checks and create artifacts; its presence does not imply a successful remote build or a published release.
