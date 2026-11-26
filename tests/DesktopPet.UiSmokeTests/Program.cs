@@ -22,6 +22,11 @@ internal static class Program
         MainWindow? pet = null;
         try
         {
+            if (args.Contains("--pet-recovery-only"))
+            {
+                PetRecoveryUiTests.Run(folder);
+                return 0;
+            }
             if (args.Contains("--diagnostics-only"))
             {
                 InstallationCheckUiTests.Run(folder);

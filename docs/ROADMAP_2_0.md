@@ -196,3 +196,5 @@ P088 Update the reviewed diagnostic JSON from the current pet without reopening 
 P089 Capture the displayed report for the write and cancel pending publication when the window closes. Feedback follows the UI language.
 
 P090 Copy the displayed diagnostic JSON on request and show a localized retry if the clipboard is busy.
+
+P091 refreshes the Settings monitor picker when Windows reports display changes. A native WPF fixture first reproduces a stale list, then verifies attachment and reordering, removal without automatic reselection, preserved Settings drafts and focus state, and no updates after the window closes. The fixture supplies work areas to the real dispatcher callback. Included in 2.0.0 development.

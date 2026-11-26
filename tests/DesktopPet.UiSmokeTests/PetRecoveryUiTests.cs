@@ -52,12 +52,49 @@ internal static class PetRecoveryUiTests
             ((Button)settings.FindName("RecoverPetButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             Check(brain.X == -704 && brain.Y + 122 == 1024, "Negative monitor recovery lost its selected floor");
             Console.WriteLine("PASS Recovery selects real X/Y monitor geometry, restores a hidden pet, retains notifications/focus/quiet and rejects stale display selections");
+            pose = (brain.X, brain.Y);
+            var retained = areas[0];
+            var attached = new DesktopRect(0, 0, 1920, 1080);
+            var draft = (TextBox)settings.FindName("FocusMinutesBox");
+            draft.Text = "47";
+            areas = new[] { attached, retained };
+            NotifyDisplayChange(pet);
+            Check(picker.Items.Count == 2 && picker.SelectedIndex == 1,
+                "Open Settings did not refresh after attaching a display or preserve the selected monitor by geometry");
+            Check(pose == (brain.X, brain.Y) && draft.Text == "47" && pet.FocusSnapshot == focus,
+                "Display refresh moved the pet or replaced Settings drafts/focus");
+
+            areas = new[] { attached };
+            NotifyDisplayChange(pet);
+            Check(picker.Items.Count == 1 && picker.SelectedItem is null &&
+                ((TextBlock)settings.FindName("RecoveryStatusText")).Text.Contains("다시 선택"),
+                "Removing the selected display must require explicit reselection and show why");
+            pose = (brain.X, brain.Y);
+            ((Button)settings.FindName("RecoverPetButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Check(pose == (brain.X, brain.Y) && picker.SelectedItem is null,
+                "A click with no current monitor selected moved the pet or selected a new target");
+
+            settings.Close();
+            var previousItems = picker.ItemsSource;
+            areas = new[] { attached, retained };
+            NotifyDisplayChange(pet);
+            Check(ReferenceEquals(picker.ItemsSource, previousItems),
+                "A display callback updated Settings after it closed");
+            Console.WriteLine("PASS Recovery monitor choices track topology changes, preserve valid selections and require explicit reselection after removal");
         }
         finally
         {
             save.Stop(); Set(pet, "_settingsDirty", false); settings.Close(); pet.DisposeResources(); pet.Close();
         }
     }
+    private static void NotifyDisplayChange(MainWindow pet)
+    {
+        Invoke(pet, "OnDisplaySettingsChanged", pet, EventArgs.Empty);
+        var frame = new DispatcherFrame();
+        pet.Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() => frame.Continue = false));
+        Dispatcher.PushFrame(frame);
+    }
+
     private static object? Get(object obj, string name) => obj.GetType().GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(obj);
     private static void Set(object obj, string name, object value) => obj.GetType().GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(obj, value);
     private static object? Invoke(object obj, string name, params object[] args) => obj.GetType().GetMethod(name, BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(obj, args);

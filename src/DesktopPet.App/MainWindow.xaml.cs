@@ -904,6 +904,7 @@ public partial class MainWindow : Window
     }
 
     public IReadOnlyList<DesktopRect> DesktopWorkAreas => BuildMonitorWorkAreas();
+    internal event Action<IReadOnlyList<DesktopRect>>? DesktopWorkAreasChanged;
 
     public bool TryRecoverPet(DesktopRect? preferredMonitor = null)
     {
@@ -953,12 +954,14 @@ public partial class MainWindow : Window
             {
                 if (_disposed) return;
                 _windowPlatformMonitor?.Pause();
-                _platformLayout.UpdateWorkAreas(BuildMonitorWorkAreas());
+                var areas = BuildMonitorWorkAreas();
+                _platformLayout.UpdateWorkAreas(areas);
                 _platformLayout.UpdateWindowPlatforms(Array.Empty<Platform>());
                 _lastNativeX = _lastNativeY = int.MinValue;
                 _lastGaitPositionX = double.NaN;
                 RefreshAttentionState();
                 if (IsPresentationActive) _windowPlatformMonitor?.Resume();
+                DesktopWorkAreasChanged?.Invoke(areas);
             });
     }
 

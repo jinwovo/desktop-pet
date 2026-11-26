@@ -1235,11 +1235,16 @@
     },
     {
       "id": "P091",
-      "title": "Discovery pending: 2.0 acceptance and publication (91)",
-      "status": "planned",
+      "title": "Refresh the monitor picker as displays are connected or removed",
+      "status": "verified",
       "milestone": "2.0.0",
-      "changedFiles": [],
-      "checks": []
+      "changedFiles": [
+        "src/DesktopPet.App/MainWindow.xaml.cs",
+        "src/DesktopPet.App/SettingsWindow.xaml.cs"
+      ],
+      "checks": [
+        "tests/DesktopPet.UiSmokeTests/PetRecoveryUiTests.cs"
+      ]
     },
     {
       "id": "P092",

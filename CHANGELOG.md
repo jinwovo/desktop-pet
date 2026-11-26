@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased (2.0.0 development)
+
+- P091 Refresh the monitor picker when display work areas change. Keep the current monitor when it remains available and ask the user to choose again after it disappears.
+
 ## 1.9.0 — evolution patches P081–P090
 
 - P090 Copy the displayed diagnostic JSON on request and show a localized retry if the clipboard is busy.

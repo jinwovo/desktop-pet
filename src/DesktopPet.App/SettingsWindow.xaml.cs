@@ -18,6 +18,7 @@ public partial class SettingsWindow : Window
     private readonly MainWindow _pet;
     private bool _loading = true;
     private bool _closed;
+    private const string MonitorReselectionKey = "화면 구성이 바뀌었어요. 목록에서 다시 선택해주세요.";
     private const string QuietHoursHelpKey = "로컬 시간 HH:mm. 자정을 넘길 수 있고 같은 시간은 예약하지 않아요.";
     private string _focusDurationStatusKey = "";
     private string? _preferencesTransferStatusKey;
@@ -62,6 +63,7 @@ public partial class SettingsWindow : Window
         LoadFromPet();
         RenderFocusTimer();
         _pet.FocusTimerChanged += RenderFocusTimer;
+        _pet.DesktopWorkAreasChanged += UpdateMonitorChoices;
         _pet.SettingsSaveFailureChanged += RenderSettingsSaveFailure;
         RenderSettingsSaveFailure();
         RefreshDurationPresetTooltips();
@@ -79,6 +81,7 @@ public partial class SettingsWindow : Window
             _characterImportCancellation?.Cancel();
             _preferencesTransferCancellation?.Cancel();
             _pet.FocusTimerChanged -= RenderFocusTimer;
+            _pet.DesktopWorkAreasChanged -= UpdateMonitorChoices;
             _pet.SettingsSaveFailureChanged -= RenderSettingsSaveFailure;
             _pet.RenderOptionsChanged -= ApplyRenderOptions;
             UiText.LanguageChanged -= RefreshLanguage;
@@ -168,7 +171,7 @@ public partial class SettingsWindow : Window
         QuietEndBox.Text = QuietHours.Format(_pet.QuietHoursEndMinute);
         FocusMinutesBox.Text = _pet.FocusMinutes.ToString(System.Globalization.CultureInfo.InvariantCulture);
         BreakMinutesBox.Text = _pet.BreakMinutes.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        LoadMonitorChoices();
+        UpdateMonitorChoices(_pet.DesktopWorkAreas);
 
         _loading = false;
 
@@ -178,21 +181,27 @@ public partial class SettingsWindow : Window
         RenderDurationFeedback();
     }
 
-    private void LoadMonitorChoices()
+    private void UpdateMonitorChoices(IReadOnlyList<DesktopRect> areas)
     {
+        if (_closed) return;
+        var selectDefault = MonitorTargetCombo.ItemsSource is null;
         var selected = (MonitorTargetCombo.SelectedItem as MonitorChoice)?.Area;
-        var choices = _pet.DesktopWorkAreas.Select((area, i) => new MonitorChoice(
+        var choices = areas.Select((area, i) => new MonitorChoice(
             $"{i + 1} · {area.Width:0}×{area.Height:0} · ({area.Left:0}, {area.Top:0})", area)).ToArray();
         MonitorTargetCombo.ItemsSource = choices;
-        MonitorTargetCombo.SelectedItem = choices.FirstOrDefault(choice => choice.Area == selected) ?? choices.FirstOrDefault();
+        MonitorTargetCombo.SelectedItem = selectDefault
+            ? choices.FirstOrDefault()
+            : choices.FirstOrDefault(choice => choice.Area == selected);
+        if (selected is not null && MonitorTargetCombo.SelectedItem is null)
+            RecoveryStatusText.Text = UiText.Get(MonitorReselectionKey);
     }
 
     private void RecoverPet_Click(object sender, RoutedEventArgs e)
     {
         if (MonitorTargetCombo.SelectedItem is not MonitorChoice choice || !_pet.TryRecoverPet(choice.Area))
         {
-            LoadMonitorChoices();
-            RecoveryStatusText.Text = UiText.Get("화면 구성이 바뀌었어요. 목록에서 다시 선택해주세요.");
+            UpdateMonitorChoices(_pet.DesktopWorkAreas);
+            RecoveryStatusText.Text = UiText.Get(MonitorReselectionKey);
             return;
         }
         VisibleCheck.IsChecked = _pet.IsPetVisible;
