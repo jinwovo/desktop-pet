@@ -125,6 +125,34 @@ var tests = new (string Name, Action Run)[]
         var roundtrip = PetSettings.Load(path);
         Check(roundtrip.ScaleMultiplier == 1 && roundtrip.WalkSpeedMultiplier == 1, "Non-finite settings persisted");
     })),
+    ("Settings recover from the last valid backup and keep it when repairing a corrupt primary", () => InTemporaryFolder(folder =>
+    {
+        var path = Path.Combine(folder, "settings.json");
+        var backup = path + ".bak";
+        var settings = new PetSettings { Language = "zh-CN", CharacterName = "Nimbus", FocusMinutes = 37, AutoConnectAssistants = false };
+        settings.Save(path);
+        settings.FocusMinutes = 49;
+        settings.Save(path);
+        Check(PetSettings.Load(path).FocusMinutes == 49, "Loading ignored the valid latest primary");
+
+        File.WriteAllText(path, "{");
+        var recovered = PetSettings.Load(path);
+        Check(recovered.FocusMinutes == 37 && recovered.Language == "zh-CN" && recovered.CharacterName == "Nimbus" &&
+            !recovered.AutoConnectAssistants, "Corrupt primary lost the last valid preferences");
+        Check(File.ReadAllText(path) == "{", "Loading attempted to write to the corrupt primary");
+        var backupBytes = File.ReadAllBytes(backup);
+        recovered.FocusMinutes = 41;
+        recovered.Save(path);
+        Check(PetSettings.Load(path).FocusMinutes == 41 && File.ReadAllBytes(backup).SequenceEqual(backupBytes),
+            "Saving recovered settings replaced the good backup with corrupt data");
+
+        recovered.FocusMinutes = 57;
+        recovered.Save(path);
+        File.Delete(path);
+        Check(PetSettings.Load(path).FocusMinutes == 41, "Missing primary did not use the next valid backup");
+        File.WriteAllText(backup, "null");
+        Check(PetSettings.Load(path).Language == "auto", "Missing primary and invalid backup did not fall back to defaults");
+    })),
     ("Atomic settings writes preserve previous file on failure", () => InTemporaryFolder(folder =>
     {
         var path = Path.Combine(folder, "settings.json");

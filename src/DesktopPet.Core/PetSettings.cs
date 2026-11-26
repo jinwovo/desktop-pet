@@ -40,26 +40,28 @@ public sealed class PetSettings
 
     public static PetSettings Load(string? filePath = null)
     {
-        try
-        {
-            var path = filePath ?? FilePath;
-            if (File.Exists(path))
-            {
-                var json = File.ReadAllText(path);
-                var loaded = JsonSerializer.Deserialize<PetSettings>(json);
-                if (loaded is not null)
-                {
-                    loaded.Normalize();
-                    return loaded;
-                }
-            }
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
-        {
-            // Corrupt or unreadable settings file: start from defaults rather than failing to launch.
-        }
+        var path = filePath ?? FilePath;
+        var loaded = TryLoad(path) ?? TryLoad(path + ".bak") ?? new PetSettings { Language = "auto" };
+        loaded.Normalize();
+        return loaded;
+    }
 
-        return new PetSettings { Language = "auto" };
+    private static PetSettings? TryLoad(string path)
+    {
+        try { return ReadSettings(path); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
+    private static PetSettings? ReadSettings(string path)
+    {
+        try { return JsonSerializer.Deserialize<PetSettings>(File.ReadAllText(path)); }
+        catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException or JsonException)
+        {
+            return null;
+        }
     }
 
     public void Normalize()
@@ -89,7 +91,12 @@ public sealed class PetSettings
         try
         {
             File.WriteAllText(temporaryPath, json);
-            File.Move(temporaryPath, path, overwrite: true);
+            // Only a readable, valid primary may become the previous saved version.
+            // Repairing a missing or malformed primary leaves the existing backup intact.
+            if (ReadSettings(path) is not null)
+                File.Replace(temporaryPath, path, path + ".bak");
+            else
+                File.Move(temporaryPath, path, overwrite: true);
         }
         finally
         {
