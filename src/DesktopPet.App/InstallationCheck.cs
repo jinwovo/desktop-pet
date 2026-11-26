@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using System.IO;
 using System.Text.Json;
 using DesktopPet.Core;
@@ -7,7 +8,7 @@ namespace DesktopPet.App;
 public sealed record InstallationCheckResult(string AppVersion, bool ResourcesValid, int CharacterCount, int ValidatedCharacters,
     bool HasOriginalCollection, bool HasHookBridge, IReadOnlyList<string> Errors,
     IReadOnlyList<string> MissingOriginalCharacters, IReadOnlyList<string> InvalidOriginalCharacters,
-    int InvalidOptionalCharacterCount)
+    int InvalidOptionalCharacterCount, string ProcessArchitecture, string OSArchitecture)
 {
     public string ToJson() => JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });
 }
@@ -67,7 +68,9 @@ public static class InstallationCheck
         }
         return new(version, errors.Count == 0 && originals && bridge && characters.Length > 0, characters.Length, validated,
             originals, bridge, errors.OrderBy(value => value, StringComparer.Ordinal).ToArray(),
-            missingOriginals, invalidOriginals.OrderBy(name => name, StringComparer.Ordinal).ToArray(), invalidOptionalCount);
+            missingOriginals, invalidOriginals.OrderBy(name => name, StringComparer.Ordinal).ToArray(), invalidOptionalCount,
+            RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant(),
+            RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant());
     }
     private static bool IsUnlinked(string path)
     {

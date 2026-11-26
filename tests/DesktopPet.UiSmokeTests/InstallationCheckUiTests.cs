@@ -24,6 +24,14 @@ internal static class InstallationCheckUiTests
             "Valid installation failed the read-only check");
         Check(before.SetEquals(Directory.GetFiles(root, "*", SearchOption.AllDirectories)) && !good.ToJson().Contains(installation), "Installation check wrote files or exposed local paths");
         File.WriteAllText(Path.Combine(installation, "Assets", "Characters", "Nimbus", "idle.png"), "corrupt PNG");
+        using (var report = JsonDocument.Parse(good.ToJson()))
+        {
+            Check(report.RootElement.GetProperty("ProcessArchitecture").GetString() ==
+                    System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant() &&
+                report.RootElement.GetProperty("OSArchitecture").GetString() ==
+                    System.Runtime.InteropServices.RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant(),
+                "Installation report did not distinguish the executable process from the host architecture");
+        }
         var broken = InstallationCheck.Inspect(installation);
         Check(!broken.ResourcesValid && broken.ValidatedCharacters == 2 && broken.Errors.Contains("InvalidCharacterResources") && !broken.ToJson().Contains("private-installation-canary"),
             "Corrupt installation was accepted or exposed its path");
