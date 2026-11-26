@@ -140,7 +140,7 @@ public partial class MainWindow : Window
     private void InitializePet()
     {
         _dpiScale = VisualTreeHelper.GetDpi(this).DpiScaleX;
-        _settings = PetSettings.Load(_settingsPath);
+        _settings = PetSettings.Load(out var recoveredSettings, _settingsPath);
         UiText.SetLanguage(_settings.Language);
         _framePacer.MaximumFps = _settings.MaximumFps;
         _focusTimer.ConfigureDurations(TimeSpan.FromMinutes(_settings.FocusMinutes), TimeSpan.FromMinutes(_settings.BreakMinutes));
@@ -202,6 +202,7 @@ public partial class MainWindow : Window
         _lastTickTimestamp = Stopwatch.GetTimestamp();
         RefreshAttentionState();
         _inbox.Start();
+        if (recoveredSettings) ScheduleSettingsSave();
     }
 
     private CharacterPresentation LoadInitialPresentation(IReadOnlyList<string> names)

@@ -9,6 +9,7 @@ internal static class SettingsSaveRecoveryUiTests
 {
     public static void Run(string root)
     {
+        VerifyStartupRepairsPrimary(root);
         var path = Path.Combine(root, "save-recovery", "settings.json");
         var settings = new PetSettings();
         settings.Save(path);
@@ -63,6 +64,40 @@ internal static class SettingsSaveRecoveryUiTests
             pet.DisposeResources();
             pet.Close();
         }
+    }
+
+    private static void VerifyStartupRepairsPrimary(string root)
+    {
+        var folder = Path.Combine(root, "startup-recovery");
+        var path = Path.Combine(folder, "settings.json");
+        var settings = new PetSettings { Visible = false, FocusMinutes = 37, AutoConnectAssistants = false };
+        settings.Save(path);
+        settings.FocusMinutes = 49;
+        settings.Save(path);
+        File.WriteAllText(path, "{");
+        var backup = File.ReadAllBytes(path + ".bak");
+        var pet = new MainWindow(new CharacterLibrary(MainWindow.CharactersRoot, Path.Combine(folder, "characters")),
+            inboxDirectory: Path.Combine(folder, "inbox"),
+            workAreasProvider: () => new[] { new DesktopRect(0, 0, 1920, 1080) }, settingsPath: path);
+        try
+        {
+            pet.Show();
+            var clock = Stopwatch.StartNew();
+            while (clock.Elapsed < TimeSpan.FromSeconds(8))
+            {
+                var frame = new DispatcherFrame();
+                Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() => frame.Continue = false));
+                Dispatcher.PushFrame(frame);
+                var restored = PetSettings.Load(out var fromBackup, path);
+                if (!fromBackup && restored.FocusMinutes == 37) break;
+                Thread.Sleep(10);
+            }
+            var result = PetSettings.Load(out var stillUsingBackup, path);
+            Check(!stillUsingBackup && result.FocusMinutes == 37 && !result.AutoConnectAssistants &&
+                File.ReadAllBytes(path + ".bak").SequenceEqual(backup), "Startup did not repair primary while keeping recovery data");
+        }
+        finally { pet.DisposeResources(); pet.Close(); }
+        Console.WriteLine("PASS Successful startup schedules a repair of the primary settings without rotating the recovery copy");
     }
 
     private static void Check(bool valid, string message)

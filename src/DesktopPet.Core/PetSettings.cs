@@ -40,10 +40,20 @@ public sealed class PetSettings
     private static string FilePath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DesktopPet", "settings.json");
 
-    public static PetSettings Load(string? filePath = null)
+    public static PetSettings Load(string? filePath = null) => Load(out _, filePath);
+
+    /// <summary>Report whether startup used the previous valid version.</summary>
+    public static PetSettings Load(out bool recoveredFromBackup, string? filePath = null)
     {
         var path = filePath ?? FilePath;
-        var loaded = TryLoad(path) ?? TryLoad(path + ".bak") ?? new PetSettings { Language = "auto" };
+        var loaded = TryLoad(path);
+        recoveredFromBackup = false;
+        if (loaded is null)
+        {
+            loaded = TryLoad(path + ".bak");
+            recoveredFromBackup = loaded is not null;
+        }
+        loaded ??= new PetSettings { Language = "auto" };
         loaded.Normalize();
         return loaded;
     }
