@@ -95,6 +95,24 @@ try {
     Write-Host 'PASS Start Menu integration creates missing folders, preserves unrelated shortcuts, and tolerates unavailable parents'
     $passed++
 
+    & {
+        function Get-ItemProperty { [pscustomobject]@{ DesktopPet = '"C:\Unrelated.exe"' } }
+        function New-Item { throw 'The conflicting registration should have been preserved' }
+        function Set-ItemProperty { throw 'The conflicting registration should have been preserved' }
+        $result = Set-DesktopPetStartupRegistration -Executable $installedExe -RunKey 'Fixture' -WarningVariable startupWarnings
+        Assert-Test ($result -eq 'Preserved' -and @($startupWarnings).Count -eq 1) 'Unrelated startup setting did not remain intact.'
+    }
+    & {
+        function Get-ItemProperty { }
+        function New-Item { throw [UnauthorizedAccessException]::new('Fixture denies optional startup registration') }
+        function Set-ItemProperty { throw 'Startup fixture must not write to the registry' }
+        $result = Set-DesktopPetStartupRegistration -Executable $installedExe -RunKey 'Fixture' -WarningVariable startupWarnings
+        Assert-Test ($result -eq 'Unavailable' -and @($startupWarnings).Count -eq 1) 'Startup failure was treated as an install failure.'
+    }
+    Assert-Test ([System.IO.File]::ReadAllText($installedExe) -eq 'version 2') 'Startup registration changed installed payload.'
+    Write-Host 'PASS Optional startup registration preserves foreign settings and reports denied registration after installation'
+    $passed++
+
     $beforeManifest = [System.IO.File]::ReadAllText((Join-Path $installRoot '.desktop-pet-manifest.json'))
     Write-TestFile $publishRoot 'a-first.txt' 'new file that must roll back'
     Write-TestFile $publishRoot 'z-conflict\new-file.txt' 'cannot be deployed'
@@ -188,7 +206,7 @@ try {
     }
     Write-Host 'PASS Published junctions are rejected without touching their target'
     $passed++
-    Write-Host "$passed/11 installation regression checks passed"
+    Write-Host "$passed/12 installation regression checks passed"
 }
 finally {
     $safeTestRoot = Assert-DesktopPetChildPath -Root (Join-Path (Split-Path -Parent $PSScriptRoot) '.local') -Path $testRoot

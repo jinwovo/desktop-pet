@@ -64,13 +64,6 @@ if (-not $SkipStartMenuShortcut) {
     Set-DesktopPetStartMenuShortcut -ProgramsDirectory ([Environment]::GetFolderPath('Programs')) -Executable $exePath
 }
 if ($AddToStartup) {
-    $runKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
-    $existing = Get-ItemProperty -Path $runKey -Name DesktopPet -ErrorAction SilentlyContinue
-    $expected = '"' + $exePath + '"'
-    if ($existing -and $existing.DesktopPet -ne $expected) { Write-Warning '기존 DesktopPet 자동 실행 값이 달라 보존했습니다.' }
-    else {
-        New-Item -Path $runKey -Force | Out-Null
-        Set-ItemProperty -Path $runKey -Name DesktopPet -Value $expected
-    }
+    Set-DesktopPetStartupRegistration -Executable $exePath | Out-Null
 }
 Write-Host "설치 완료: $exePath"

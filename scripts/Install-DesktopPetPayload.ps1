@@ -109,6 +109,31 @@ function Set-DesktopPetStartMenuShortcut {
     }
 }
 
+function Set-DesktopPetStartupRegistration {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][string]$Executable,
+        [string]$RunKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
+    )
+    try {
+        $existing = Get-ItemProperty -LiteralPath $RunKey -Name DesktopPet -ErrorAction SilentlyContinue
+        $expected = '"' + $Executable + '"'
+        if ($existing -and $existing.DesktopPet -ne $expected) {
+            Write-Warning '기존 DesktopPet 자동 실행 값이 달라 보존했습니다.'
+            return 'Preserved'
+        }
+        if (-not $existing) {
+            New-Item -Path $RunKey -Force -ErrorAction Stop | Out-Null
+            Set-ItemProperty -LiteralPath $RunKey -Name DesktopPet -Value $expected -ErrorAction Stop
+        }
+        return 'Registered'
+    }
+    catch {
+        Write-Warning ('앱은 설치했지만 자동 실행을 등록하지 못했습니다. 실행 파일: ' + $Executable)
+        return 'Unavailable'
+    }
+}
+
 function Install-DesktopPetPayload {
     [CmdletBinding()]
     param(
