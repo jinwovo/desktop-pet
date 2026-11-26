@@ -7,6 +7,7 @@
 #>
 param(
     [switch]$AddToStartup,
+    [switch]$SkipStartMenuShortcut,
     [string]$PackageDirectory,
     [string]$InstallDirectory = (Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'DesktopPet'),
     [switch]$FrameworkDependent
@@ -47,19 +48,8 @@ finally {
 }
 
 $exePath = Join-Path $installRoot 'DesktopPet.App.exe'
-$shortcutPath = Join-Path ([Environment]::GetFolderPath('Programs')) 'DesktopPet.lnk'
-$shell = New-Object -ComObject WScript.Shell
-$shortcut = $shell.CreateShortcut($shortcutPath)
-if ([System.IO.File]::Exists($shortcutPath) -and $shortcut.TargetPath -and
-    -not ([System.IO.Path]::GetFullPath($shortcut.TargetPath)).Equals($exePath, [StringComparison]::OrdinalIgnoreCase)) {
-    Write-Warning '기존 DesktopPet 바로가기가 다른 프로그램을 가리켜 보존했습니다.'
-}
-else {
-    $shortcut.TargetPath = $exePath
-    $shortcut.WorkingDirectory = $installRoot
-    $shortcut.IconLocation = Join-Path $installRoot 'Assets\AppIcon.ico'
-    $shortcut.Save()
-    Write-Host "시작 메뉴 바로가기: $shortcutPath"
+if (-not $SkipStartMenuShortcut) {
+    Set-DesktopPetStartMenuShortcut -ProgramsDirectory ([Environment]::GetFolderPath('Programs')) -Executable $exePath
 }
 if ($AddToStartup) {
     $runKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'

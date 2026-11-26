@@ -66,6 +66,36 @@ function Assert-DesktopPetPayloadRelativePath {
     }
 }
 
+function Set-DesktopPetStartMenuShortcut {
+    [CmdletBinding()]
+    param([string]$ProgramsDirectory, [Parameter(Mandatory = $true)][string]$Executable)
+    if ([string]::IsNullOrWhiteSpace($ProgramsDirectory)) {
+        Write-Warning '시작 메뉴 폴더를 찾지 못했습니다. 설치 폴더의 DesktopPet.App.exe를 실행할 수 있습니다.'
+        return
+    }
+
+    try {
+        $programs = [System.IO.Path]::GetFullPath($ProgramsDirectory)
+        [System.IO.Directory]::CreateDirectory($programs) | Out-Null
+        $shortcutPath = Join-Path $programs 'DesktopPet.lnk'
+        $shell = New-Object -ComObject WScript.Shell -ErrorAction Stop
+        $shortcut = $shell.CreateShortcut($shortcutPath)
+        if ([System.IO.File]::Exists($shortcutPath) -and $shortcut.TargetPath -and
+            -not ([System.IO.Path]::GetFullPath($shortcut.TargetPath)).Equals($Executable, [StringComparison]::OrdinalIgnoreCase)) {
+            Write-Warning '기존 DesktopPet 바로가기가 다른 프로그램을 가리켜 보존했습니다.'
+            return
+        }
+        $shortcut.TargetPath = $Executable
+        $shortcut.WorkingDirectory = [System.IO.Path]::GetDirectoryName($Executable)
+        $shortcut.IconLocation = Join-Path $shortcut.WorkingDirectory 'Assets\AppIcon.ico'
+        $shortcut.Save()
+        Write-Host "시작 메뉴 바로가기: $shortcutPath"
+    }
+    catch {
+        Write-Warning ('앱은 설치했지만 시작 메뉴 바로가기를 만들지 못했습니다. 실행 파일: ' + $Executable)
+    }
+}
+
 function Install-DesktopPetPayload {
     [CmdletBinding()]
     param(

@@ -62,6 +62,25 @@ try {
     Write-Host 'PASS Locked executable aborts before changing the installed version'
     $passed++
 
+    $programs = Join-Path $testRoot 'missing Programs Folder'
+    $installedExe = Join-Path $installRoot 'DesktopPet.App.exe'
+    Set-DesktopPetStartMenuShortcut -ProgramsDirectory $programs -Executable $installedExe
+    $linkPath = Join-Path $programs 'DesktopPet.lnk'
+    $shell = New-Object -ComObject WScript.Shell
+    $link = $shell.CreateShortcut($linkPath)
+    Assert-Test ([System.IO.File]::Exists($linkPath) -and $link.TargetPath -eq $installedExe) 'Shortcut creation failed in a missing Programs folder.'
+    $otherExe = Join-Path $testRoot 'Other.exe'
+    $link.TargetPath = $otherExe
+    $link.Save()
+    Set-DesktopPetStartMenuShortcut -ProgramsDirectory $programs -Executable $installedExe
+    Assert-Test ($shell.CreateShortcut($linkPath).TargetPath -eq $otherExe) 'Existing unrelated shortcut was overwritten.'
+    $blockedPrograms = Join-Path $testRoot 'blocked Programs'
+    [System.IO.File]::WriteAllText($blockedPrograms, 'not a directory')
+    Set-DesktopPetStartMenuShortcut -ProgramsDirectory $blockedPrograms -Executable $installedExe -WarningVariable shortcutWarnings
+    Assert-Test (@($shortcutWarnings).Count -eq 1 -and [System.IO.File]::ReadAllText($installedExe) -eq 'version 2') 'Shortcut failure did not preserve installed payload.'
+    Write-Host 'PASS Start Menu integration creates missing folders, preserves unrelated shortcuts, and tolerates unavailable parents'
+    $passed++
+
     $beforeManifest = [System.IO.File]::ReadAllText((Join-Path $installRoot '.desktop-pet-manifest.json'))
     Write-TestFile $publishRoot 'a-first.txt' 'new file that must roll back'
     Write-TestFile $publishRoot 'z-conflict\new-file.txt' 'cannot be deployed'
@@ -152,7 +171,7 @@ try {
     }
     Write-Host 'PASS Published junctions are rejected without touching their target'
     $passed++
-    Write-Host "$passed/9 installation regression checks passed"
+    Write-Host "$passed/10 installation regression checks passed"
 }
 finally {
     $safeTestRoot = Assert-DesktopPetChildPath -Root (Join-Path (Split-Path -Parent $PSScriptRoot) '.local') -Path $testRoot
