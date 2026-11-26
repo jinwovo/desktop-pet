@@ -34,6 +34,13 @@ internal static class DiagnosticsUiTests
                 "Diagnostic export changed user preferences or the reviewed content");
             ((Button)settings.FindName("DiagnosticsButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             Check(ReferenceEquals(window, Get(settings, "_diagnosticWindow")), "Diagnostics opened duplicate windows");
+            var previous = window.Report;
+            ((PetSettings)Get(pet, "_settings")!).MaximumFps = 30;
+            Check(window.Report == previous, "Diagnostic JSON was replaced before an explicit refresh");
+            Descendants<Button>(window).Single(button => button.Name == "RefreshDiagnosticButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            using (var report = JsonDocument.Parse(window.Report))
+                Check(report.RootElement.GetProperty("MaximumFps").GetInt32() == 30 && window.Report != previous &&
+                    window.Report == Descendants<TextBox>(window).Single().Text, "Refresh did not update the reviewed report from the current pet");
             settings.Close();
             Check(!window.IsVisible && Get(settings, "_diagnosticWindow") is null, "Closing Settings retained the diagnostic window");
             Console.WriteLine("PASS Diagnostics previews exact allowlisted JSON, exports without local paths/character identity and closes with Settings without changing preferences");

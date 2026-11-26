@@ -685,7 +685,7 @@ public partial class SettingsWindow : Window
         if (_diagnosticWindow is not null) { _diagnosticWindow.Activate(); return; }
         try
         {
-            _diagnosticWindow = new DiagnosticWindow(_pet.CreateDiagnosticReport()) { Owner = this };
+            _diagnosticWindow = new DiagnosticWindow(_pet.CreateDiagnosticReport(), _pet.CreateDiagnosticReport) { Owner = this };
             _diagnosticWindow.Closed += (_, _) => _diagnosticWindow = null;
             _diagnosticWindow.Show();
         }
